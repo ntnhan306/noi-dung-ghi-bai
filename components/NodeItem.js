@@ -9,29 +9,32 @@ export const NodeItem = ({ node, isEditMode, onClick, onEdit, onDelete }) => {
 
   return html`
     <div 
-      className="group relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-300 hover:-translate-y-1 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between"
+      className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-soft hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer p-5 flex items-center justify-between overflow-hidden"
       onClick=${() => onClick(node)}
     >
-      <div className="flex items-center gap-5 flex-1 overflow-hidden">
-        <div className=${`p-3 rounded-xl flex-shrink-0 transition-colors ${isLesson ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'}`}>
-          ${isLesson ? html`<${FileText} size=${24} />` : html`<${Folder} size=${24} />`}
+      <!-- Decoration for hover -->
+      <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+      <div className="relative flex items-center gap-5 flex-1 overflow-hidden z-10">
+        <div className=${`p-3.5 rounded-2xl flex-shrink-0 transition-all duration-300 shadow-sm group-hover:scale-110 ${isLesson ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 ring-1 ring-emerald-100' : 'bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 ring-1 ring-indigo-100'}`}>
+          ${isLesson ? html`<${FileText} size=${24} strokeWidth=${1.5} />` : html`<${Folder} size=${24} strokeWidth=${1.5} />`}
         </div>
-        <div className="min-w-0">
-          <span className="text-[10px] font-sans font-bold text-slate-400 uppercase tracking-widest mb-1 block">
+        <div className="min-w-0 flex-1">
+          <span className="text-[10px] font-sans font-bold text-slate-400 uppercase tracking-widest mb-1.5 block group-hover:text-indigo-400 transition-colors">
             ${NODE_LABELS[node.type]}
           </span>
-          <h3 className="text-lg font-serif font-medium text-slate-800 group-hover:text-blue-700 truncate">
+          <h3 className="text-lg font-serif font-semibold text-slate-800 group-hover:text-indigo-700 truncate transition-colors leading-snug">
             ${node.title}
           </h3>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 pl-4 border-l border-slate-50 ml-4">
+      <div className="relative flex items-center gap-3 pl-4 border-l border-slate-100 ml-4 z-10">
         ${isEditMode && html`
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick=${(e) => e.stopPropagation()}>
             <button 
               onClick=${() => onEdit && onEdit(node)}
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
               title="Sửa tên"
             >
               <${Edit2} size=${16} />
@@ -45,7 +48,9 @@ export const NodeItem = ({ node, isEditMode, onClick, onEdit, onDelete }) => {
             </button>
           </div>
         `}
-        <${ChevronRight} className="text-slate-300 group-hover:text-blue-500 transition-colors transform group-hover:translate-x-1" />
+        <div className="w-8 h-8 rounded-full bg-transparent group-hover:bg-white flex items-center justify-center transition-colors">
+          <${ChevronRight} className="text-slate-300 group-hover:text-indigo-500 transition-colors transform group-hover:translate-x-0.5" />
+        </div>
       </div>
     </div>
   `;

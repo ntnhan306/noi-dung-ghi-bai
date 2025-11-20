@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nội dung ghi bài - Chỉnh sửa</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
@@ -11,22 +17,31 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Arial', 'Helvetica', 'sans-serif'],
-              serif: ['"Times New Roman"', 'Times', 'serif'],
+              sans: ['Inter', 'sans-serif'],
+              serif: ['"Playfair Display"', 'serif'],
             },
             colors: {
-              slate: {
-                50: '#f8fafc',
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a',
+              primary: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+              },
+              indigo: {
+                50: '#eef2ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+              },
+              violet: {
+                50: '#f5f3ff',
+                500: '#8b5cf6',
+                600: '#7c3aed',
               }
+            },
+            boxShadow: {
+              'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
+              'glow': '0 0 20px rgba(99, 102, 241, 0.2)',
             }
           },
         },
@@ -45,7 +60,7 @@
     }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-serif antialiased">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-700">
     <div id="root"></div>
     <!-- Trỏ về file index.js ở thư mục gốc -->
     <script type="module" src="../index.js"></script>

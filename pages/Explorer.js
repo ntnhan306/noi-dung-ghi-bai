@@ -62,7 +62,7 @@ export const Explorer = ({ mode }) => {
           'bold italic forecolor | alignleft aligncenter ' +
           'alignright alignjustify | bullist numlist outdent indent | ' +
           'image table media | removeformat | help',
-        content_style: 'body { font-family:"Times New Roman",serif; font-size:18px; line-height: 1.6; color: #334155; }',
+        content_style: 'body { font-family:"Playfair Display",serif; font-size:18px; line-height: 1.8; color: #334155; background-color: #fff; }',
         setup: (editor) => {
           editorRef.current = editor;
         }
@@ -159,9 +159,11 @@ export const Explorer = ({ mode }) => {
   if (loading) {
     return html`
       <div className="flex items-center justify-center h-[60vh] text-slate-400">
-        <div className="flex flex-col items-center gap-3">
-           <${Loader2} className="w-10 h-10 animate-spin text-blue-500" />
-           <span className="font-sans text-sm">Đang tải dữ liệu...</span>
+        <div className="flex flex-col items-center gap-4">
+           <div className="relative">
+             <div className="w-12 h-12 rounded-full border-4 border-indigo-100 animate-spin border-t-indigo-600"></div>
+           </div>
+           <span className="font-sans text-sm font-medium text-indigo-600/70">Đang tải dữ liệu...</span>
         </div>
       </div>
     `;
@@ -173,13 +175,13 @@ export const Explorer = ({ mode }) => {
       <div className="max-w-5xl mx-auto pb-20">
         <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
         
-        <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[700px] flex flex-col">
-          <div className="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center sticky top-0 z-20 backdrop-blur-sm bg-white/90">
+        <div className="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-white/60 overflow-hidden min-h-[700px] flex flex-col relative">
+          <div className="px-10 py-8 border-b border-slate-100 bg-white/95 backdrop-blur-sm flex justify-between items-start sticky top-0 z-20">
             <div>
-              <span className="text-xs font-sans font-bold text-blue-500 uppercase tracking-wider block mb-1">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 uppercase tracking-widest mb-3">
                 ${NODE_LABELS[NodeType.LESSON]}
               </span>
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-800">
+              <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 leading-tight">
                 ${currentNode.title}
               </h1>
             </div>
@@ -188,13 +190,13 @@ export const Explorer = ({ mode }) => {
                <div className="flex gap-3">
                 <button 
                   onClick=${() => handleEditTitle(currentNode)}
-                  className="px-4 py-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-full font-sans text-sm font-medium transition-colors"
+                  className="px-4 py-2 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 rounded-xl font-sans text-sm font-medium transition-colors"
                 >
                    Sửa tên
                 </button>
                 <button 
                   onClick=${toggleContentEditor}
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-all flex items-center gap-2 font-sans shadow-md hover:shadow-lg"
+                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans"
                 >
                   <${LayoutGrid} size=${18} /> Soạn thảo
                 </button>
@@ -205,7 +207,7 @@ export const Explorer = ({ mode }) => {
               <div className="flex gap-3">
                 <button 
                   onClick=${() => setIsEditingContent(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition-colors flex items-center gap-2 font-sans"
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans"
                   disabled=${saving}
                 >
                   <${X} size=${18} /> Hủy
@@ -213,7 +215,7 @@ export const Explorer = ({ mode }) => {
                 <button 
                   onClick=${handleSaveContent}
                   disabled=${saving}
-                  className="px-5 py-2 bg-green-600 text-white rounded-full text-sm font-medium hover:bg-green-700 transition-all flex items-center gap-2 font-sans shadow-md hover:shadow-lg disabled:opacity-70"
+                  className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans disabled:opacity-70"
                 >
                   ${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`}
                   ${saving ? 'Đang lưu...' : 'Lưu bài'}
@@ -229,8 +231,8 @@ export const Explorer = ({ mode }) => {
               </div>
             ` : html`
               <div 
-                className="p-8 md:p-12 prose prose-lg max-w-none font-serif text-slate-800 leading-loose"
-                dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-20 text-slate-300"><p class="italic">Chưa có nội dung.</p></div>' }}
+                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-serif leading-loose prose-headings:font-serif prose-headings:font-bold prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg"
+                dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
               ></div>
             `}
           </div>
@@ -239,9 +241,9 @@ export const Explorer = ({ mode }) => {
         <div className="mt-8">
            <button 
              onClick=${() => handleNavigate(currentNode.parentId)}
-             className="text-slate-500 hover:text-blue-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-lg hover:bg-slate-100 inline-flex"
+             className="group text-slate-500 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm inline-flex"
            >
-             <${ArrowLeft} size=${18} /> Quay lại danh sách
+             <div className="p-1 rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại danh sách
            </button>
         </div>
 
@@ -259,38 +261,41 @@ export const Explorer = ({ mode }) => {
 
   // --- VIEW: LIST (EXPLORER) ---
   return html`
-    <div className="max-w-6xl mx-auto pb-20">
+    <div className="max-w-7xl mx-auto pb-20">
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-2 tracking-tight">
+      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="relative">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-3 tracking-tight">
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
-          <p className="text-slate-500 font-sans">
-            ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để bắt đầu'}
+          <p className="text-slate-500 font-sans text-lg max-w-2xl">
+            ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để bắt đầu hành trình ghi chép.'}
           </p>
+          
+          <!-- Decorative decorative line -->
+          <div className="h-1 w-20 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full mt-6"></div>
         </div>
         
         ${mode === 'edit' && !currentNode && html`
           <button 
             onClick=${() => setIsPasswordModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-slate-600 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 rounded-lg transition-all text-sm font-medium shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 text-slate-600 bg-white/60 backdrop-blur border border-white/60 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white rounded-xl transition-all text-sm font-medium shadow-sm hover:shadow-md"
           >
-            <${KeyRound} size=${16} /> Đổi mật khẩu
+            <${KeyRound} size=${18} /> Đổi mật khẩu
           </button>
         `}
       </header>
 
       ${mode === 'edit' && allowedChildTypes.length > 0 && html`
-        <div className="mb-8 flex gap-3 font-sans">
+        <div className="mb-10 flex gap-4 font-sans">
           ${allowedChildTypes.map(type => html`
             <button
               key=${type}
               onClick=${() => handleCreate(type)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide"
             >
-              <${Plus} size=${18} />
+              <${Plus} size=${18} strokeWidth=${2.5} />
               Thêm ${NODE_LABELS[type]}
             </button>
           `)}
@@ -298,16 +303,23 @@ export const Explorer = ({ mode }) => {
       `}
 
       ${children.length === 0 ? html`
-        <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm">
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <${ListIcon} className="text-slate-300" size=${40} />
+        <div className="text-center py-32 bg-white/60 backdrop-blur-sm rounded-3xl border border-dashed border-slate-300/80 hover:border-indigo-300 transition-colors">
+          <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <${ListIcon} className="text-indigo-300" size=${48} />
           </div>
-          <h3 className="text-lg font-medium text-slate-700">Trống trơn!</h3>
-          <p className="text-slate-500 font-sans mt-2">Chưa có mục nào được tạo trong thư mục này.</p>
-          ${mode === 'edit' && html`<p className="text-sm text-blue-500 mt-4 font-sans cursor-pointer hover:underline" onClick=${() => allowedChildTypes[0] && handleCreate(allowedChildTypes[0])}>Tạo mục mới ngay</p>`}
+          <h3 className="text-xl font-serif font-medium text-slate-700">Chưa có nội dung</h3>
+          <p className="text-slate-500 font-sans mt-2">Thư mục này hiện đang trống.</p>
+          ${mode === 'edit' && html`
+             <button 
+               onClick=${() => allowedChildTypes[0] && handleCreate(allowedChildTypes[0])}
+               className="mt-6 text-indigo-600 font-medium hover:underline decoration-2 underline-offset-4 font-sans"
+             >
+               Tạo mục mới ngay
+             </button>
+          `}
         </div>
       ` : html`
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           ${children.map(node => html`
             <${NodeItem} 
               key=${node.id}
