@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -15,11 +15,15 @@ export const Explorer = ({ mode }) => {
   const [allNodes, setAllNodes] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Modal state
+  // Modal state for Title editing
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('CREATE');
   const [editingNode, setEditingNode] = useState(undefined);
   const [targetType, setTargetType] = useState(NodeType.SUBJECT);
+
+  // Content Editing state (Rich Text)
+  const [isEditingContent, setIsEditingContent] = useState(false);
+  const editorRef = useRef(null);
 
   // Fetch Data
   const fetchData = async () => {
@@ -37,6 +41,36 @@ export const Explorer = ({ mode }) => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Initialize TinyMCE when entering content edit mode
+  useEffect(() => {
+    if (isEditingContent && window.tinymce) {
+      window.tinymce.init({
+        selector: '#lesson-editor',
+        height: 600,
+        menubar: 'file edit view insert format tools table help',
+        plugins: [
+          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+          'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+          'bold italic forecolor | alignleft aligncenter ' +
+          'alignright alignjustify | bullist numlist outdent indent | ' +
+          'image table media | removeformat | help',
+        content_style: 'body { font-family:"Times New Roman",serif; font-size:16px }',
+        setup: (editor) => {
+          editorRef.current = editor;
+        }
+      });
+    }
+
+    return () => {
+      if (window.tinymce) {
+        window.tinymce.remove('#lesson-editor');
+      }
+    };
+  }, [isEditingContent]);
 
   // Derive current view state
   const currentNode = useMemo(() => 
@@ -72,11 +106,30 @@ export const Explorer = ({ mode }) => {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (node) => {
+  // Edit Title Handler
+  const handleEditTitle = (node) => {
     setModalMode('UPDATE');
     setTargetType(node.type);
     setEditingNode(node);
     setIsModalOpen(true);
+  };
+
+  // Toggle Content Editor
+  const toggleContentEditor = () => {
+    setIsEditingContent(true);
+  };
+
+  // Save Content from TinyMCE
+  const handleSaveContent = async () => {
+    if (editorRef.current) {
+      const newContent = editorRef.current.getContent();
+      await apiService.saveNode({
+        ...currentNode,
+        content: newContent
+      });
+      setIsEditingContent(false);
+      fetchData();
+    }
   };
 
   const handleDelete = async (node) => {
@@ -86,7 +139,8 @@ export const Explorer = ({ mode }) => {
     }
   };
 
-  const handleSave = async (data) => {
+  // Save from Modal (Title only)
+  const handleSaveModal = async (data) => {
     await apiService.saveNode(data);
     fetchData();
   };
@@ -106,33 +160,66 @@ export const Explorer = ({ mode }) => {
   // Render Content for LESSON type
   if (currentNode?.type === NodeType.LESSON) {
     return html`
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[500px]">
-          <div className="p-8 border-b border-gray-100 bg-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-sm font-sans font-bold text-gray-400 uppercase tracking-wider block mb-2">
-                  ${NODE_LABELS[NodeType.LESSON]}
-                </span>
-                <h1 className="text-3xl font-serif font-bold text-gray-900 leading-tight">
-                  ${currentNode.title}
-                </h1>
-              </div>
-              ${mode === 'edit' && html`
-                <button 
-                  onClick=${() => handleEdit(currentNode)}
-                  className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center gap-2 font-sans"
-                >
-                  <${LayoutGrid} size=${16} /> Chỉnh sửa nội dung
-                </button>
-              `}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[600px] flex flex-col">
+          <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center sticky top-16 z-20">
+            <div>
+              <span className="text-sm font-sans font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                ${NODE_LABELS[NodeType.LESSON]}
+              </span>
+              <h1 className="text-2xl font-serif font-bold text-gray-900">
+                ${currentNode.title}
+              </h1>
             </div>
+            
+            ${mode === 'edit' && !isEditingContent && html`
+               <div className="flex gap-2">
+                <button 
+                  onClick=${() => handleEditTitle(currentNode)}
+                  className="px-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-sans text-sm font-medium transition-colors"
+                >
+                   Sửa tên
+                </button>
+                <button 
+                  onClick=${toggleContentEditor}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 font-sans shadow-sm"
+                >
+                  <${LayoutGrid} size=${16} /> Soạn thảo
+                </button>
+              </div>
+            `}
+
+            ${mode === 'edit' && isEditingContent && html`
+              <div className="flex gap-2">
+                <button 
+                  onClick=${() => setIsEditingContent(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 font-sans"
+                >
+                  <${X} size=${16} /> Hủy
+                </button>
+                <button 
+                  onClick=${handleSaveContent}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2 font-sans shadow-sm"
+                >
+                  <${Save} size=${16} /> Lưu nội dung
+                </button>
+              </div>
+            `}
           </div>
           
-          <div className="p-8 prose prose-lg max-w-none font-serif text-gray-800 whitespace-pre-wrap leading-relaxed">
-            ${currentNode.content || html`<em className="text-gray-400">Chưa có nội dung...</em>`}
+          <div className="flex-1 bg-white relative">
+            ${isEditingContent ? html`
+              <div className="p-4 h-full">
+                <textarea id="lesson-editor" defaultValue=${currentNode.content}></textarea>
+              </div>
+            ` : html`
+              <div 
+                className="p-8 prose prose-lg max-w-none font-serif text-gray-800 leading-relaxed"
+                dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="text-gray-400 italic text-center mt-10">Chưa có nội dung. Nhấn "Soạn thảo" để bắt đầu ghi bài.</div>' }}
+              ></div>
+            `}
           </div>
         </div>
         
@@ -151,7 +238,7 @@ export const Explorer = ({ mode }) => {
           targetType=${currentNode.type}
           initialData=${editingNode}
           onClose=${() => setIsModalOpen(false)}
-          onSave=${handleSave}
+          onSave=${handleSaveModal}
         />
       </div>
     `;
@@ -202,7 +289,7 @@ export const Explorer = ({ mode }) => {
               node=${node}
               isEditMode=${mode === 'edit'}
               onClick=${() => handleNavigate(node.id)}
-              onEdit=${handleEdit}
+              onEdit=${handleEditTitle}
               onDelete=${handleDelete}
             />
           `)}
@@ -215,7 +302,7 @@ export const Explorer = ({ mode }) => {
         targetType=${targetType}
         initialData=${editingNode}
         onClose=${() => setIsModalOpen(false)}
-        onSave=${handleSave}
+        onSave=${handleSaveModal}
       />
     </div>
   `;

@@ -1,9 +1,18 @@
 import React from 'react';
 import { html } from './utils/html.js';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { Explorer } from './pages/Explorer.js';
 import { AuthGuard } from './pages/AuthGuard.js';
 import { BookOpen, Lock } from 'lucide-react';
+
+// Detect basename for GitHub Pages vs Cloudflare/Local
+const getBasename = () => {
+  const hostname = window.location.hostname;
+  if (hostname.includes('github.io')) {
+    return '/noi-dung-ghi-bai';
+  }
+  return '/';
+};
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -24,19 +33,19 @@ const Layout = ({ children }) => {
 
           <nav className="flex items-center gap-2">
             ${isEditMode ? html`
-              <a 
-                href="#/view" 
+              <${Link} 
+                to="/view" 
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-all font-sans"
               >
                 <${BookOpen} size=${16} /> Chế độ xem
-              </a>
+              </${Link}>
             ` : html`
-              <a 
-                href="#/edit" 
+              <${Link} 
+                to="/edit" 
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-all font-sans"
               >
                 <${Lock} size=${16} /> Chế độ sửa
-              </a>
+              </${Link}>
             `}
           </nav>
         </div>
@@ -57,7 +66,7 @@ const Layout = ({ children }) => {
 
 const App = () => {
   return html`
-    <${HashRouter}>
+    <${BrowserRouter} basename=${getBasename()}>
       <${Layout}>
         <${Routes}>
           <${Route} path="/" element=${html`<${Navigate} to="/view" replace />`} />
@@ -77,7 +86,7 @@ const App = () => {
           `} />
         </${Routes}>
       </${Layout}>
-    </${HashRouter}>
+    </${BrowserRouter}>
   `;
 };
 

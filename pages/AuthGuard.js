@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { html } from '../utils/html.js';
+import { Link } from 'react-router-dom';
 import { Lock, ArrowRight } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 
@@ -80,9 +81,9 @@ export const AuthGuard = ({ children }) => {
           </form>
           
           <div className="mt-6 text-center">
-             <a href="#/" className="text-sm text-gray-500 hover:text-blue-600 hover:underline">
+             <${Link} to="/view" className="text-sm text-gray-500 hover:text-blue-600 hover:underline">
                Quay lại trang xem
-             </a>
+             </${Link}>
           </div>
         </div>
       </div>

@@ -12,12 +12,12 @@ export const EditorModal = ({
   onSave 
 }) => {
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setTitle(initialData?.title || '');
-      setContent(initialData?.content || '');
+    } else {
+      setTitle('');
     }
   }, [isOpen, initialData]);
 
@@ -25,28 +25,29 @@ export const EditorModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Only save title and type logic here. Content is handled in the Lesson Detail view.
     onSave({
       ...initialData,
       title,
-      content: targetType === NodeType.LESSON ? content : undefined,
-      type: targetType
+      type: targetType,
+      content: initialData?.content || '' // Preserve existing content if updating title, or empty if new
     });
     onClose();
   };
 
   return html`
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-semibold text-gray-800">
-            ${mode === 'CREATE' ? 'Thêm mới' : 'Chỉnh sửa'} ${NODE_LABELS[targetType]}
+            ${mode === 'CREATE' ? 'Thêm mới' : 'Sửa tên'} ${NODE_LABELS[targetType]}
           </h2>
           <button onClick=${onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <${X} size=${24} />
           </button>
         </div>
 
-        <form onSubmit=${handleSubmit} className="p-6 flex flex-col gap-4 overflow-y-auto flex-1">
+        <form onSubmit=${handleSubmit} className="p-6 flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề</label>
             <input
@@ -56,22 +57,9 @@ export const EditorModal = ({
               onChange=${(e) => setTitle(e.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               placeholder="Nhập tiêu đề..."
+              autoFocus
             />
           </div>
-
-          ${targetType === NodeType.LESSON && html`
-            <div className="flex-1 flex flex-col min-h-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nội dung bài học</label>
-              <textarea
-                value=${content}
-                onChange=${(e) => setContent(e.target.value)}
-                className="w-full flex-1 p-4 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-serif"
-                placeholder="Nhập nội dung bài học..."
-                style=${{ minHeight: '300px' }}
-              />
-              <p className="text-xs text-gray-500 mt-1">Hỗ trợ văn bản thuần (Ghi chú đơn giản).</p>
-            </div>
-          `}
         </form>
 
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
