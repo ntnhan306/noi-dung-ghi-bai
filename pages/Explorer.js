@@ -30,21 +30,38 @@ export const Explorer = ({ mode }) => {
   const editorRef = useRef(null);
 
   // Fetch Data
-  const fetchData = async () => {
-    setLoading(true);
+  // Modified to accept isBackground param to update data silently without full page loader
+  const fetchData = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
       const data = await apiService.getAllNodes();
       setAllNodes(data);
     } catch (err) {
       console.error("Failed to load data", err);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Auto-refresh in View mode (every 1 second if online)
+  useEffect(() => {
+    // Only active in View mode
+    if (mode !== 'view') return;
+
+    const intervalId = setInterval(() => {
+      // Only fetch if online to save resources/errors
+      if (navigator.onLine) {
+        fetchData(true); // Pass true to indicate background fetch
+      }
+    }, 1000);
+
+    // Cleanup interval on unmount or mode change
+    return () => clearInterval(intervalId);
+  }, [mode]);
 
   // Initialize TinyMCE
   useEffect(() => {
@@ -128,7 +145,7 @@ export const Explorer = ({ mode }) => {
           content: newContent
         });
         setIsEditingContent(false);
-        fetchData();
+        fetchData(true); // Refresh data after save
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
       } finally {
@@ -140,13 +157,13 @@ export const Explorer = ({ mode }) => {
   const handleDelete = async (node) => {
     if (window.confirm(`Bạn có chắc muốn xóa "${node.title}"?`)) {
       await apiService.deleteNode(node.id);
-      fetchData();
+      fetchData(true);
     }
   };
 
   const handleSaveModal = async (data) => {
     await apiService.saveNode(data);
-    fetchData();
+    fetchData(true);
   };
   
   const handleChangePassword = async (newPass) => {
