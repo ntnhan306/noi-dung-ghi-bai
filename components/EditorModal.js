@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { html } from 'htm/react';
+import { html } from '../utils/html.js';
 import { X } from 'lucide-react';
 import { NodeType, NODE_LABELS } from '../types.js';
 

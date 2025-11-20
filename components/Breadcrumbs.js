@@ -1,5 +1,5 @@
 import React from 'react';
-import { html } from 'htm/react';
+import { html } from '../utils/html.js';
 import { ChevronRight, Home } from 'lucide-react';
 
 export const Breadcrumbs = ({ items, onNavigate }) => {

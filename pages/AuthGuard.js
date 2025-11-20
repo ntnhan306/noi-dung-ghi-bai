@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { html } from 'htm/react';
+import { html } from '../utils/html.js';
 import { Lock, ArrowRight } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 
@@ -74,7 +74,7 @@ export const AuthGuard = ({ children }) => {
               className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-900/20 disabled:opacity-50"
             >
               ${checking ? 'Đang kiểm tra...' : html`
-                <>Truy cập <${ArrowRight} size=${18} /></>
+                <${React.Fragment}>Truy cập <${ArrowRight} size=${18} /></${React.Fragment}>
               `}
             </button>
           </form>

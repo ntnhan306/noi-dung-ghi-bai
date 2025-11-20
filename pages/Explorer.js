@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { html } from 'htm/react';
+import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2 } from 'lucide-react';
 import { apiService } from '../services/apiService.js';

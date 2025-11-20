@@ -1,5 +1,5 @@
 import React from 'react';
-import { html } from 'htm/react';
+import { html } from './utils/html.js';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Explorer } from './pages/Explorer.js';
 import { AuthGuard } from './pages/AuthGuard.js';
