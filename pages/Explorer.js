@@ -35,7 +35,11 @@ export const Explorer = ({ mode }) => {
     if (!isBackground) setLoading(true);
     try {
       const data = await apiService.getAllNodes();
-      setAllNodes(data);
+      // QUAN TRỌNG: Chỉ cập nhật nếu data là mảng hợp lệ.
+      // Nếu apiService trả về null (do lỗi), giữ nguyên dữ liệu cũ.
+      if (Array.isArray(data)) {
+        setAllNodes(data);
+      }
     } catch (err) {
       console.error("Failed to load data", err);
     } finally {
@@ -47,7 +51,7 @@ export const Explorer = ({ mode }) => {
     fetchData();
   }, []);
 
-  // Auto-refresh in View mode (every 1 second if online)
+  // Auto-refresh in View mode (every 2 seconds if online to reduce load/risk)
   useEffect(() => {
     // Only active in View mode
     if (mode !== 'view') return;
@@ -57,7 +61,7 @@ export const Explorer = ({ mode }) => {
       if (navigator.onLine) {
         fetchData(true); // Pass true to indicate background fetch
       }
-    }, 1000);
+    }, 2000); // Tăng lên 2s cho an toàn hơn
 
     // Cleanup interval on unmount or mode change
     return () => clearInterval(intervalId);
@@ -145,7 +149,8 @@ export const Explorer = ({ mode }) => {
           content: newContent
         });
         setIsEditingContent(false);
-        fetchData(true); // Refresh data after save
+        // Sau khi lưu, fetch lại ngay để đảm bảo đồng bộ
+        await fetchData(true); 
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
       } finally {

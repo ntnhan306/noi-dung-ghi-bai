@@ -1,8 +1,9 @@
+
 export default {
   async fetch(request, env) {
     // Cấu hình CORS để cho phép Web App gọi API
     const corsHeaders = {
-      "Access-Control-Allow-Origin": "*", // Có thể thay "*" bằng "https://ntnhan306.github.io" để bảo mật hơn
+      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
@@ -37,8 +38,10 @@ export default {
           )
         `).run();
 
-        const { results } = await env.DB.prepare("SELECT * FROM nodes ORDER BY createdAt ASC").all();
-        return new Response(JSON.stringify(results), { headers: corsHeaders });
+        const result = await env.DB.prepare("SELECT * FROM nodes ORDER BY createdAt ASC").all();
+        // Đảm bảo kết quả trả về luôn là một mảng, ngay cả khi DB chưa có dữ liệu hoặc truy vấn lỗi nhẹ
+        const nodes = result.results || [];
+        return new Response(JSON.stringify(nodes), { headers: corsHeaders });
       }
 
       // --- API: Lưu (Thêm mới hoặc Cập nhật) ---
@@ -64,11 +67,14 @@ export default {
       if (url.pathname === "/api/delete" && request.method === "POST") {
         const { id } = await request.json();
         
+        if (!id) {
+           return new Response(JSON.stringify({ error: "Missing ID" }), { status: 400, headers: corsHeaders });
+        }
+
         // Xóa node được chọn
         await env.DB.prepare("DELETE FROM nodes WHERE id = ?").bind(id).run();
         
-        // Xóa các node con (để tránh dữ liệu rác)
-        // Lưu ý: Nếu cấu trúc sâu hơn, nên xử lý xóa đệ quy ở Client hoặc Logic phức tạp hơn
+        // Xóa các node con
         await env.DB.prepare("DELETE FROM nodes WHERE parentId = ?").bind(id).run();
 
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
@@ -90,13 +96,11 @@ export default {
            return new Response(JSON.stringify({ valid: true, source: 'db' }), { headers: corsHeaders });
         }
 
-        // Fallback: Nếu chưa thiết lập gì cả, cho phép dùng 'admin' tạm thời (tùy chọn)
-        // Nếu muốn bảo mật tuyệt đối ngay từ đầu, hãy xóa dòng if bên dưới
+        // Fallback: Mật khẩu mặc định nếu chưa cài đặt gì
         if (!dbPass && !env.PASS && password === 'admin') {
              return new Response(JSON.stringify({ valid: true, source: 'default' }), { headers: corsHeaders });
         }
 
-        // Sai mật khẩu
         return new Response(JSON.stringify({ valid: false }), { status: 401, headers: corsHeaders });
       }
 

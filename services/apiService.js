@@ -12,7 +12,8 @@ export const apiService = {
       return await response.json();
     } catch (error) {
       console.error("Error fetching nodes:", error);
-      return [];
+      // QUAN TRỌNG: Trả về null khi lỗi để không ghi đè dữ liệu cũ bằng mảng rỗng
+      return null;
     }
   },
 
