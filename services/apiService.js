@@ -1,98 +1,96 @@
+
 import { NodeType } from '../types.js';
 
-// Key for local storage simulation
-const STORAGE_KEY = 'app_data_v1';
-
-// Helper to generate ID
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
-// Simulation of the D1 database structure in LocalStorage
-const getLocalDB = () => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    // Seed data
-    const seed = [
-      { id: 'root_math', parentId: null, type: NodeType.SUBJECT, title: 'Toán Học', createdAt: Date.now() },
-      { id: 'root_lit', parentId: null, type: NodeType.SUBJECT, title: 'Ngữ Văn', createdAt: Date.now() },
-    ];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
-    return seed;
-  }
-  return JSON.parse(stored);
-};
-
-const saveLocalDB = (data) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-};
+const API_URL = 'https://noi-dung-ghi-bai.nhanns23062012.workers.dev';
 
 export const apiService = {
-  // Simulate GET /api/get
+  // Lấy tất cả dữ liệu từ D1
   getAllNodes: async () => {
-    // In a real app, this would be: await fetch('/api/get').then(r => r.json())
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(getLocalDB()), 300); // Simulate network delay
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/get`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching nodes:", error);
+      return [];
+    }
   },
 
-  // Simulate POST /api/save
+  // Lưu hoặc cập nhật (Node hoặc Bài học) vào D1
   saveNode: async (node) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const db = getLocalDB();
-        const existingIndex = db.findIndex(n => n.id === node.id);
-        
-        const newNode = {
-          id: node.id || generateId(),
-          parentId: node.parentId || null,
-          type: node.type || NodeType.SUBJECT,
-          title: node.title || 'Không tiêu đề',
-          content: node.content || '',
-          createdAt: node.createdAt || Date.now()
-        };
+    try {
+      const payload = {
+        id: node.id || Math.random().toString(36).substr(2, 9),
+        parentId: node.parentId || null,
+        type: node.type,
+        title: node.title,
+        content: node.content || '',
+        createdAt: node.createdAt || Date.now()
+      };
 
-        if (existingIndex >= 0) {
-          // Update
-          db[existingIndex] = { ...db[existingIndex], ...node };
-        } else {
-          // Insert
-          db.push(newNode);
-        }
-        
-        saveLocalDB(db);
-        resolve(newNode);
-      }, 300);
-    });
+      const response = await fetch(`${API_URL}/api/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Save failed');
+      return await response.json();
+    } catch (error) {
+      console.error("Error saving node:", error);
+      throw error;
+    }
   },
 
-  // Simulate POST /api/delete
+  // Xóa dữ liệu khỏi D1
   deleteNode: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let db = getLocalDB();
-        // Recursive delete logic would be better on backend, 
-        // but for simulation we just delete the node. 
-        // In a real SQL D1, you might use ON DELETE CASCADE or handle in worker.
-        
-        // Simple filter for now (leaving orphans in simulation is acceptable for demo)
-        db = db.filter(n => n.id !== id);
-        saveLocalDB(db);
-        resolve(true);
-      }, 300);
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      
+      if (!response.ok) throw new Error('Delete failed');
+      return true;
+    } catch (error) {
+      console.error("Error deleting node:", error);
+      return false;
+    }
   },
   
-  // Authentication Check (Mocking the Worker Secret Check)
+  // Xác thực mật khẩu (Gọi Worker kiểm tra ENV.PASS hoặc D1)
   verifyPassword: async (password) => {
-    // This simulates the Worker checking env.PASS or D1 stored password
-    // "admin" is the D1 password, "secret123" is the Worker Variable
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (password === 'admin' || password === 'secret123') {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }, 500);
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      
+      if (response.status === 200) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Auth error:", error);
+      return false;
+    }
+  },
+
+  // Đổi mật khẩu lưu trong D1
+  changePassword: async (newPassword) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword })
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error("Change password error:", error);
+      return false;
+    }
   }
 };

@@ -1,12 +1,14 @@
+
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
 import { NodeItem } from '../components/NodeItem.js';
 import { EditorModal } from '../components/EditorModal.js';
+import { ChangePasswordModal } from '../components/ChangePasswordModal.js';
 
 export const Explorer = ({ mode }) => {
   const { nodeId } = useParams();
@@ -14,14 +16,16 @@ export const Explorer = ({ mode }) => {
   
   const [allNodes, setAllNodes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
-  // Modal state for Title editing
+  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('CREATE');
   const [editingNode, setEditingNode] = useState(undefined);
   const [targetType, setTargetType] = useState(NodeType.SUBJECT);
 
-  // Content Editing state (Rich Text)
+  // Content Editing state
   const [isEditingContent, setIsEditingContent] = useState(false);
   const editorRef = useRef(null);
 
@@ -42,12 +46,12 @@ export const Explorer = ({ mode }) => {
     fetchData();
   }, []);
 
-  // Initialize TinyMCE when entering content edit mode
+  // Initialize TinyMCE
   useEffect(() => {
     if (isEditingContent && window.tinymce) {
       window.tinymce.init({
         selector: '#lesson-editor',
-        height: 600,
+        height: 'calc(100vh - 250px)', // Responsive height
         menubar: 'file edit view insert format tools table help',
         plugins: [
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
@@ -58,7 +62,7 @@ export const Explorer = ({ mode }) => {
           'bold italic forecolor | alignleft aligncenter ' +
           'alignright alignjustify | bullist numlist outdent indent | ' +
           'image table media | removeformat | help',
-        content_style: 'body { font-family:"Times New Roman",serif; font-size:16px }',
+        content_style: 'body { font-family:"Times New Roman",serif; font-size:18px; line-height: 1.6; color: #334155; }',
         setup: (editor) => {
           editorRef.current = editor;
         }
@@ -72,7 +76,6 @@ export const Explorer = ({ mode }) => {
     };
   }, [isEditingContent]);
 
-  // Derive current view state
   const currentNode = useMemo(() => 
     allNodes.find(n => n.id === nodeId), 
   [allNodes, nodeId]);
@@ -81,7 +84,6 @@ export const Explorer = ({ mode }) => {
     allNodes.filter(n => n.parentId === (nodeId || null)), 
   [allNodes, nodeId]);
 
-  // Build Breadcrumbs
   const breadcrumbs = useMemo(() => {
     const path = [];
     let curr = currentNode;
@@ -93,7 +95,6 @@ export const Explorer = ({ mode }) => {
     return path;
   }, [currentNode, allNodes]);
 
-  // Handlers
   const handleNavigate = (id) => {
     const prefix = mode === 'edit' ? '/edit' : '/view';
     navigate(id ? `${prefix}/${id}` : prefix);
@@ -106,7 +107,6 @@ export const Explorer = ({ mode }) => {
     setIsModalOpen(true);
   };
 
-  // Edit Title Handler
   const handleEditTitle = (node) => {
     setModalMode('UPDATE');
     setTargetType(node.type);
@@ -114,21 +114,26 @@ export const Explorer = ({ mode }) => {
     setIsModalOpen(true);
   };
 
-  // Toggle Content Editor
   const toggleContentEditor = () => {
     setIsEditingContent(true);
   };
 
-  // Save Content from TinyMCE
   const handleSaveContent = async () => {
     if (editorRef.current) {
+      setSaving(true);
       const newContent = editorRef.current.getContent();
-      await apiService.saveNode({
-        ...currentNode,
-        content: newContent
-      });
-      setIsEditingContent(false);
-      fetchData();
+      try {
+        await apiService.saveNode({
+          ...currentNode,
+          content: newContent
+        });
+        setIsEditingContent(false);
+        fetchData();
+      } catch (e) {
+        alert("Lỗi khi lưu nội dung!");
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -139,71 +144,79 @@ export const Explorer = ({ mode }) => {
     }
   };
 
-  // Save from Modal (Title only)
   const handleSaveModal = async (data) => {
     await apiService.saveNode(data);
     fetchData();
   };
+  
+  const handleChangePassword = async (newPass) => {
+    return await apiService.changePassword(newPass);
+  };
 
-  // Determine allowed actions
   const currentType = currentNode ? currentNode.type : NodeType.ROOT;
   const allowedChildTypes = ALLOWED_CHILDREN[currentType] || [];
 
   if (loading) {
     return html`
-      <div className="flex items-center justify-center h-64 text-gray-400">
-        <${Loader2} className="w-8 h-8 animate-spin" />
+      <div className="flex items-center justify-center h-[60vh] text-slate-400">
+        <div className="flex flex-col items-center gap-3">
+           <${Loader2} className="w-10 h-10 animate-spin text-blue-500" />
+           <span className="font-sans text-sm">Đang tải dữ liệu...</span>
+        </div>
       </div>
     `;
   }
 
-  // Render Content for LESSON type
+  // --- VIEW: LESSON DETAIL ---
   if (currentNode?.type === NodeType.LESSON) {
     return html`
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto pb-20">
         <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[600px] flex flex-col">
-          <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center sticky top-16 z-20">
+        <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden min-h-[700px] flex flex-col">
+          <div className="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center sticky top-0 z-20 backdrop-blur-sm bg-white/90">
             <div>
-              <span className="text-sm font-sans font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              <span className="text-xs font-sans font-bold text-blue-500 uppercase tracking-wider block mb-1">
                 ${NODE_LABELS[NodeType.LESSON]}
               </span>
-              <h1 className="text-2xl font-serif font-bold text-gray-900">
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-800">
                 ${currentNode.title}
               </h1>
             </div>
             
             ${mode === 'edit' && !isEditingContent && html`
-               <div className="flex gap-2">
+               <div className="flex gap-3">
                 <button 
                   onClick=${() => handleEditTitle(currentNode)}
-                  className="px-3 py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-sans text-sm font-medium transition-colors"
+                  className="px-4 py-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-full font-sans text-sm font-medium transition-colors"
                 >
                    Sửa tên
                 </button>
                 <button 
                   onClick=${toggleContentEditor}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 font-sans shadow-sm"
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-full text-sm font-medium hover:bg-blue-700 transition-all flex items-center gap-2 font-sans shadow-md hover:shadow-lg"
                 >
-                  <${LayoutGrid} size=${16} /> Soạn thảo
+                  <${LayoutGrid} size=${18} /> Soạn thảo
                 </button>
               </div>
             `}
 
             ${mode === 'edit' && isEditingContent && html`
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button 
                   onClick=${() => setIsEditingContent(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 font-sans"
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-full text-sm font-medium transition-colors flex items-center gap-2 font-sans"
+                  disabled=${saving}
                 >
-                  <${X} size=${16} /> Hủy
+                  <${X} size=${18} /> Hủy
                 </button>
                 <button 
                   onClick=${handleSaveContent}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2 font-sans shadow-sm"
+                  disabled=${saving}
+                  className="px-5 py-2 bg-green-600 text-white rounded-full text-sm font-medium hover:bg-green-700 transition-all flex items-center gap-2 font-sans shadow-md hover:shadow-lg disabled:opacity-70"
                 >
-                  <${Save} size=${16} /> Lưu nội dung
+                  ${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`}
+                  ${saving ? 'Đang lưu...' : 'Lưu bài'}
                 </button>
               </div>
             `}
@@ -211,24 +224,24 @@ export const Explorer = ({ mode }) => {
           
           <div className="flex-1 bg-white relative">
             ${isEditingContent ? html`
-              <div className="p-4 h-full">
+              <div className="p-0 h-full">
                 <textarea id="lesson-editor" defaultValue=${currentNode.content}></textarea>
               </div>
             ` : html`
               <div 
-                className="p-8 prose prose-lg max-w-none font-serif text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="text-gray-400 italic text-center mt-10">Chưa có nội dung. Nhấn "Soạn thảo" để bắt đầu ghi bài.</div>' }}
+                className="p-8 md:p-12 prose prose-lg max-w-none font-serif text-slate-800 leading-loose"
+                dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-20 text-slate-300"><p class="italic">Chưa có nội dung.</p></div>' }}
               ></div>
             `}
           </div>
         </div>
         
-        <div className="mt-6">
+        <div className="mt-8">
            <button 
              onClick=${() => handleNavigate(currentNode.parentId)}
-             className="text-gray-500 hover:text-gray-900 flex items-center gap-2 font-sans text-sm transition-colors"
+             className="text-slate-500 hover:text-blue-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-lg hover:bg-slate-100 inline-flex"
            >
-             <${ArrowLeft} size=${16} /> Quay lại
+             <${ArrowLeft} size=${18} /> Quay lại danh sách
            </button>
         </div>
 
@@ -244,29 +257,40 @@ export const Explorer = ({ mode }) => {
     `;
   }
 
-  // Render List for Containers (Subject, Chapter, etc.)
+  // --- VIEW: LIST (EXPLORER) ---
   return html`
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto pb-20">
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
-      <header className="mb-8">
-        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">
-          ${currentNode ? currentNode.title : 'Danh sách môn học'}
-        </h1>
-        <p className="text-gray-500 font-sans">
-          ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn để xem chi tiết'}
-        </p>
+      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-2 tracking-tight">
+            ${currentNode ? currentNode.title : 'Danh sách môn học'}
+          </h1>
+          <p className="text-slate-500 font-sans">
+            ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để bắt đầu'}
+          </p>
+        </div>
+        
+        ${mode === 'edit' && !currentNode && html`
+          <button 
+            onClick=${() => setIsPasswordModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-slate-600 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 rounded-lg transition-all text-sm font-medium shadow-sm"
+          >
+            <${KeyRound} size=${16} /> Đổi mật khẩu
+          </button>
+        `}
       </header>
 
       ${mode === 'edit' && allowedChildTypes.length > 0 && html`
-        <div className="mb-6 flex gap-2 font-sans">
+        <div className="mb-8 flex gap-3 font-sans">
           ${allowedChildTypes.map(type => html`
             <button
               key=${type}
               onClick=${() => handleCreate(type)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 hover:shadow transition-all text-sm font-medium"
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 transition-all text-sm font-medium"
             >
-              <${Plus} size=${16} />
+              <${Plus} size=${18} />
               Thêm ${NODE_LABELS[type]}
             </button>
           `)}
@@ -274,15 +298,16 @@ export const Explorer = ({ mode }) => {
       `}
 
       ${children.length === 0 ? html`
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <${ListIcon} className="text-gray-300" size=${32} />
+        <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm">
+          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <${ListIcon} className="text-slate-300" size=${40} />
           </div>
-          <p className="text-gray-500 font-sans">Chưa có mục nào ở đây.</p>
-          ${mode === 'edit' && html`<p className="text-sm text-gray-400 mt-1 font-sans">Hãy thêm mục mới để bắt đầu.</p>`}
+          <h3 className="text-lg font-medium text-slate-700">Trống trơn!</h3>
+          <p className="text-slate-500 font-sans mt-2">Chưa có mục nào được tạo trong thư mục này.</p>
+          ${mode === 'edit' && html`<p className="text-sm text-blue-500 mt-4 font-sans cursor-pointer hover:underline" onClick=${() => allowedChildTypes[0] && handleCreate(allowedChildTypes[0])}>Tạo mục mới ngay</p>`}
         </div>
       ` : html`
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           ${children.map(node => html`
             <${NodeItem} 
               key=${node.id}
@@ -303,6 +328,12 @@ export const Explorer = ({ mode }) => {
         initialData=${editingNode}
         onClose=${() => setIsModalOpen(false)}
         onSave=${handleSaveModal}
+      />
+      
+      <${ChangePasswordModal}
+        isOpen=${isPasswordModalOpen}
+        onClose=${() => setIsPasswordModalOpen(false)}
+        onSave=${handleChangePassword}
       />
     </div>
   `;
