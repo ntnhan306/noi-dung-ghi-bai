@@ -52,7 +52,6 @@ const Layout = ({ children }) => {
           <div 
             className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
             onClick=${handleSecretEntry}
-            title="Nhấp 5 lần để vào chế độ chỉnh sửa"
           >
             <div className=${`p-2.5 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/30 text-white transition-all duration-300 ${secretCount > 0 ? 'ring-4 ring-indigo-100' : ''}`}>
               <${BookOpen} className="w-6 h-6" strokeWidth=${2.5} />
