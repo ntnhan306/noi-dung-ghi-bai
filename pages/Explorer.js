@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, Copy, CornerDownRight, ClipboardList } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, Copy, CornerDownRight, ClipboardList, ArrowUpDown, Check } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -32,7 +32,8 @@ export const Explorer = ({ mode }) => {
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
 
-  // --- Drag and Drop State ---
+  // --- Drag and Drop & Sort Mode State ---
+  const [isSorting, setIsSorting] = useState(false); // New: Sort Mode toggle
   const [draggingId, setDraggingId] = useState(null);
   const [dropTargetId, setDropTargetId] = useState(null);
   const [dropPosition, setDropPosition] = useState(null); // 'top' | 'bottom'
@@ -49,7 +50,10 @@ export const Explorer = ({ mode }) => {
       
       // Only update if we got valid array. If null/error, keep old data to prevent UI flash
       if (Array.isArray(data)) {
-        setAllNodes(data);
+        // Nếu đang sắp xếp (isSorting), không cập nhật dữ liệu nền để tránh nhảy vị trí
+        if (!isSorting) {
+            setAllNodes(data);
+        }
       } else if (data === null && !isBackground && allNodes.length === 0) {
          // Initial load failed
       }
@@ -73,13 +77,13 @@ export const Explorer = ({ mode }) => {
   // Auto-refresh every 1s (for both View and Edit mode to keep sync and validate session)
   useEffect(() => {
     const intervalId = setInterval(() => {
-      // Chỉ fetch khi có mạng
-      if (navigator.onLine) {
+      // Chỉ fetch khi có mạng và KHÔNG ĐANG SẮP XẾP
+      if (navigator.onLine && !isSorting) {
         fetchData(true);
       }
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [mode]);
+  }, [mode, isSorting]);
 
   // Initialize TinyMCE
   useEffect(() => {
@@ -132,6 +136,7 @@ export const Explorer = ({ mode }) => {
   }, [currentNode, allNodes]);
 
   const handleNavigate = (id) => {
+    if (isSorting) return; // Disable navigation while sorting
     const prefix = mode === 'edit' ? '/edit' : '/view';
     navigate(id ? `${prefix}/${id}` : prefix);
   };
@@ -189,7 +194,6 @@ export const Explorer = ({ mode }) => {
   };
   
   const handleChangePassword = async (newPass) => {
-    // Cập nhật password mới vào storage ngay để tránh bị kick out ở lần fetch tiếp theo
     const success = await apiService.changePassword(newPass);
     if (success) {
         sessionStorage.setItem('auth_pass', newPass);
@@ -206,17 +210,16 @@ export const Explorer = ({ mode }) => {
   };
 
   const startAutoScroll = (speed) => {
-    if (autoScrollInterval.current) return; // Already scrolling
+    if (autoScrollInterval.current) return; 
     autoScrollInterval.current = setInterval(() => {
       window.scrollBy({ top: speed, behavior: 'auto' });
     }, 20);
   };
 
   const handleGlobalDragOver = (e) => {
-    e.preventDefault(); // Allow drag over container
-    e.dataTransfer.dropEffect = 'move'; // Show correct cursor
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
 
-    // Calculate distance from top/bottom of viewport
     const SCROLL_THRESHOLD = 100;
     const SCROLL_SPEED = 15;
     
@@ -235,23 +238,18 @@ export const Explorer = ({ mode }) => {
   // --- Drag and Drop Handlers ---
   const handleDragStart = (e, node) => {
     setDraggingId(node.id);
-    // Use text/plain for compatibility
     e.dataTransfer.setData("text/plain", node.id);
     e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e, node, position) => {
-    // Cannot drop on self
     if (node.id === draggingId) return;
-    
     setDropTargetId(node.id);
     setDropPosition(position);
-    
     handleGlobalDragOver(e);
   };
 
   const handleDragLeave = (e) => {
-    // Optional: Debounce clearing to prevent flickering
   };
 
   const handleDrop = async (e, targetNode) => {
@@ -268,60 +266,63 @@ export const Explorer = ({ mode }) => {
     const draggedNode = allNodes.find(n => n.id === draggingId);
     if (!draggedNode) return;
 
-    // Calculate new order
-    let newChildren = [...children];
-    const oldIndex = newChildren.findIndex(n => n.id === draggingId);
-    const targetIndex = newChildren.findIndex(n => n.id === targetNode.id);
+    // Calculate new order in local state
+    let currentChildren = [...children];
+    const oldIndex = currentChildren.findIndex(n => n.id === draggingId);
+    const targetIndex = currentChildren.findIndex(n => n.id === targetNode.id);
     
     if (oldIndex === -1 || targetIndex === -1) return; 
 
     // Remove old
-    newChildren.splice(oldIndex, 1);
+    currentChildren.splice(oldIndex, 1);
     
     // Determine insert index
-    const adjustedTargetIndex = newChildren.findIndex(n => n.id === targetNode.id);
+    // Note: Since we removed old index, if target was after old, indices shifted. 
+    // However, splice modifies array in place, so `currentChildren` already has item removed.
+    // We need to find target again in the modified array or use id.
+    const adjustedTargetIndex = currentChildren.findIndex(n => n.id === targetNode.id);
+    
     const insertIndex = dropPosition === 'top' ? adjustedTargetIndex : adjustedTargetIndex + 1;
     
     // Insert
-    newChildren.splice(insertIndex, 0, draggedNode);
+    currentChildren.splice(insertIndex, 0, draggedNode);
     
-    const updates = newChildren.map((node, index) => ({
-        id: node.id,
-        parentId: node.parentId,
+    // Update orderIndices locally
+    const updatedChildren = currentChildren.map((node, index) => ({
+        ...node,
         orderIndex: index
+    }));
+
+    // Create a Map for O(1) lookup
+    const updatesMap = new Map(updatedChildren.map(c => [c.id, c.orderIndex]));
+
+    // Update global allNodes state locally (UI update only)
+    setAllNodes(prevNodes => prevNodes.map(node => {
+        if (updatesMap.has(node.id)) {
+            return { ...node, orderIndex: updatesMap.get(node.id) };
+        }
+        return node;
     }));
     
     // Reset Drag State
     setDraggingId(null);
     setDropTargetId(null);
     setDropPosition(null);
-    
-    // API Call
-    setLoading(true);
-    await apiService.batchUpdateNodes(updates);
-    await fetchData(true);
-    setLoading(false);
   };
 
-  // --- Manual Reorder Logic ---
-  const handleMoveNodeOrder = async (node, direction) => {
-    const currentIndex = children.findIndex(c => c.id === node.id);
-    if (currentIndex === -1) return;
+  const handleSaveOrder = async () => {
+    setSaving(true);
+    // Extract current children (which have correct sort order from state) and map to update payload
+    const updates = children.map((node, index) => ({
+        id: node.id,
+        parentId: node.parentId,
+        orderIndex: index // Should already be correct from local update, but safety first
+    }));
     
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= children.length) return;
-
-    const targetNode = children[targetIndex];
-    
-    const updates = [
-      { id: node.id, parentId: node.parentId, orderIndex: targetNode.orderIndex !== undefined ? targetNode.orderIndex : targetIndex },
-      { id: targetNode.id, parentId: targetNode.parentId, orderIndex: node.orderIndex !== undefined ? node.orderIndex : currentIndex }
-    ];
-
-    setLoading(true);
     await apiService.batchUpdateNodes(updates);
-    await fetchData(true);
-    setLoading(false);
+    setSaving(false);
+    setIsSorting(false);
+    await fetchData(true); // Sync with server
   };
 
   // --- Move (Cut/Paste) Logic ---
@@ -466,7 +467,7 @@ export const Explorer = ({ mode }) => {
   return html`
     <div 
       className="max-w-7xl mx-auto pb-20" 
-      onDragOver=${(e) => mode === 'edit' && draggingId && handleGlobalDragOver(e)}
+      onDragOver=${(e) => mode === 'edit' && isSorting && draggingId && handleGlobalDragOver(e)}
     >
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
@@ -492,17 +493,54 @@ export const Explorer = ({ mode }) => {
       </header>
 
       ${mode === 'edit' && allowedChildTypes.length > 0 && html`
-        <div className="mb-10 flex gap-4 font-sans">
-          ${allowedChildTypes.map(type => html`
-            <button
-              key=${type}
-              onClick=${() => handleCreate(type)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide"
-            >
-              <${Plus} size=${18} strokeWidth=${2.5} />
-              Thêm ${NODE_LABELS[type]}
-            </button>
-          `)}
+        <div className="mb-10 flex flex-wrap items-center gap-4 font-sans">
+          <!-- Sort Buttons -->
+          ${isSorting ? html`
+             <button
+               onClick=${handleSaveOrder}
+               disabled=${saving}
+               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide"
+             >
+               ${saving ? html`<${Loader2} size=${18} className="animate-spin" />` : html`<${Save} size=${18} strokeWidth=${2.5} />`}
+               Lưu vị trí
+             </button>
+             <button
+               onClick=${() => { setIsSorting(false); fetchData(); }}
+               disabled=${saving}
+               className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all text-sm font-semibold tracking-wide"
+             >
+               <${X} size=${18} strokeWidth=${2.5} />
+               Hủy
+             </button>
+             <span className="text-indigo-600 font-medium animate-pulse flex items-center gap-2 px-2">
+               <${ArrowUpDown} size=${16} />
+               Kéo thả các mục để sắp xếp
+             </span>
+          ` : html`
+             <!-- Add Buttons -->
+             ${allowedChildTypes.map(type => html`
+                <button
+                key=${type}
+                onClick=${() => handleCreate(type)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide"
+                >
+                <${Plus} size=${18} strokeWidth=${2.5} />
+                Thêm ${NODE_LABELS[type]}
+                </button>
+             `)}
+
+             ${children.length > 1 && html`
+                <div className="w-px h-8 bg-slate-300 mx-2"></div>
+                <button
+                    onClick=${() => setIsSorting(true)}
+                    className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-all text-sm font-medium"
+                    title="Sắp xếp lại thứ tự"
+                >
+                    <${ArrowUpDown} size=${18} />
+                    Sắp xếp
+                </button>
+             `}
+          `}
         </div>
       `}
 
@@ -529,14 +567,13 @@ export const Explorer = ({ mode }) => {
               key=${node.id}
               node=${node}
               isEditMode=${mode === 'edit'}
+              isSorting=${isSorting} 
               isFirst=${index === 0}
               isLast=${index === children.length - 1}
               
               onClick=${() => handleNavigate(node.id)}
               onEdit=${handleEditTitle}
               onDelete=${handleDelete}
-              onMoveUp=${() => handleMoveNodeOrder(node, 'up')}
-              onMoveDown=${() => handleMoveNodeOrder(node, 'down')}
               onStartMove=${handleStartMove}
 
               // Drag Props
