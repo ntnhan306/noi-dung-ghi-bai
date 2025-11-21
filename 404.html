@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
   <head>
@@ -26,27 +27,12 @@
               serif: ['"Outfit"', 'sans-serif'],
             },
             colors: {
-              primary: {
-                50: '#eff6ff',
-                100: '#dbeafe',
-                500: '#3b82f6',
-                600: '#2563eb',
-                700: '#1d4ed8',
-              },
-              indigo: {
-                50: '#eef2ff',
-                500: '#6366f1',
-                600: '#4f46e5',
-              },
-              violet: {
-                50: '#f5f3ff',
-                500: '#8b5cf6',
-                600: '#7c3aed',
-              }
+              primary: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb' },
+              indigo: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5' },
+              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' }
             },
             boxShadow: {
               'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
-              'glow': '0 0 20px rgba(99, 102, 241, 0.2)',
             }
           },
         },
@@ -66,8 +52,38 @@
     }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-700 select-none">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none">
     <div id="root"></div>
-    <script type="module" src="/noi-dung-ghi-bai/index.js"></script>
+    <script>
+      // Script loader thông minh để xử lý đường dẫn trên GitHub Pages vs Local
+      (function() {
+        var path = window.location.pathname;
+        // Mặc định giả định chạy ở root
+        var scriptSrc = '/index.js';
+        
+        // Nếu phát hiện đang chạy trong thư mục repo (GitHub Pages)
+        if (path.indexOf('/noi-dung-ghi-bai') === 0) {
+           scriptSrc = '/noi-dung-ghi-bai/index.js';
+        } else {
+           // Fallback: Thử tìm file index.js tương đối nếu có thể
+           scriptSrc = './index.js'; 
+        }
+
+        var script = document.createElement('script');
+        script.type = 'module';
+        script.src = scriptSrc;
+        script.onerror = function() {
+           console.error("Failed to load app script from", scriptSrc);
+           // Thử fallback cuối cùng về root relative
+           if (scriptSrc !== './index.js') {
+              var fb = document.createElement('script');
+              fb.type = 'module';
+              fb.src = './index.js';
+              document.body.appendChild(fb);
+           }
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>

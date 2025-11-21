@@ -85,11 +85,7 @@ export const Explorer = ({ mode }) => {
         ghostClass: 'bg-indigo-50/50',
         dragClass: 'opacity-50',
         onEnd: () => {
-          // Khi thả xong, Sortable đã đổi chỗ DOM.
-          // Ta cần cập nhật lại state React để khớp với DOM.
           const newOrderIds = Array.from(sortableListRef.current.children).map(el => el.getAttribute('data-id'));
-          
-          // Tạo map thứ tự mới
           const orderMap = new Map(newOrderIds.map((id, index) => [id, index]));
 
           setAllNodes(prev => prev.map(n => {
@@ -106,13 +102,16 @@ export const Explorer = ({ mode }) => {
         sortableInstance.current = null;
       }
     }
-  }, [isSorting, nodeId]); // Re-init if changing folders
+  }, [isSorting, nodeId]);
 
   // Initialize Quill Editor
   useEffect(() => {
     if (isEditingContent && !quillRef.current) {
       const editorContainer = document.getElementById('editor-container');
-      if (editorContainer) {
+      // Ensure Quill is available globally (from CDN)
+      const Quill = window.Quill;
+
+      if (editorContainer && Quill) {
         const quill = new Quill(editorContainer, {
             theme: 'snow',
             modules: {
@@ -156,7 +155,6 @@ export const Explorer = ({ mode }) => {
     let curr = currentNode;
     while (curr) {
       path.unshift({ id: curr.id, title: curr.title });
-      // eslint-disable-next-line no-loop-func
       curr = allNodes.find(n => n.id === curr?.parentId);
     }
     return path;
@@ -236,7 +234,6 @@ export const Explorer = ({ mode }) => {
 
   const handleSaveOrder = async () => {
     setSaving(true);
-    // children state đã được cập nhật orderIndex thông qua logic onEnd -> setAllNodes
     const updates = children.map((node) => ({
         id: node.id,
         parentId: node.parentId,
@@ -249,7 +246,6 @@ export const Explorer = ({ mode }) => {
     await fetchData(true); 
   };
 
-  // --- Move (Cut/Paste) Logic ---
   const handleStartMove = (node) => {
     setMovingNode(node);
   };
@@ -296,7 +292,6 @@ export const Explorer = ({ mode }) => {
     `;
   }
 
-  // --- VIEW: LESSON DETAIL ---
   if (currentNode?.type === NodeType.LESSON) {
     return html`
       <div className="max-w-5xl mx-auto pb-20">
@@ -386,7 +381,6 @@ export const Explorer = ({ mode }) => {
     `;
   }
 
-  // --- VIEW: LIST (EXPLORER) ---
   return html`
     <div className="max-w-7xl mx-auto pb-20">
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
@@ -424,7 +418,6 @@ export const Explorer = ({ mode }) => {
 
       ${mode === 'edit' && allowedChildTypes.length > 0 && html`
         <div className="mb-10 flex flex-wrap items-center gap-4 font-sans">
-          <!-- Sort Buttons -->
           ${isSorting ? html`
              <button
                onClick=${handleSaveOrder}
@@ -447,7 +440,6 @@ export const Explorer = ({ mode }) => {
                Kéo thả biểu tượng <${ClipboardList} size=${16} /> để sắp xếp
              </span>
           ` : html`
-             <!-- Add Buttons -->
              ${allowedChildTypes.map(type => html`
                 <button
                 key=${type}

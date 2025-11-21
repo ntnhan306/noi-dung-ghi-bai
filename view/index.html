@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
   <head>
@@ -6,14 +7,11 @@
     <title>Nội dung ghi bài - Xem</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234f46e5%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z%22/><path d=%22M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z%22/></svg>">
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Quill JS -->
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.snow.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.js"></script>
 
@@ -26,28 +24,10 @@
               serif: ['"Outfit"', 'sans-serif'],
             },
             colors: {
-              primary: {
-                50: '#eff6ff',
-                100: '#dbeafe',
-                500: '#3b82f6',
-                600: '#2563eb',
-                700: '#1d4ed8',
-              },
-              indigo: {
-                50: '#eef2ff',
-                500: '#6366f1',
-                600: '#4f46e5',
-              },
-              violet: {
-                50: '#f5f3ff',
-                500: '#8b5cf6',
-                600: '#7c3aed',
-              }
+              indigo: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5' },
+              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' }
             },
-            boxShadow: {
-              'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
-              'glow': '0 0 20px rgba(99, 102, 241, 0.2)',
-            }
+            boxShadow: { 'soft': '0 10px 40px -10px rgba(0,0,0,0.05)' }
           },
         },
       }
@@ -66,9 +46,8 @@
     }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-100 selection:text-indigo-700 select-none">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none">
     <div id="root"></div>
-    <!-- Trỏ về file index.js ở thư mục gốc -->
     <script type="module" src="../index.js"></script>
   </body>
 </html>
