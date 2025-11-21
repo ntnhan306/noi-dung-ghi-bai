@@ -397,7 +397,7 @@ export const Explorer = ({ mode }) => {
           `}
         </div>
       ` : html`
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           ${children.map((node, index) => html`
             <${NodeItem} 
               key=${node.id}
