@@ -9,7 +9,14 @@ export const apiService = {
     try {
       const response = await fetch(`${API_URL}/api/get`);
       if (!response.ok) throw new Error('Network response was not ok');
-      return await response.json();
+      
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error("Invalid JSON response:", text);
+        return null; // Trả về null nếu parse lỗi để không xóa dữ liệu UI
+      }
     } catch (error) {
       console.error("Error fetching nodes:", error);
       // QUAN TRỌNG: Trả về null khi lỗi để không ghi đè dữ liệu cũ bằng mảng rỗng

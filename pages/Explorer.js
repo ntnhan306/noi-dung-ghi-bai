@@ -32,13 +32,23 @@ export const Explorer = ({ mode }) => {
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
 
+  // --- Drag and Drop State ---
+  const [draggingId, setDraggingId] = useState(null);
+  const [dropTargetId, setDropTargetId] = useState(null);
+  const [dropPosition, setDropPosition] = useState(null); // 'top' | 'bottom'
+  const autoScrollInterval = useRef(null);
+
   // Fetch Data
   const fetchData = async (isBackground = false) => {
     if (!isBackground) setLoading(true);
     try {
       const data = await apiService.getAllNodes();
+      // Only update if we got valid array. If null/error, keep old data to prevent UI flash
       if (Array.isArray(data)) {
         setAllNodes(data);
+      } else if (data === null && !isBackground && allNodes.length === 0) {
+         // If initial load fails completely, maybe set empty but show error?
+         // Currently we keep loading or empty state.
       }
     } catch (err) {
       console.error("Failed to load data", err);
@@ -98,7 +108,6 @@ export const Explorer = ({ mode }) => {
   const children = useMemo(() => 
     allNodes
       .filter(n => n.parentId === (nodeId || null))
-      // Ensure sorting by orderIndex explicitly in frontend as well
       .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
   [allNodes, nodeId]);
 
@@ -123,7 +132,6 @@ export const Explorer = ({ mode }) => {
     setTargetType(type);
     setEditingNode({ 
       parentId: nodeId || null,
-      // New item gets highest orderIndex + 1
       orderIndex: children.length > 0 ? Math.max(...children.map(c => c.orderIndex || 0)) + 1 : 0
     });
     setIsModalOpen(true);
@@ -175,7 +183,119 @@ export const Explorer = ({ mode }) => {
     return await apiService.changePassword(newPass);
   };
 
-  // --- Reorder Logic ---
+  // --- Auto Scroll Logic ---
+  const stopAutoScroll = () => {
+    if (autoScrollInterval.current) {
+      clearInterval(autoScrollInterval.current);
+      autoScrollInterval.current = null;
+    }
+  };
+
+  const startAutoScroll = (speed) => {
+    if (autoScrollInterval.current) return; // Already scrolling
+    autoScrollInterval.current = setInterval(() => {
+      window.scrollBy({ top: speed, behavior: 'auto' });
+    }, 20);
+  };
+
+  const handleGlobalDragOver = (e) => {
+    // Calculate distance from top/bottom of viewport
+    const SCROLL_THRESHOLD = 100;
+    const SCROLL_SPEED = 15;
+    
+    const y = e.clientY;
+    const h = window.innerHeight;
+
+    if (y < SCROLL_THRESHOLD) {
+      startAutoScroll(-SCROLL_SPEED);
+    } else if (y > h - SCROLL_THRESHOLD) {
+      startAutoScroll(SCROLL_SPEED);
+    } else {
+      stopAutoScroll();
+    }
+  };
+
+  // --- Drag and Drop Handlers ---
+  const handleDragStart = (e, node) => {
+    setDraggingId(node.id);
+    // Use text/plain for compatibility
+    e.dataTransfer.setData("text/plain", node.id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e, node, position) => {
+    // Cannot drop on self
+    if (node.id === draggingId) return;
+    
+    setDropTargetId(node.id);
+    setDropPosition(position);
+    
+    handleGlobalDragOver(e);
+  };
+
+  const handleDragLeave = (e) => {
+    // Optional: Debounce clearing to prevent flickering
+  };
+
+  const handleDrop = async (e, targetNode) => {
+    e.preventDefault();
+    stopAutoScroll();
+    
+    if (!draggingId || draggingId === targetNode.id) {
+        setDraggingId(null);
+        setDropTargetId(null);
+        setDropPosition(null);
+        return;
+    }
+
+    const draggedNode = allNodes.find(n => n.id === draggingId);
+    if (!draggedNode) return;
+
+    // Calculate new order
+    // We have the list of `children` sorted by orderIndex.
+    // We need to insert `draggingId` at the index of `targetNode`, 
+    // adjusted by `dropPosition`.
+    
+    let newChildren = [...children];
+    const oldIndex = newChildren.findIndex(n => n.id === draggingId);
+    const targetIndex = newChildren.findIndex(n => n.id === targetNode.id);
+    
+    if (oldIndex === -1 || targetIndex === -1) return; // Should not happen within same parent
+
+    // Remove old
+    newChildren.splice(oldIndex, 1);
+    
+    // Determine insert index
+    // Note: after splicing oldIndex, the targetIndex might have shifted if oldIndex < targetIndex
+    const adjustedTargetIndex = newChildren.findIndex(n => n.id === targetNode.id);
+    const insertIndex = dropPosition === 'top' ? adjustedTargetIndex : adjustedTargetIndex + 1;
+    
+    // Insert
+    newChildren.splice(insertIndex, 0, draggedNode);
+    
+    // Optimistic UI Update: Update local state immediately
+    // We need to update ALL nodes, modifying the children part
+    // But re-calculating exact orderIndex for everyone is cleaner for DB
+    
+    const updates = newChildren.map((node, index) => ({
+        id: node.id,
+        parentId: node.parentId,
+        orderIndex: index
+    }));
+    
+    // Reset Drag State
+    setDraggingId(null);
+    setDropTargetId(null);
+    setDropPosition(null);
+    
+    // API Call
+    setLoading(true);
+    await apiService.batchUpdateNodes(updates);
+    await fetchData(true);
+    setLoading(false);
+  };
+
+  // --- Manual Reorder Logic ---
   const handleMoveNodeOrder = async (node, direction) => {
     const currentIndex = children.findIndex(c => c.id === node.id);
     if (currentIndex === -1) return;
@@ -185,13 +305,11 @@ export const Explorer = ({ mode }) => {
 
     const targetNode = children[targetIndex];
     
-    // Swap order indexes
     const updates = [
-      { id: node.id, parentId: node.parentId, orderIndex: targetNode.orderIndex || targetIndex },
-      { id: targetNode.id, parentId: targetNode.parentId, orderIndex: node.orderIndex || currentIndex }
+      { id: node.id, parentId: node.parentId, orderIndex: targetNode.orderIndex !== undefined ? targetNode.orderIndex : targetIndex },
+      { id: targetNode.id, parentId: targetNode.parentId, orderIndex: node.orderIndex !== undefined ? node.orderIndex : currentIndex }
     ];
 
-    // Optimistic UI Update (optional, but here we just wait for fetch)
     setLoading(true);
     await apiService.batchUpdateNodes(updates);
     await fetchData(true);
@@ -209,21 +327,17 @@ export const Explorer = ({ mode }) => {
 
   const handlePasteNode = async () => {
     if (!movingNode) return;
-    
-    // Don't allow moving a folder into itself or its children (basic cycle check)
     if (movingNode.id === nodeId) {
       alert("Không thể di chuyển thư mục vào chính nó.");
       return;
     }
     
     setLoading(true);
-    
-    // Calculate new orderIndex at the end of the current list
     const maxOrder = children.length > 0 ? Math.max(...children.map(c => c.orderIndex || 0)) : -1;
     
     const updates = [{
       id: movingNode.id,
-      parentId: nodeId || null, // Paste into current view
+      parentId: nodeId || null,
       orderIndex: maxOrder + 1
     }];
 
@@ -236,6 +350,7 @@ export const Explorer = ({ mode }) => {
   const currentType = currentNode ? currentNode.type : NodeType.ROOT;
   const allowedChildTypes = ALLOWED_CHILDREN[currentType] || [];
 
+  // --- Render Loading ---
   if (loading && !allNodes.length) {
     return html`
       <div className="flex items-center justify-center h-[60vh] text-slate-400">
@@ -341,7 +456,7 @@ export const Explorer = ({ mode }) => {
 
   // --- VIEW: LIST (EXPLORER) ---
   return html`
-    <div className="max-w-7xl mx-auto pb-20">
+    <div className="max-w-7xl mx-auto pb-20" onDragOver=${(e) => mode === 'edit' && draggingId && handleGlobalDragOver(e)}>
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -397,7 +512,7 @@ export const Explorer = ({ mode }) => {
           `}
         </div>
       ` : html`
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-4 transition-all">
           ${children.map((node, index) => html`
             <${NodeItem} 
               key=${node.id}
@@ -405,12 +520,21 @@ export const Explorer = ({ mode }) => {
               isEditMode=${mode === 'edit'}
               isFirst=${index === 0}
               isLast=${index === children.length - 1}
+              
               onClick=${() => handleNavigate(node.id)}
               onEdit=${handleEditTitle}
               onDelete=${handleDelete}
               onMoveUp=${() => handleMoveNodeOrder(node, 'up')}
               onMoveDown=${() => handleMoveNodeOrder(node, 'down')}
               onStartMove=${handleStartMove}
+
+              // Drag Props
+              isDragging=${draggingId === node.id}
+              dropPosition=${dropTargetId === node.id ? dropPosition : null}
+              onDragStart=${handleDragStart}
+              onDragOver=${handleDragOver}
+              onDrop=${handleDrop}
+              onDragLeave=${handleDragLeave}
             />
           `)}
         </div>
