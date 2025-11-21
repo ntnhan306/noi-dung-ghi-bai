@@ -26,6 +26,13 @@ export const apiService = {
       if (!response.ok) throw new Error('Network response was not ok');
       
       const text = await response.text();
+      
+      // Basic check to ensure we didn't get an HTML error page
+      if (text.trim().startsWith('<')) {
+         console.error("Received HTML instead of JSON:", text.substring(0, 50) + "...");
+         return null;
+      }
+
       try {
         return JSON.parse(text);
       } catch (e) {

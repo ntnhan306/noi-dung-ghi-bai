@@ -37,9 +37,6 @@ export default {
       // --- API: Lấy danh sách (Get All) ---
       if (url.pathname === "/api/get" && request.method === "GET") {
         
-        // LOGIC BẢO MẬT MỚI:
-        // Nếu Client gửi kèm mật khẩu (đang ở chế độ sửa), ta kiểm tra tính hợp lệ.
-        // Nếu mật khẩu sai (đã bị đổi ở nơi khác), trả về 401 để Client tự đăng xuất.
         const authPass = request.headers.get('X-Auth-Pass');
         if (authPass) {
             const isValid = await checkPassword(authPass);
@@ -48,7 +45,7 @@ export default {
             }
         }
 
-        // Đảm bảo bảng tồn tại
+        // Khởi tạo DB một cách an toàn
         try {
             await env.DB.batch([
                 env.DB.prepare(`
@@ -70,13 +67,8 @@ export default {
                 `)
             ]);
         } catch (e) {
-            console.error("DB Init Error:", e);
+            // Ignore creation errors if tables exist
         }
-        
-        // Migration
-        try {
-          await env.DB.prepare("ALTER TABLE nodes ADD COLUMN orderIndex INTEGER DEFAULT 0").run();
-        } catch (e) {}
 
         const result = await env.DB.prepare("SELECT * FROM nodes ORDER BY orderIndex ASC, createdAt ASC").all();
         const nodes = result.results || [];
@@ -90,10 +82,15 @@ export default {
         let orderIndex = data.orderIndex;
         if (orderIndex === undefined || orderIndex === null) {
             if (!data.createdAt) { // Node mới
-                const maxOrderResult = await env.DB.prepare("SELECT MAX(orderIndex) as maxVal FROM nodes WHERE parentId = ? OR (parentId IS NULL AND ? IS NULL)")
-                    .bind(data.parentId || null, data.parentId || null)
-                    .first();
-                orderIndex = (maxOrderResult?.maxVal || 0) + 1;
+                // Tìm max index hiện tại
+                try {
+                    const maxOrderResult = await env.DB.prepare("SELECT MAX(orderIndex) as maxVal FROM nodes WHERE parentId = ? OR (parentId IS NULL AND ? IS NULL)")
+                        .bind(data.parentId || null, data.parentId || null)
+                        .first();
+                    orderIndex = (maxOrderResult?.maxVal || 0) + 1;
+                } catch (e) {
+                    orderIndex = 0;
+                }
             } else {
                 orderIndex = 0;
             }
@@ -134,10 +131,10 @@ export default {
 
         await env.DB.prepare("DELETE FROM nodes WHERE id = ?").bind(id).run();
         
-        const children = await env.DB.prepare("SELECT id FROM nodes WHERE parentId = ?").bind(id).all();
-        if (children.results && children.results.length > 0) {
+        // Xóa các node con
+        try {
             await env.DB.prepare(`DELETE FROM nodes WHERE parentId = ?`).bind(id).run();
-        }
+        } catch(e) {}
         
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }

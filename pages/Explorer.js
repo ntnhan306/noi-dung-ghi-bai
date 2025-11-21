@@ -39,6 +39,9 @@ export const Explorer = ({ mode }) => {
   const sortableListRef = useRef(null);
   const sortableInstance = useRef(null);
 
+  // Fetch Lock to prevent race conditions
+  const isFetchingRef = useRef(false);
+
   // --- Derived State (Moved to top to prevent ReferenceError) ---
   const currentNode = useMemo(() => 
     allNodes.find(n => n.id === nodeId), 
@@ -62,14 +65,20 @@ export const Explorer = ({ mode }) => {
 
   // --- Fetch Data Function ---
   const fetchData = async (isBackground = false) => {
+    // Prevent overlapping fetches
+    if (isFetchingRef.current) return;
+    
     if (!isBackground) setLoading(true);
+    isFetchingRef.current = true;
+
     try {
       const currentPass = mode === 'edit' ? sessionStorage.getItem('auth_pass') : null;
       const data = await apiService.getAllNodes(currentPass);
       
       if (Array.isArray(data)) {
-        // Chỉ cập nhật dữ liệu nếu KHÔNG đang sắp xếp để tránh xung đột DOM
-        if (!isSorting) {
+        // CRITICAL: Do NOT update nodes if user is sorting or editing content
+        // This prevents UI jumps or data overwrites while user is interacting
+        if (!isSorting && !isEditingContent) {
             setAllNodes(data);
         }
       }
@@ -81,6 +90,7 @@ export const Explorer = ({ mode }) => {
       }
       console.error("Failed to load data", err);
     } finally {
+      isFetchingRef.current = false;
       if (!isBackground) setLoading(false);
     }
   };
@@ -95,12 +105,14 @@ export const Explorer = ({ mode }) => {
   // Periodic refresh
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (navigator.onLine && !isSorting) {
+      // STOP FETCHING IF: Offline OR Sorting OR Editing Content
+      // This fixes the "Loss of content" bug by freezing the background sync while you type.
+      if (navigator.onLine && !isSorting && !isEditingContent) {
         fetchData(true);
       }
     }, 1000);
     return () => clearInterval(intervalId);
-  }, [mode, isSorting]);
+  }, [mode, isSorting, isEditingContent]); // Re-run effect when edit state changes
 
   // Initialize SortableJS
   useEffect(() => {
@@ -152,18 +164,23 @@ export const Explorer = ({ mode }) => {
             },
             placeholder: 'Nhập nội dung bài học tại đây...',
         });
+        
+        // Initial content load only. 
+        // We do NOT put currentNode in the dependency array to avoid re-setting content 
+        // if background fetch happens to run before the interval is cleared.
         if (currentNode && currentNode.content) {
             quill.root.innerHTML = currentNode.content;
         }
         quillRef.current = quill;
       }
     }
+    // Cleanup on unmount or when edit mode turns off
     return () => {
         if (!isEditingContent) {
             quillRef.current = null;
         }
     };
-  }, [isEditingContent, currentNode]);
+  }, [isEditingContent]); // Removed currentNode from deps to prevent overwrite
 
   // --- Handlers ---
 
@@ -199,12 +216,19 @@ export const Explorer = ({ mode }) => {
       setSaving(true);
       const newContent = quillRef.current.root.innerHTML;
       try {
-        await apiService.saveNode({
+        const updatedNode = {
           ...currentNode,
           content: newContent
-        });
+        };
+        
+        // Optimistic update: Update local state immediately
+        setAllNodes(prev => prev.map(n => n.id === updatedNode.id ? updatedNode : n));
+        
+        await apiService.saveNode(updatedNode);
+        
         setIsEditingContent(false);
         quillRef.current = null;
+        // Resume fetching
         await fetchData(true); 
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
