@@ -2,13 +2,14 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, Copy, CornerDownRight, ClipboardList, ArrowUpDown, Check, LogOut } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
 import { NodeItem } from '../components/NodeItem.js';
 import { EditorModal } from '../components/EditorModal.js';
 import { ChangePasswordModal } from '../components/ChangePasswordModal.js';
+import Sortable from 'sortablejs';
 
 export const Explorer = ({ mode }) => {
   const { nodeId } = useParams();
@@ -27,41 +28,33 @@ export const Explorer = ({ mode }) => {
 
   // Content Editing state
   const [isEditingContent, setIsEditingContent] = useState(false);
-  const quillRef = useRef(null); // Ref to hold Quill instance
+  const quillRef = useRef(null);
 
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
 
-  // --- Drag and Drop & Sort Mode State ---
-  const [isSorting, setIsSorting] = useState(false); // New: Sort Mode toggle
-  const [draggingId, setDraggingId] = useState(null);
-  const [dropTargetId, setDropTargetId] = useState(null);
-  const [dropPosition, setDropPosition] = useState(null); // 'top' | 'bottom'
-  const autoScrollInterval = useRef(null);
+  // --- Sort Mode State ---
+  const [isSorting, setIsSorting] = useState(false);
+  const sortableListRef = useRef(null);
+  const sortableInstance = useRef(null);
 
   // Fetch Data
   const fetchData = async (isBackground = false) => {
     if (!isBackground) setLoading(true);
     try {
-      // Nếu ở chế độ Edit, lấy password từ session để gửi kèm
       const currentPass = mode === 'edit' ? sessionStorage.getItem('auth_pass') : null;
-
       const data = await apiService.getAllNodes(currentPass);
       
-      // Only update if we got valid array. If null/error, keep old data to prevent UI flash
       if (Array.isArray(data)) {
-        // Nếu đang sắp xếp (isSorting), không cập nhật dữ liệu nền để tránh nhảy vị trí
+        // Chỉ cập nhật dữ liệu nếu KHÔNG đang sắp xếp để tránh xung đột DOM
         if (!isSorting) {
             setAllNodes(data);
         }
-      } else if (data === null && !isBackground && allNodes.length === 0) {
-         // Initial load failed
       }
     } catch (err) {
       if (err.message === 'UNAUTHORIZED') {
-        // Mật khẩu đã thay đổi hoặc phiên hết hạn
         sessionStorage.removeItem('auth_pass');
-        window.location.reload(); // Reload để kích hoạt AuthGuard
+        window.location.reload(); 
         return;
       }
       console.error("Failed to load data", err);
@@ -74,10 +67,8 @@ export const Explorer = ({ mode }) => {
     fetchData();
   }, []);
 
-  // Auto-refresh every 1s (for both View and Edit mode to keep sync and validate session)
   useEffect(() => {
     const intervalId = setInterval(() => {
-      // Chỉ fetch khi có mạng và KHÔNG ĐANG SẮP XẾP
       if (navigator.onLine && !isSorting) {
         fetchData(true);
       }
@@ -85,12 +76,43 @@ export const Explorer = ({ mode }) => {
     return () => clearInterval(intervalId);
   }, [mode, isSorting]);
 
+  // Initialize SortableJS
+  useEffect(() => {
+    if (isSorting && sortableListRef.current) {
+      sortableInstance.current = Sortable.create(sortableListRef.current, {
+        animation: 150,
+        handle: '.drag-handle',
+        ghostClass: 'bg-indigo-50/50',
+        dragClass: 'opacity-50',
+        onEnd: () => {
+          // Khi thả xong, Sortable đã đổi chỗ DOM.
+          // Ta cần cập nhật lại state React để khớp với DOM.
+          const newOrderIds = Array.from(sortableListRef.current.children).map(el => el.getAttribute('data-id'));
+          
+          // Tạo map thứ tự mới
+          const orderMap = new Map(newOrderIds.map((id, index) => [id, index]));
+
+          setAllNodes(prev => prev.map(n => {
+            if (orderMap.has(n.id)) {
+              return { ...n, orderIndex: orderMap.get(n.id) };
+            }
+            return n;
+          }));
+        }
+      });
+    } else {
+      if (sortableInstance.current) {
+        sortableInstance.current.destroy();
+        sortableInstance.current = null;
+      }
+    }
+  }, [isSorting, nodeId]); // Re-init if changing folders
+
   // Initialize Quill Editor
   useEffect(() => {
     if (isEditingContent && !quillRef.current) {
       const editorContainer = document.getElementById('editor-container');
       if (editorContainer) {
-        // Initialize Quill
         const quill = new Quill(editorContainer, {
             theme: 'snow',
             modules: {
@@ -106,16 +128,12 @@ export const Explorer = ({ mode }) => {
             },
             placeholder: 'Nhập nội dung bài học tại đây...',
         });
-        
-        // Set initial content
         if (currentNode && currentNode.content) {
             quill.root.innerHTML = currentNode.content;
         }
-
         quillRef.current = quill;
       }
     }
-    // Cleanup
     return () => {
         if (!isEditingContent) {
             quillRef.current = null;
@@ -145,7 +163,7 @@ export const Explorer = ({ mode }) => {
   }, [currentNode, allNodes]);
 
   const handleNavigate = (id) => {
-    if (isSorting) return; // Disable navigation while sorting
+    if (isSorting) return;
     const prefix = mode === 'edit' ? '/edit' : '/view';
     navigate(id ? `${prefix}/${id}` : prefix);
   };
@@ -181,7 +199,7 @@ export const Explorer = ({ mode }) => {
           content: newContent
         });
         setIsEditingContent(false);
-        quillRef.current = null; // Clear ref on close
+        quillRef.current = null;
         await fetchData(true); 
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
@@ -212,133 +230,23 @@ export const Explorer = ({ mode }) => {
   };
 
   const handleLogout = () => {
-    // Xóa mật khẩu trong session và chuyển về trang xem
     sessionStorage.removeItem('auth_pass');
     navigate('/view');
   };
 
-  // --- Auto Scroll Logic ---
-  const stopAutoScroll = () => {
-    if (autoScrollInterval.current) {
-      clearInterval(autoScrollInterval.current);
-      autoScrollInterval.current = null;
-    }
-  };
-
-  const startAutoScroll = (speed) => {
-    if (autoScrollInterval.current) return; 
-    autoScrollInterval.current = setInterval(() => {
-      window.scrollBy({ top: speed, behavior: 'auto' });
-    }, 20);
-  };
-
-  const handleGlobalDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-
-    const SCROLL_THRESHOLD = 100;
-    const SCROLL_SPEED = 15;
-    
-    const y = e.clientY;
-    const h = window.innerHeight;
-
-    if (y < SCROLL_THRESHOLD) {
-      startAutoScroll(-SCROLL_SPEED);
-    } else if (y > h - SCROLL_THRESHOLD) {
-      startAutoScroll(SCROLL_SPEED);
-    } else {
-      stopAutoScroll();
-    }
-  };
-
-  // --- Drag and Drop Handlers ---
-  const handleDragStart = (e, node) => {
-    setDraggingId(node.id);
-    e.dataTransfer.setData("text/plain", node.id);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e, node, position) => {
-    if (node.id === draggingId) return;
-    setDropTargetId(node.id);
-    setDropPosition(position);
-    handleGlobalDragOver(e);
-  };
-
-  const handleDragLeave = (e) => {
-  };
-
-  const handleDrop = async (e, targetNode) => {
-    e.preventDefault();
-    stopAutoScroll();
-    
-    if (!draggingId || draggingId === targetNode.id) {
-        setDraggingId(null);
-        setDropTargetId(null);
-        setDropPosition(null);
-        return;
-    }
-
-    const draggedNode = allNodes.find(n => n.id === draggingId);
-    if (!draggedNode) return;
-
-    // Calculate new order in local state
-    let currentChildren = [...children];
-    const oldIndex = currentChildren.findIndex(n => n.id === draggingId);
-    const targetIndex = currentChildren.findIndex(n => n.id === targetNode.id);
-    
-    if (oldIndex === -1 || targetIndex === -1) return; 
-
-    // Remove old
-    currentChildren.splice(oldIndex, 1);
-    
-    // Determine insert index
-    // Note: Since we removed old index, if target was after old, indices shifted. 
-    // However, splice modifies array in place, so `currentChildren` already has item removed.
-    // We need to find target again in the modified array or use id.
-    const adjustedTargetIndex = currentChildren.findIndex(n => n.id === targetNode.id);
-    
-    const insertIndex = dropPosition === 'top' ? adjustedTargetIndex : adjustedTargetIndex + 1;
-    
-    // Insert
-    currentChildren.splice(insertIndex, 0, draggedNode);
-    
-    // Update orderIndices locally
-    const updatedChildren = currentChildren.map((node, index) => ({
-        ...node,
-        orderIndex: index
-    }));
-
-    // Create a Map for O(1) lookup
-    const updatesMap = new Map(updatedChildren.map(c => [c.id, c.orderIndex]));
-
-    // Update global allNodes state locally (UI update only)
-    setAllNodes(prevNodes => prevNodes.map(node => {
-        if (updatesMap.has(node.id)) {
-            return { ...node, orderIndex: updatesMap.get(node.id) };
-        }
-        return node;
-    }));
-    
-    // Reset Drag State
-    setDraggingId(null);
-    setDropTargetId(null);
-    setDropPosition(null);
-  };
-
   const handleSaveOrder = async () => {
     setSaving(true);
-    // Extract current children (which have correct sort order from state) and map to update payload
-    const updates = children.map((node, index) => ({
+    // children state đã được cập nhật orderIndex thông qua logic onEnd -> setAllNodes
+    const updates = children.map((node) => ({
         id: node.id,
         parentId: node.parentId,
-        orderIndex: index // Should already be correct from local update, but safety first
+        orderIndex: node.orderIndex
     }));
     
     await apiService.batchUpdateNodes(updates);
     setSaving(false);
     setIsSorting(false);
-    await fetchData(true); // Sync with server
+    await fetchData(true); 
   };
 
   // --- Move (Cut/Paste) Logic ---
@@ -375,7 +283,6 @@ export const Explorer = ({ mode }) => {
   const currentType = currentNode ? currentNode.type : NodeType.ROOT;
   const allowedChildTypes = ALLOWED_CHILDREN[currentType] || [];
 
-  // --- Render Loading ---
   if (loading && !allNodes.length) {
     return html`
       <div className="flex items-center justify-center h-[60vh] text-slate-400">
@@ -446,7 +353,6 @@ export const Explorer = ({ mode }) => {
           
           <div className="flex-1 bg-white relative">
             ${isEditingContent ? html`
-              <!-- Quill Editor Container -->
               <div className="h-[calc(100vh-300px)] bg-white select-text">
                 <div id="editor-container" className="h-full text-lg font-sans text-slate-700"></div>
               </div>
@@ -482,10 +388,7 @@ export const Explorer = ({ mode }) => {
 
   // --- VIEW: LIST (EXPLORER) ---
   return html`
-    <div 
-      className="max-w-7xl mx-auto pb-20" 
-      onDragOver=${(e) => mode === 'edit' && isSorting && draggingId && handleGlobalDragOver(e)}
-    >
+    <div className="max-w-7xl mx-auto pb-20">
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -541,7 +444,7 @@ export const Explorer = ({ mode }) => {
              </button>
              <span className="text-indigo-600 font-medium animate-pulse flex items-center gap-2 px-2">
                <${ArrowUpDown} size=${16} />
-               Kéo thả các mục để sắp xếp
+               Kéo thả biểu tượng <${ClipboardList} size=${16} /> để sắp xếp
              </span>
           ` : html`
              <!-- Add Buttons -->
@@ -588,34 +491,22 @@ export const Explorer = ({ mode }) => {
           `}
         </div>
       ` : html`
-        <div className="grid grid-cols-1 gap-4 transition-all">
-          ${children.map((node, index) => html`
+        <div ref=${sortableListRef} className="grid grid-cols-1 gap-4 transition-all">
+          ${children.map((node) => html`
             <${NodeItem} 
               key=${node.id}
               node=${node}
               isEditMode=${mode === 'edit'}
               isSorting=${isSorting} 
-              isFirst=${index === 0}
-              isLast=${index === children.length - 1}
-              
               onClick=${() => handleNavigate(node.id)}
               onEdit=${handleEditTitle}
               onDelete=${handleDelete}
               onStartMove=${handleStartMove}
-
-              // Drag Props
-              isDragging=${draggingId === node.id}
-              dropPosition=${dropTargetId === node.id ? dropPosition : null}
-              onDragStart=${handleDragStart}
-              onDragOver=${handleDragOver}
-              onDrop=${handleDrop}
-              onDragLeave=${handleDragLeave}
             />
           `)}
         </div>
       `}
 
-      <!-- Floating Status Bar for Move Operation -->
       ${movingNode && html`
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-6 animate-in slide-in-from-bottom-10">
             <div className="flex items-center gap-3">

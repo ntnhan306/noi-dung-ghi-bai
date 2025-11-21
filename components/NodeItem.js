@@ -1,52 +1,19 @@
 
 import React from 'react';
 import { html } from '../utils/html.js';
-import { Folder, FileText, ChevronRight, Edit2, Trash2, ArrowUp, ArrowDown, FolderInput, GripVertical } from 'lucide-react';
+import { Folder, FileText, ChevronRight, Edit2, Trash2, FolderInput, GripVertical } from 'lucide-react';
 import { NodeType, NODE_LABELS } from '../types.js';
 
 export const NodeItem = ({ 
   node, 
   isEditMode, 
-  isSorting, // New prop for Sort Mode
+  isSorting, 
   onClick, 
   onEdit, 
   onDelete, 
-  onMoveUp, 
-  onMoveDown, 
-  onStartMove,
-  isFirst,
-  isLast,
-  // Drag Props
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragLeave,
-  isDragging,
-  dropPosition // 'top' | 'bottom' | null
+  onStartMove
 }) => {
   const isLesson = node.type === NodeType.LESSON;
-
-  // Handle calculating drop position (top/bottom half)
-  const handleDragOver = (e) => {
-    if (!isSorting || !onDragOver) return; // Only allow drag in Sort Mode
-    e.preventDefault(); // REQUIRED: Allows the drop
-    e.stopPropagation();
-    
-    // REQUIRED: Visual feedback for the cursor
-    e.dataTransfer.dropEffect = 'move'; 
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-    const position = e.clientY < midY ? 'top' : 'bottom';
-    
-    onDragOver(e, node, position);
-  };
-
-  const handleDragStart = (e) => {
-    if (isSorting && onDragStart) {
-      onDragStart(e, node);
-    }
-  };
 
   const handleItemClick = () => {
     if (!isSorting) {
@@ -56,22 +23,10 @@ export const NodeItem = ({
 
   return html`
     <div 
-      draggable=${isSorting}
-      onDragStart=${handleDragStart}
-      onDragOver=${handleDragOver}
-      onDrop=${(e) => isSorting && onDrop && onDrop(e, node)}
-      onDragLeave=${(e) => isSorting && onDragLeave && onDragLeave(e)}
-      className=${`group relative bg-white/80 backdrop-blur-sm rounded-2xl border transition-all duration-300 p-5 flex items-center justify-between overflow-visible ${isDragging ? 'opacity-40 border-dashed border-indigo-400' : 'border-white/50 shadow-soft'} ${!isSorting ? 'cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'cursor-move'} ${dropPosition ? 'ring-2 ring-indigo-500 ring-offset-2' : ''}`}
+      data-id=${node.id}
+      className=${`group relative bg-white/80 backdrop-blur-sm rounded-2xl border transition-all duration-300 p-5 flex items-center justify-between overflow-visible ${!isSorting ? 'border-white/50 shadow-soft cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'border-indigo-200 shadow-none'}`}
       onClick=${handleItemClick}
     >
-      <!-- Drop Indicators -->
-      ${dropPosition === 'top' && html`
-        <div className="absolute -top-3 left-0 right-0 h-1.5 bg-indigo-500 rounded-full shadow-glow z-50 pointer-events-none animate-pulse"></div>
-      `}
-      ${dropPosition === 'bottom' && html`
-        <div className="absolute -bottom-3 left-0 right-0 h-1.5 bg-indigo-500 rounded-full shadow-glow z-50 pointer-events-none animate-pulse"></div>
-      `}
-
       <!-- Decoration for hover (only when not sorting) -->
       ${!isSorting && html`
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"></div>
@@ -80,7 +35,7 @@ export const NodeItem = ({
       <div className="relative flex items-center gap-5 flex-1 overflow-hidden z-10">
         <!-- Drag Handle (Only in Sort Mode) -->
         ${isSorting && html`
-          <div className="text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-indigo-50 rounded-lg">
+          <div className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
             <${GripVertical} size=${24} />
           </div>
         `}
