@@ -15,6 +15,7 @@ export const Explorer = ({ mode }) => {
   const { nodeId } = useParams();
   const navigate = useNavigate();
   
+  // --- State Definitions ---
   const [allNodes, setAllNodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,12 +34,33 @@ export const Explorer = ({ mode }) => {
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
 
-  // --- Sort Mode State ---
+  // Sort Mode State
   const [isSorting, setIsSorting] = useState(false);
   const sortableListRef = useRef(null);
   const sortableInstance = useRef(null);
 
-  // Fetch Data
+  // --- Derived State (Moved to top to prevent ReferenceError) ---
+  const currentNode = useMemo(() => 
+    allNodes.find(n => n.id === nodeId), 
+  [allNodes, nodeId]);
+
+  const children = useMemo(() => 
+    allNodes
+      .filter(n => n.parentId === (nodeId || null))
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
+  [allNodes, nodeId]);
+
+  const breadcrumbs = useMemo(() => {
+    const path = [];
+    let curr = currentNode;
+    while (curr) {
+      path.unshift({ id: curr.id, title: curr.title });
+      curr = allNodes.find(n => n.id === curr?.parentId);
+    }
+    return path;
+  }, [currentNode, allNodes]);
+
+  // --- Fetch Data Function ---
   const fetchData = async (isBackground = false) => {
     if (!isBackground) setLoading(true);
     try {
@@ -63,33 +85,14 @@ export const Explorer = ({ mode }) => {
     }
   };
 
-  // --- Derived State (Must be defined before Effects that use them) ---
-  const currentNode = useMemo(() => 
-    allNodes.find(n => n.id === nodeId), 
-  [allNodes, nodeId]);
-
-  const children = useMemo(() => 
-    allNodes
-      .filter(n => n.parentId === (nodeId || null))
-      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
-  [allNodes, nodeId]);
-
-  const breadcrumbs = useMemo(() => {
-    const path = [];
-    let curr = currentNode;
-    while (curr) {
-      path.unshift({ id: curr.id, title: curr.title });
-      curr = allNodes.find(n => n.id === curr?.parentId);
-    }
-    return path;
-  }, [currentNode, allNodes]);
-
   // --- Effects ---
 
+  // Initial load
   useEffect(() => {
     fetchData();
   }, []);
 
+  // Periodic refresh
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (navigator.onLine && !isSorting) {
@@ -131,7 +134,6 @@ export const Explorer = ({ mode }) => {
   useEffect(() => {
     if (isEditingContent && !quillRef.current) {
       const editorContainer = document.getElementById('editor-container');
-      // Ensure Quill is available globally (from CDN)
       const Quill = window.Quill;
 
       if (editorContainer && Quill) {
@@ -162,6 +164,8 @@ export const Explorer = ({ mode }) => {
         }
     };
   }, [isEditingContent, currentNode]);
+
+  // --- Handlers ---
 
   const handleNavigate = (id) => {
     if (isSorting) return;
