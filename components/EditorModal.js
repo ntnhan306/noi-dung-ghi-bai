@@ -58,7 +58,7 @@ export const EditorModal = ({
               required
               value=${title}
               onChange=${(e) => setTitle(e.target.value)}
-              className="w-full px-5 py-3.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-lg placeholder:text-slate-400 shadow-inner"
+              className="w-full px-5 py-3.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-lg placeholder:text-slate-400 shadow-inner select-text"
               placeholder="Ví dụ: Toán học, Chương 1..."
               autoFocus
             />

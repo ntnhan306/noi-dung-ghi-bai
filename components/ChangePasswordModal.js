@@ -71,7 +71,7 @@ export const ChangePasswordModal = ({ isOpen, onClose, onSave }) => {
                 required
                 value=${newPassword}
                 onChange=${(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900"
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 select-text"
                 placeholder="Nhập mật khẩu mới..."
               />
             </div>
@@ -82,7 +82,7 @@ export const ChangePasswordModal = ({ isOpen, onClose, onSave }) => {
                 required
                 value=${confirmPassword}
                 onChange=${(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900"
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 select-text"
                 placeholder="Nhập lại mật khẩu..."
               />
             </div>
