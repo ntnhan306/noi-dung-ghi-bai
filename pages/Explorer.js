@@ -63,6 +63,29 @@ export const Explorer = ({ mode }) => {
     }
   };
 
+  // --- Derived State (Must be defined before Effects that use them) ---
+  const currentNode = useMemo(() => 
+    allNodes.find(n => n.id === nodeId), 
+  [allNodes, nodeId]);
+
+  const children = useMemo(() => 
+    allNodes
+      .filter(n => n.parentId === (nodeId || null))
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
+  [allNodes, nodeId]);
+
+  const breadcrumbs = useMemo(() => {
+    const path = [];
+    let curr = currentNode;
+    while (curr) {
+      path.unshift({ id: curr.id, title: curr.title });
+      curr = allNodes.find(n => n.id === curr?.parentId);
+    }
+    return path;
+  }, [currentNode, allNodes]);
+
+  // --- Effects ---
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -139,26 +162,6 @@ export const Explorer = ({ mode }) => {
         }
     };
   }, [isEditingContent, currentNode]);
-
-  const currentNode = useMemo(() => 
-    allNodes.find(n => n.id === nodeId), 
-  [allNodes, nodeId]);
-
-  const children = useMemo(() => 
-    allNodes
-      .filter(n => n.parentId === (nodeId || null))
-      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
-  [allNodes, nodeId]);
-
-  const breadcrumbs = useMemo(() => {
-    const path = [];
-    let curr = currentNode;
-    while (curr) {
-      path.unshift({ id: curr.id, title: curr.title });
-      curr = allNodes.find(n => n.id === curr?.parentId);
-    }
-    return path;
-  }, [currentNode, allNodes]);
 
   const handleNavigate = (id) => {
     if (isSorting) return;
