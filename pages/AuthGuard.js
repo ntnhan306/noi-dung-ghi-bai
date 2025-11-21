@@ -13,8 +13,9 @@ export const AuthGuard = ({ children }) => {
 
   // Simple session persistence for refresh
   useEffect(() => {
-    const session = sessionStorage.getItem('auth_session');
-    if (session === 'valid') {
+    const storedPass = sessionStorage.getItem('auth_pass');
+    if (storedPass) {
+      // Optimistically set true, real check happens in Explorer's fetchData
       setIsAuthenticated(true);
     }
   }, []);
@@ -28,7 +29,8 @@ export const AuthGuard = ({ children }) => {
       const isValid = await apiService.verifyPassword(password);
       if (isValid) {
         setIsAuthenticated(true);
-        sessionStorage.setItem('auth_session', 'valid');
+        // Store password to send in headers for periodic validation
+        sessionStorage.setItem('auth_pass', password);
       } else {
         setError('Mật khẩu không đúng. Vui lòng thử lại.');
       }

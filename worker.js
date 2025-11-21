@@ -5,7 +5,7 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, X-Auth-Pass", // Cho phép header tùy chỉnh
     };
 
     if (request.method === "OPTIONS") {
@@ -14,9 +14,40 @@ export default {
 
     const url = new URL(request.url);
 
+    // Helper: Hàm kiểm tra mật khẩu
+    async function checkPassword(pass) {
+        if (!pass) return false;
+        // 1. Kiểm tra biến môi trường (Secret)
+        if (env.PASS && pass === env.PASS) return true;
+        
+        // 2. Kiểm tra DB
+        try {
+            const dbPass = await env.DB.prepare("SELECT value FROM config WHERE key = 'admin_password'").first();
+            if (dbPass && dbPass.value === pass) return true;
+            // Mặc định
+            if (!dbPass && !env.PASS && pass === 'admin') return true;
+        } catch(e) {
+            // Fallback nếu DB chưa init
+            if (pass === 'admin') return true;
+        }
+        return false;
+    }
+
     try {
       // --- API: Lấy danh sách (Get All) ---
       if (url.pathname === "/api/get" && request.method === "GET") {
+        
+        // LOGIC BẢO MẬT MỚI:
+        // Nếu Client gửi kèm mật khẩu (đang ở chế độ sửa), ta kiểm tra tính hợp lệ.
+        // Nếu mật khẩu sai (đã bị đổi ở nơi khác), trả về 401 để Client tự đăng xuất.
+        const authPass = request.headers.get('X-Auth-Pass');
+        if (authPass) {
+            const isValid = await checkPassword(authPass);
+            if (!isValid) {
+                return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+            }
+        }
+
         // Đảm bảo bảng tồn tại
         try {
             await env.DB.batch([
@@ -39,18 +70,14 @@ export default {
                 `)
             ]);
         } catch (e) {
-            // Lỗi khởi tạo (có thể do bảng đã tồn tại hoặc concurrency)
             console.error("DB Init Error:", e);
         }
         
-        // Migration: Thêm cột orderIndex nếu chưa có (cho DB cũ)
+        // Migration
         try {
           await env.DB.prepare("ALTER TABLE nodes ADD COLUMN orderIndex INTEGER DEFAULT 0").run();
-        } catch (e) {
-          // Bỏ qua lỗi nếu cột đã tồn tại
-        }
+        } catch (e) {}
 
-        // Sắp xếp theo orderIndex tăng dần
         const result = await env.DB.prepare("SELECT * FROM nodes ORDER BY orderIndex ASC, createdAt ASC").all();
         const nodes = result.results || [];
         return new Response(JSON.stringify(nodes), { headers: corsHeaders });
@@ -60,7 +87,6 @@ export default {
       if (url.pathname === "/api/save" && request.method === "POST") {
         const data = await request.json();
         
-        // Nếu tạo mới và không có orderIndex, tìm max orderIndex hiện tại
         let orderIndex = data.orderIndex;
         if (orderIndex === undefined || orderIndex === null) {
             if (!data.createdAt) { // Node mới
@@ -69,7 +95,6 @@ export default {
                     .first();
                 orderIndex = (maxOrderResult?.maxVal || 0) + 1;
             } else {
-                // Node cũ update nhưng thiếu orderIndex -> giữ nguyên hoặc đặt 0
                 orderIndex = 0;
             }
         }
@@ -90,21 +115,15 @@ export default {
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
-      // --- API: Cập nhật hàng loạt (Sắp xếp) ---
+      // --- API: Cập nhật hàng loạt ---
       if (url.pathname === "/api/batch-update" && request.method === "POST") {
-        const updates = await request.json(); // Array of { id, orderIndex, parentId }
-        
+        const updates = await request.json();
         if (!Array.isArray(updates)) {
             return new Response("Invalid data", { status: 400, headers: corsHeaders });
         }
-
-        const stmt = env.DB.prepare(`
-            UPDATE nodes SET orderIndex = ?, parentId = ? WHERE id = ?
-        `);
-        
+        const stmt = env.DB.prepare(`UPDATE nodes SET orderIndex = ?, parentId = ? WHERE id = ?`);
         const batch = updates.map(u => stmt.bind(u.orderIndex, u.parentId || null, u.id));
         await env.DB.batch(batch);
-
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
@@ -115,13 +134,9 @@ export default {
 
         await env.DB.prepare("DELETE FROM nodes WHERE id = ?").bind(id).run();
         
-        // Xóa đệ quy (chỉ 1 cấp để đơn giản, thực tế nên dùng đệ quy sâu hơn nếu cần)
         const children = await env.DB.prepare("SELECT id FROM nodes WHERE parentId = ?").bind(id).all();
         if (children.results && children.results.length > 0) {
-            const childIds = children.results.map(c => c.id);
-            // Xóa con
             await env.DB.prepare(`DELETE FROM nodes WHERE parentId = ?`).bind(id).run();
-            // Xóa cháu (nếu có logic sâu hơn cần loop, ở đây tạm thời xóa 1 cấp)
         }
         
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
@@ -130,27 +145,11 @@ export default {
       // --- API: Auth Verify ---
       if (url.pathname === "/api/auth/verify" && request.method === "POST") {
         const { password } = await request.json();
+        const isValid = await checkPassword(password);
         
-        // Ưu tiên mật khẩu môi trường (Secret)
-        if (env.PASS && password === env.PASS) {
+        if (isValid) {
             return new Response(JSON.stringify({ valid: true }), { headers: corsHeaders });
         }
-        
-        // Kiểm tra mật khẩu trong DB
-        try {
-            const dbPass = await env.DB.prepare("SELECT value FROM config WHERE key = 'admin_password'").first();
-            if (dbPass && dbPass.value === password) {
-                return new Response(JSON.stringify({ valid: true }), { headers: corsHeaders });
-            }
-            // Mặc định ban đầu nếu chưa có gì
-            if (!dbPass && !env.PASS && password === 'admin') {
-                return new Response(JSON.stringify({ valid: true }), { headers: corsHeaders });
-            }
-        } catch(e) {
-            // Nếu bảng config chưa sẵn sàng
-            if (password === 'admin') return new Response(JSON.stringify({ valid: true }), { headers: corsHeaders });
-        }
-
         return new Response(JSON.stringify({ valid: false }), { status: 401, headers: corsHeaders });
       }
 

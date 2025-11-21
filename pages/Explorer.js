@@ -42,15 +42,24 @@ export const Explorer = ({ mode }) => {
   const fetchData = async (isBackground = false) => {
     if (!isBackground) setLoading(true);
     try {
-      const data = await apiService.getAllNodes();
+      // Nếu ở chế độ Edit, lấy password từ session để gửi kèm
+      const currentPass = mode === 'edit' ? sessionStorage.getItem('auth_pass') : null;
+
+      const data = await apiService.getAllNodes(currentPass);
+      
       // Only update if we got valid array. If null/error, keep old data to prevent UI flash
       if (Array.isArray(data)) {
         setAllNodes(data);
       } else if (data === null && !isBackground && allNodes.length === 0) {
-         // If initial load fails completely, maybe set empty but show error?
-         // Currently we keep loading or empty state.
+         // Initial load failed
       }
     } catch (err) {
+      if (err.message === 'UNAUTHORIZED') {
+        // Mật khẩu đã thay đổi hoặc phiên hết hạn
+        sessionStorage.removeItem('auth_pass');
+        window.location.reload(); // Reload để kích hoạt AuthGuard
+        return;
+      }
       console.error("Failed to load data", err);
     } finally {
       if (!isBackground) setLoading(false);
@@ -61,14 +70,14 @@ export const Explorer = ({ mode }) => {
     fetchData();
   }, []);
 
-  // Auto-refresh in View mode
+  // Auto-refresh every 1s (for both View and Edit mode to keep sync and validate session)
   useEffect(() => {
-    if (mode !== 'view') return;
     const intervalId = setInterval(() => {
+      // Chỉ fetch khi có mạng
       if (navigator.onLine) {
         fetchData(true);
       }
-    }, 2000);
+    }, 1000);
     return () => clearInterval(intervalId);
   }, [mode]);
 
@@ -180,7 +189,12 @@ export const Explorer = ({ mode }) => {
   };
   
   const handleChangePassword = async (newPass) => {
-    return await apiService.changePassword(newPass);
+    // Cập nhật password mới vào storage ngay để tránh bị kick out ở lần fetch tiếp theo
+    const success = await apiService.changePassword(newPass);
+    if (success) {
+        sessionStorage.setItem('auth_pass', newPass);
+    }
+    return success;
   };
 
   // --- Auto Scroll Logic ---
@@ -255,30 +269,21 @@ export const Explorer = ({ mode }) => {
     if (!draggedNode) return;
 
     // Calculate new order
-    // We have the list of `children` sorted by orderIndex.
-    // We need to insert `draggingId` at the index of `targetNode`, 
-    // adjusted by `dropPosition`.
-    
     let newChildren = [...children];
     const oldIndex = newChildren.findIndex(n => n.id === draggingId);
     const targetIndex = newChildren.findIndex(n => n.id === targetNode.id);
     
-    if (oldIndex === -1 || targetIndex === -1) return; // Should not happen within same parent
+    if (oldIndex === -1 || targetIndex === -1) return; 
 
     // Remove old
     newChildren.splice(oldIndex, 1);
     
     // Determine insert index
-    // Note: after splicing oldIndex, the targetIndex might have shifted if oldIndex < targetIndex
     const adjustedTargetIndex = newChildren.findIndex(n => n.id === targetNode.id);
     const insertIndex = dropPosition === 'top' ? adjustedTargetIndex : adjustedTargetIndex + 1;
     
     // Insert
     newChildren.splice(insertIndex, 0, draggedNode);
-    
-    // Optimistic UI Update: Update local state immediately
-    // We need to update ALL nodes, modifying the children part
-    // But re-calculating exact orderIndex for everyone is cleaner for DB
     
     const updates = newChildren.map((node, index) => ({
         id: node.id,

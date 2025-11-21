@@ -5,9 +5,24 @@ const API_URL = 'https://noi-dung-ghi-bai.nhanns23062012.workers.dev';
 
 export const apiService = {
   // Lấy tất cả dữ liệu từ D1
-  getAllNodes: async () => {
+  // password: Mật khẩu hiện tại (nếu có) để xác thực phiên
+  getAllNodes: async (password = null) => {
     try {
-      const response = await fetch(`${API_URL}/api/get`);
+      const headers = {};
+      if (password) {
+        headers['X-Auth-Pass'] = password;
+      }
+
+      const response = await fetch(`${API_URL}/api/get`, {
+        method: 'GET',
+        headers: headers
+      });
+      
+      // Xử lý trường hợp mật khẩu sai/hết hạn
+      if (response.status === 401) {
+        throw new Error('UNAUTHORIZED');
+      }
+
       if (!response.ok) throw new Error('Network response was not ok');
       
       const text = await response.text();
@@ -18,6 +33,8 @@ export const apiService = {
         return null; // Trả về null nếu parse lỗi để không xóa dữ liệu UI
       }
     } catch (error) {
+      if (error.message === 'UNAUTHORIZED') throw error;
+      
       console.error("Error fetching nodes:", error);
       // QUAN TRỌNG: Trả về null khi lỗi để không ghi đè dữ liệu cũ bằng mảng rỗng
       return null;
