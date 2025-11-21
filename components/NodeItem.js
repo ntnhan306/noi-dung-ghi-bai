@@ -28,8 +28,11 @@ export const NodeItem = ({
   // Handle calculating drop position (top/bottom half)
   const handleDragOver = (e) => {
     if (!isEditMode || !onDragOver) return;
-    e.preventDefault(); // Necessary to allow dropping
+    e.preventDefault(); // REQUIRED: Allows the drop
     e.stopPropagation();
+    
+    // REQUIRED: Visual feedback for the cursor
+    e.dataTransfer.dropEffect = 'move'; 
     
     const rect = e.currentTarget.getBoundingClientRect();
     const midY = rect.top + rect.height / 2;
@@ -38,10 +41,16 @@ export const NodeItem = ({
     onDragOver(e, node, position);
   };
 
+  const handleDragStart = (e) => {
+    if (isEditMode && onDragStart) {
+      onDragStart(e, node);
+    }
+  };
+
   return html`
     <div 
       draggable=${isEditMode}
-      onDragStart=${(e) => isEditMode && onDragStart && onDragStart(e, node)}
+      onDragStart=${handleDragStart}
       onDragOver=${handleDragOver}
       onDrop=${(e) => isEditMode && onDrop && onDrop(e, node)}
       onDragLeave=${(e) => isEditMode && onDragLeave && onDragLeave(e)}
@@ -62,7 +71,7 @@ export const NodeItem = ({
       <div className="relative flex items-center gap-5 flex-1 overflow-hidden z-10">
         <!-- Drag Handle -->
         ${isEditMode && html`
-          <div className="text-slate-300 cursor-grab active:cursor-grabbing hover:text-indigo-400 -ml-1">
+          <div className="text-slate-300 cursor-grab active:cursor-grabbing hover:text-indigo-400 -ml-1 flex-shrink-0">
             <${GripVertical} size=${20} />
           </div>
         `}

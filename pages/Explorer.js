@@ -199,6 +199,9 @@ export const Explorer = ({ mode }) => {
   };
 
   const handleGlobalDragOver = (e) => {
+    e.preventDefault(); // Allow drag over container
+    e.dataTransfer.dropEffect = 'move'; // Show correct cursor
+
     // Calculate distance from top/bottom of viewport
     const SCROLL_THRESHOLD = 100;
     const SCROLL_SPEED = 15;
@@ -456,7 +459,10 @@ export const Explorer = ({ mode }) => {
 
   // --- VIEW: LIST (EXPLORER) ---
   return html`
-    <div className="max-w-7xl mx-auto pb-20" onDragOver=${(e) => mode === 'edit' && draggingId && handleGlobalDragOver(e)}>
+    <div 
+      className="max-w-7xl mx-auto pb-20" 
+      onDragOver=${(e) => mode === 'edit' && draggingId && handleGlobalDragOver(e)}
+    >
       <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
