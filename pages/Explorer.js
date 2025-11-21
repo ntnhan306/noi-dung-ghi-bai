@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, Copy, CornerDownRight, ClipboardList, ArrowUpDown, Check } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, Copy, CornerDownRight, ClipboardList, ArrowUpDown, Check, LogOut } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -199,6 +199,12 @@ export const Explorer = ({ mode }) => {
         sessionStorage.setItem('auth_pass', newPass);
     }
     return success;
+  };
+
+  const handleLogout = () => {
+    // Xóa mật khẩu trong session và chuyển về trang xem
+    sessionStorage.removeItem('auth_pass');
+    navigate('/view');
   };
 
   // --- Auto Scroll Logic ---
@@ -483,12 +489,22 @@ export const Explorer = ({ mode }) => {
         </div>
         
         ${mode === 'edit' && !currentNode && html`
-          <button 
-            onClick=${() => setIsPasswordModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 text-slate-600 bg-white/60 backdrop-blur border border-white/60 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white rounded-xl transition-all text-sm font-medium shadow-sm hover:shadow-md"
-          >
-            <${KeyRound} size=${18} /> Đổi mật khẩu
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick=${() => setIsPasswordModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 text-slate-600 bg-white/60 backdrop-blur border border-white/60 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white rounded-xl transition-all text-sm font-medium shadow-sm hover:shadow-md"
+            >
+              <${KeyRound} size=${18} /> Đổi mật khẩu
+            </button>
+            
+            <button 
+              onClick=${handleLogout}
+              className="flex items-center gap-2 px-5 py-2.5 text-red-500 bg-white/60 backdrop-blur border border-white/60 hover:border-red-200 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium shadow-sm hover:shadow-md"
+              title="Đăng xuất và xóa phiên làm việc"
+            >
+              <${LogOut} size=${18} /> Đăng xuất
+            </button>
+          </div>
         `}
       </header>
 
