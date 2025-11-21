@@ -83,7 +83,7 @@ export const Explorer = ({ mode }) => {
           'bold italic forecolor | alignleft aligncenter ' +
           'alignright alignjustify | bullist numlist outdent indent | ' +
           'image table media | removeformat | help',
-        content_style: 'body { font-family:"Playfair Display",serif; font-size:18px; line-height: 1.8; color: #334155; background-color: #fff; }',
+        content_style: 'body { font-family:"Plus Jakarta Sans", sans-serif; font-size:18px; line-height: 1.8; color: #334155; background-color: #fff; }',
         setup: (editor) => {
           editorRef.current = editor;
         }
@@ -253,7 +253,7 @@ export const Explorer = ({ mode }) => {
               </div>
             ` : html`
               <div 
-                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-serif leading-loose prose-headings:font-serif prose-headings:font-bold prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg"
+                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif prose-headings:font-bold prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg"
                 dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
               ></div>
             `}
