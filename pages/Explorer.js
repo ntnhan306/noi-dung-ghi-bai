@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, Copy, CornerDownRight, ClipboardList } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -29,14 +29,14 @@ export const Explorer = ({ mode }) => {
   const [isEditingContent, setIsEditingContent] = useState(false);
   const editorRef = useRef(null);
 
+  // Moving (Cut/Paste) state
+  const [movingNode, setMovingNode] = useState(null);
+
   // Fetch Data
-  // Modified to accept isBackground param to update data silently without full page loader
   const fetchData = async (isBackground = false) => {
     if (!isBackground) setLoading(true);
     try {
       const data = await apiService.getAllNodes();
-      // QUAN TRỌNG: Chỉ cập nhật nếu data là mảng hợp lệ.
-      // Nếu apiService trả về null (do lỗi), giữ nguyên dữ liệu cũ.
       if (Array.isArray(data)) {
         setAllNodes(data);
       }
@@ -51,19 +51,14 @@ export const Explorer = ({ mode }) => {
     fetchData();
   }, []);
 
-  // Auto-refresh in View mode (every 2 seconds if online to reduce load/risk)
+  // Auto-refresh in View mode
   useEffect(() => {
-    // Only active in View mode
     if (mode !== 'view') return;
-
     const intervalId = setInterval(() => {
-      // Only fetch if online to save resources/errors
       if (navigator.onLine) {
-        fetchData(true); // Pass true to indicate background fetch
+        fetchData(true);
       }
-    }, 2000); // Tăng lên 2s cho an toàn hơn
-
-    // Cleanup interval on unmount or mode change
+    }, 2000);
     return () => clearInterval(intervalId);
   }, [mode]);
 
@@ -72,7 +67,7 @@ export const Explorer = ({ mode }) => {
     if (isEditingContent && window.tinymce) {
       window.tinymce.init({
         selector: '#lesson-editor',
-        height: 'calc(100vh - 250px)', // Responsive height
+        height: 'calc(100vh - 250px)',
         menubar: 'file edit view insert format tools table help',
         plugins: [
           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
@@ -89,7 +84,6 @@ export const Explorer = ({ mode }) => {
         }
       });
     }
-
     return () => {
       if (window.tinymce) {
         window.tinymce.remove('#lesson-editor');
@@ -102,7 +96,10 @@ export const Explorer = ({ mode }) => {
   [allNodes, nodeId]);
 
   const children = useMemo(() => 
-    allNodes.filter(n => n.parentId === (nodeId || null)), 
+    allNodes
+      .filter(n => n.parentId === (nodeId || null))
+      // Ensure sorting by orderIndex explicitly in frontend as well
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
   [allNodes, nodeId]);
 
   const breadcrumbs = useMemo(() => {
@@ -124,7 +121,11 @@ export const Explorer = ({ mode }) => {
   const handleCreate = (type) => {
     setModalMode('CREATE');
     setTargetType(type);
-    setEditingNode({ parentId: nodeId || null });
+    setEditingNode({ 
+      parentId: nodeId || null,
+      // New item gets highest orderIndex + 1
+      orderIndex: children.length > 0 ? Math.max(...children.map(c => c.orderIndex || 0)) + 1 : 0
+    });
     setIsModalOpen(true);
   };
 
@@ -149,7 +150,6 @@ export const Explorer = ({ mode }) => {
           content: newContent
         });
         setIsEditingContent(false);
-        // Sau khi lưu, fetch lại ngay để đảm bảo đồng bộ
         await fetchData(true); 
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
@@ -175,10 +175,68 @@ export const Explorer = ({ mode }) => {
     return await apiService.changePassword(newPass);
   };
 
+  // --- Reorder Logic ---
+  const handleMoveNodeOrder = async (node, direction) => {
+    const currentIndex = children.findIndex(c => c.id === node.id);
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= children.length) return;
+
+    const targetNode = children[targetIndex];
+    
+    // Swap order indexes
+    const updates = [
+      { id: node.id, parentId: node.parentId, orderIndex: targetNode.orderIndex || targetIndex },
+      { id: targetNode.id, parentId: targetNode.parentId, orderIndex: node.orderIndex || currentIndex }
+    ];
+
+    // Optimistic UI Update (optional, but here we just wait for fetch)
+    setLoading(true);
+    await apiService.batchUpdateNodes(updates);
+    await fetchData(true);
+    setLoading(false);
+  };
+
+  // --- Move (Cut/Paste) Logic ---
+  const handleStartMove = (node) => {
+    setMovingNode(node);
+  };
+
+  const handleCancelMove = () => {
+    setMovingNode(null);
+  };
+
+  const handlePasteNode = async () => {
+    if (!movingNode) return;
+    
+    // Don't allow moving a folder into itself or its children (basic cycle check)
+    if (movingNode.id === nodeId) {
+      alert("Không thể di chuyển thư mục vào chính nó.");
+      return;
+    }
+    
+    setLoading(true);
+    
+    // Calculate new orderIndex at the end of the current list
+    const maxOrder = children.length > 0 ? Math.max(...children.map(c => c.orderIndex || 0)) : -1;
+    
+    const updates = [{
+      id: movingNode.id,
+      parentId: nodeId || null, // Paste into current view
+      orderIndex: maxOrder + 1
+    }];
+
+    await apiService.batchUpdateNodes(updates);
+    setMovingNode(null);
+    await fetchData(true);
+    setLoading(false);
+  };
+
   const currentType = currentNode ? currentNode.type : NodeType.ROOT;
   const allowedChildTypes = ALLOWED_CHILDREN[currentType] || [];
 
-  if (loading) {
+  if (loading && !allNodes.length) {
     return html`
       <div className="flex items-center justify-center h-[60vh] text-slate-400">
         <div className="flex flex-col items-center gap-4">
@@ -294,8 +352,6 @@ export const Explorer = ({ mode }) => {
           <p className="text-slate-500 font-sans text-lg max-w-2xl">
             ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để bắt đầu hành trình ghi chép.'}
           </p>
-          
-          <!-- Decorative decorative line -->
           <div className="h-1 w-20 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full mt-6"></div>
         </div>
         
@@ -342,16 +398,52 @@ export const Explorer = ({ mode }) => {
         </div>
       ` : html`
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          ${children.map(node => html`
+          ${children.map((node, index) => html`
             <${NodeItem} 
               key=${node.id}
               node=${node}
               isEditMode=${mode === 'edit'}
+              isFirst=${index === 0}
+              isLast=${index === children.length - 1}
               onClick=${() => handleNavigate(node.id)}
               onEdit=${handleEditTitle}
               onDelete=${handleDelete}
+              onMoveUp=${() => handleMoveNodeOrder(node, 'up')}
+              onMoveDown=${() => handleMoveNodeOrder(node, 'down')}
+              onStartMove=${handleStartMove}
             />
           `)}
+        </div>
+      `}
+
+      <!-- Floating Status Bar for Move Operation -->
+      ${movingNode && html`
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-6 animate-in slide-in-from-bottom-10">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-600 rounded-lg"><${ClipboardList} size=${20}/></div>
+                <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider font-bold">Đang di chuyển</p>
+                    <p className="font-serif font-medium text-lg">${movingNode.title}</p>
+                </div>
+            </div>
+            
+            <div className="h-8 w-px bg-slate-700"></div>
+
+            <div className="flex items-center gap-2">
+                <button 
+                    onClick=${handleCancelMove}
+                    className="px-4 py-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-sm font-medium"
+                >
+                    Hủy bỏ
+                </button>
+                <button 
+                    onClick=${handlePasteNode}
+                    className="px-5 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg transition-colors text-sm font-bold shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+                >
+                    <${CornerDownRight} size=${18} />
+                    Dán vào đây
+                </button>
+            </div>
         </div>
       `}
 

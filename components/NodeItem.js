@@ -1,10 +1,21 @@
 
 import React from 'react';
 import { html } from '../utils/html.js';
-import { Folder, FileText, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { Folder, FileText, ChevronRight, Edit2, Trash2, ArrowUp, ArrowDown, FolderInput } from 'lucide-react';
 import { NodeType, NODE_LABELS } from '../types.js';
 
-export const NodeItem = ({ node, isEditMode, onClick, onEdit, onDelete }) => {
+export const NodeItem = ({ 
+  node, 
+  isEditMode, 
+  onClick, 
+  onEdit, 
+  onDelete, 
+  onMoveUp, 
+  onMoveDown, 
+  onStartMove,
+  isFirst,
+  isLast
+}) => {
   const isLesson = node.type === NodeType.LESSON;
 
   return html`
@@ -31,10 +42,39 @@ export const NodeItem = ({ node, isEditMode, onClick, onEdit, onDelete }) => {
 
       <div className="relative flex items-center gap-3 pl-4 border-l border-slate-100 ml-4 z-10">
         ${isEditMode && html`
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick=${(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1 transition-opacity duration-200" onClick=${(e) => e.stopPropagation()}>
+            <!-- Reorder Buttons -->
+            <div className="flex flex-col gap-0.5 mr-2">
+              <button 
+                onClick=${() => onMoveUp && onMoveUp(node)}
+                disabled=${isFirst}
+                className=${`p-1 rounded hover:bg-slate-100 ${isFirst ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-indigo-600'}`}
+                title="Di chuyển lên"
+              >
+                <${ArrowUp} size=${14} />
+              </button>
+              <button 
+                onClick=${() => onMoveDown && onMoveDown(node)}
+                disabled=${isLast}
+                className=${`p-1 rounded hover:bg-slate-100 ${isLast ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-indigo-600'}`}
+                title="Di chuyển xuống"
+              >
+                <${ArrowDown} size=${14} />
+              </button>
+            </div>
+
+            <!-- Move to Folder Button -->
+            <button 
+              onClick=${() => onStartMove && onStartMove(node)}
+              className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-colors"
+              title="Di chuyển sang thư mục khác"
+            >
+              <${FolderInput} size=${16} />
+            </button>
+
             <button 
               onClick=${() => onEdit && onEdit(node)}
-              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
               title="Sửa tên"
             >
               <${Edit2} size=${16} />

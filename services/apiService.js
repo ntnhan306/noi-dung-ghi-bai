@@ -26,7 +26,8 @@ export const apiService = {
         type: node.type,
         title: node.title,
         content: node.content || '',
-        createdAt: node.createdAt || Date.now()
+        createdAt: node.createdAt || Date.now(),
+        orderIndex: node.orderIndex !== undefined ? node.orderIndex : 0
       };
 
       const response = await fetch(`${API_URL}/api/save`, {
@@ -40,6 +41,24 @@ export const apiService = {
     } catch (error) {
       console.error("Error saving node:", error);
       throw error;
+    }
+  },
+
+  // Cập nhật hàng loạt (cho việc sắp xếp hoặc di chuyển)
+  batchUpdateNodes: async (updates) => {
+    // updates: Array of { id, orderIndex, parentId }
+    try {
+      const response = await fetch(`${API_URL}/api/batch-update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) throw new Error('Batch update failed');
+      return true;
+    } catch (error) {
+      console.error("Error batch updating nodes:", error);
+      return false;
     }
   },
 
@@ -60,7 +79,7 @@ export const apiService = {
     }
   },
   
-  // Xác thực mật khẩu (Gọi Worker kiểm tra ENV.PASS hoặc D1)
+  // Xác thực mật khẩu
   verifyPassword: async (password) => {
     try {
       const response = await fetch(`${API_URL}/api/auth/verify`, {
