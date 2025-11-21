@@ -27,7 +27,7 @@ export const Explorer = ({ mode }) => {
 
   // Content Editing state
   const [isEditingContent, setIsEditingContent] = useState(false);
-  const editorRef = useRef(null);
+  const quillRef = useRef(null); // Ref to hold Quill instance
 
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
@@ -85,34 +85,43 @@ export const Explorer = ({ mode }) => {
     return () => clearInterval(intervalId);
   }, [mode, isSorting]);
 
-  // Initialize TinyMCE
+  // Initialize Quill Editor
   useEffect(() => {
-    if (isEditingContent && window.tinymce) {
-      window.tinymce.init({
-        selector: '#lesson-editor',
-        height: 'calc(100vh - 250px)',
-        menubar: 'file edit view insert format tools table help',
-        plugins: [
-          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-          'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-        ],
-        toolbar: 'undo redo | blocks | ' +
-          'bold italic forecolor | alignleft aligncenter ' +
-          'alignright alignjustify | bullist numlist outdent indent | ' +
-          'image table media | removeformat | help',
-        content_style: 'body { font-family:"Plus Jakarta Sans", sans-serif; font-size:18px; line-height: 1.8; color: #334155; background-color: #fff; }',
-        setup: (editor) => {
-          editorRef.current = editor;
+    if (isEditingContent && !quillRef.current) {
+      const editorContainer = document.getElementById('editor-container');
+      if (editorContainer) {
+        // Initialize Quill
+        const quill = new Quill(editorContainer, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, 4, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['link', 'image', 'video', 'blockquote', 'code-block'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'Nhập nội dung bài học tại đây...',
+        });
+        
+        // Set initial content
+        if (currentNode && currentNode.content) {
+            quill.root.innerHTML = currentNode.content;
         }
-      });
-    }
-    return () => {
-      if (window.tinymce) {
-        window.tinymce.remove('#lesson-editor');
+
+        quillRef.current = quill;
       }
+    }
+    // Cleanup
+    return () => {
+        if (!isEditingContent) {
+            quillRef.current = null;
+        }
     };
-  }, [isEditingContent]);
+  }, [isEditingContent, currentNode]);
 
   const currentNode = useMemo(() => 
     allNodes.find(n => n.id === nodeId), 
@@ -163,15 +172,16 @@ export const Explorer = ({ mode }) => {
   };
 
   const handleSaveContent = async () => {
-    if (editorRef.current) {
+    if (quillRef.current) {
       setSaving(true);
-      const newContent = editorRef.current.getContent();
+      const newContent = quillRef.current.root.innerHTML;
       try {
         await apiService.saveNode({
           ...currentNode,
           content: newContent
         });
         setIsEditingContent(false);
+        quillRef.current = null; // Clear ref on close
         await fetchData(true); 
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
@@ -416,7 +426,7 @@ export const Explorer = ({ mode }) => {
             ${mode === 'edit' && isEditingContent && html`
               <div className="flex gap-3">
                 <button 
-                  onClick=${() => setIsEditingContent(false)}
+                  onClick=${() => { setIsEditingContent(false); quillRef.current = null; }}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans"
                   disabled=${saving}
                 >
@@ -436,8 +446,9 @@ export const Explorer = ({ mode }) => {
           
           <div className="flex-1 bg-white relative">
             ${isEditingContent ? html`
-              <div className="p-0 h-full select-text">
-                <textarea id="lesson-editor" defaultValue=${currentNode.content}></textarea>
+              <!-- Quill Editor Container -->
+              <div className="h-[calc(100vh-300px)] bg-white select-text">
+                <div id="editor-container" className="h-full text-lg font-sans text-slate-700"></div>
               </div>
             ` : html`
               <div 
