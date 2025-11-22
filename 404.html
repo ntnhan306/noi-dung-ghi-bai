@@ -18,6 +18,26 @@
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.snow.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.js"></script>
 
+    <style>
+      /* Chặn chọn văn bản triệt để trên mọi trình duyệt */
+      .select-none {
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none;    /* Firefox */
+        -ms-user-select: none;     /* IE10+/Edge */
+        user-select: none;         /* Standard */
+        -webkit-touch-callout: none; /* iOS Safari - Chặn menu ngữ cảnh khi giữ lâu */
+      }
+      
+      /* Cho phép chọn lại ở input */
+      input, textarea, .select-text {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+        -webkit-touch-callout: default;
+      }
+    </style>
+
     <script>
       tailwind.config = {
         theme: {
@@ -33,6 +53,15 @@
             },
             boxShadow: {
               'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
+            },
+            keyframes: {
+              marquee: {
+                '0%': { transform: 'translateX(100%)' },
+                '100%': { transform: 'translateX(-100%)' },
+              }
+            },
+            animation: {
+              marquee: 'marquee 15s linear infinite',
             }
           },
         },
