@@ -167,7 +167,10 @@ export const Explorer = ({ mode }) => {
             autosave_retention: '2m',
             image_advtab: true,
             importcss_append: true,
-            height: '100%',
+            // Cấu hình chiều cao cố định để tránh lỗi 0px
+            height: '75vh', 
+            min_height: 600,
+            resize: true, // Cho phép người dùng kéo giãn
             image_caption: true,
             quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
             noneditable_noneditable_class: 'mceNonEditable',
@@ -400,8 +403,8 @@ export const Explorer = ({ mode }) => {
           
           <div className="flex-1 bg-white relative flex flex-col">
             ${isEditingContent ? html`
-              <div className="flex-1 bg-white select-text">
-                <textarea id="editor-container" className="h-full w-full opacity-0"></textarea>
+              <div className="bg-white select-text min-h-[600px]">
+                <textarea id="editor-container" className="w-full"></textarea>
               </div>
             ` : html`
               <div 
