@@ -181,7 +181,7 @@ export const Explorer = ({ mode }) => {
             noneditable_noneditable_class: 'mceNonEditable',
             toolbar_mode: 'sliding',
             contextmenu: 'link image table',
-            content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; }',
+            content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
             branding: false, // TẮT BRANDING
             promotion: false, // TẮT QUẢNG CÁO UPGRADE
             setup: (editor) => {
@@ -235,7 +235,7 @@ export const Explorer = ({ mode }) => {
       const recognition = new SpeechRecognition();
       recognition.lang = voiceLang;
       recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition.interimResults = true; // BẬT CHẾ ĐỘ KẾT QUẢ TẠM THỜI (Real-time)
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -243,6 +243,12 @@ export const Explorer = ({ mode }) => {
 
       recognition.onend = () => {
         setIsListening(false);
+        // Xóa span tạm nếu còn sót
+        const editor = window.tinymce.get('editor-container');
+        if (editor) {
+             const existingInterim = editor.dom.select('span#voice-interim')[0];
+             if (existingInterim) editor.dom.remove(existingInterim);
+        }
       };
 
       recognition.onerror = (event) => {
@@ -257,16 +263,41 @@ export const Explorer = ({ mode }) => {
         const editor = window.tinymce.get('editor-container');
         if (!editor) return;
 
-        let finalTranscript = '';
+        let finalChunk = '';
+        let interimChunk = '';
+
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            finalChunk += event.results[i][0].transcript;
+          } else {
+            interimChunk += event.results[i][0].transcript;
           }
         }
         
-        if (finalTranscript) {
-            // Thêm dấu cách sau mỗi câu để tự nhiên hơn
-            editor.execCommand('mceInsertContent', false, finalTranscript + ' ');
+        // Xử lý văn bản chính thức (Final)
+        if (finalChunk) {
+            // Xóa interim cũ nếu có để tránh trùng lặp
+            const existingInterim = editor.dom.select('span#voice-interim')[0];
+            if (existingInterim) editor.dom.remove(existingInterim);
+
+            // Chèn văn bản chốt vào
+            editor.execCommand('mceInsertContent', false, finalChunk + ' ');
+        }
+
+        // Xử lý văn bản tạm thời (Interim - Streaming)
+        if (interimChunk) {
+            const existingInterim = editor.dom.select('span#voice-interim')[0];
+            if (existingInterim) {
+                // Cập nhật nội dung nếu span đã tồn tại
+                existingInterim.innerText = interimChunk;
+            } else {
+                // Tạo span mới nếu chưa có
+                editor.execCommand('mceInsertContent', false, `<span id="voice-interim">${interimChunk}</span>`);
+            }
+        } else {
+            // Nếu không còn interim, xóa span
+            const existingInterim = editor.dom.select('span#voice-interim')[0];
+            if (existingInterim) editor.dom.remove(existingInterim);
         }
       };
 
@@ -308,6 +339,10 @@ export const Explorer = ({ mode }) => {
     const editor = window.tinymce.get('editor-container');
     if (editor) {
       setSaving(true);
+      // Xóa mọi thẻ tạm trước khi lưu
+      const existingInterim = editor.dom.select('span#voice-interim')[0];
+      if (existingInterim) editor.dom.remove(existingInterim);
+
       const newContent = editor.getContent();
       try {
         const updatedNode = {
@@ -500,7 +535,7 @@ export const Explorer = ({ mode }) => {
               </div>
             ` : html`
               <div 
-                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif prose-headings:font-bold prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
+                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif font-bold prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
                 dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
               ></div>
             `}
