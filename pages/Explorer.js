@@ -29,7 +29,8 @@ export const Explorer = ({ mode }) => {
 
   // Content Editing state
   const [isEditingContent, setIsEditingContent] = useState(false);
-  const quillRef = useRef(null);
+  // We use this to track if TinyMCE is ready, but direct access goes through window.tinymce
+  const [editorReady, setEditorReady] = useState(false);
 
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
@@ -142,45 +143,67 @@ export const Explorer = ({ mode }) => {
     }
   }, [isSorting, nodeId]);
 
-  // Initialize Quill Editor
+  // Initialize TinyMCE Editor
   useEffect(() => {
-    if (isEditingContent && !quillRef.current) {
-      const editorContainer = document.getElementById('editor-container');
-      const Quill = window.Quill;
+    if (isEditingContent) {
+      const initTinyMCE = () => {
+        if (window.tinymce) {
+          // Remove existing instance if any
+          if (window.tinymce.get('editor-container')) {
+            window.tinymce.get('editor-container').remove();
+          }
 
-      if (editorContainer && Quill) {
-        const quill = new Quill(editorContainer, {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{ 'header': [1, 2, 3, 4, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'align': [] }],
-                    ['link', 'image', 'video', 'blockquote', 'code-block'],
-                    ['clean']
-                ]
-            },
-            placeholder: 'Nhập nội dung bài học tại đây...',
-        });
-        
-        // Initial content load only. 
-        // We do NOT put currentNode in the dependency array to avoid re-setting content 
-        // if background fetch happens to run before the interval is cleared.
-        if (currentNode && currentNode.content) {
-            quill.root.innerHTML = currentNode.content;
+          window.tinymce.init({
+            selector: '#editor-container',
+            // Plugins khổng lồ cho "80 tính năng"
+            plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
+            menubar: 'file edit view insert format tools table help',
+            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
+            toolbar_sticky: true,
+            autosave_ask_before_unload: true,
+            autosave_interval: '30s',
+            autosave_prefix: '{path}{query}-{id}-',
+            autosave_restore_when_empty: false,
+            autosave_retention: '2m',
+            image_advtab: true,
+            importcss_append: true,
+            height: '100%',
+            image_caption: true,
+            quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
+            noneditable_noneditable_class: 'mceNonEditable',
+            toolbar_mode: 'sliding',
+            contextmenu: 'link image table',
+            content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; }',
+            branding: false, // TẮT BRANDING
+            promotion: false, // TẮT QUẢNG CÁO UPGRADE
+            setup: (editor) => {
+              editor.on('init', () => {
+                if (currentNode && currentNode.content) {
+                    editor.setContent(currentNode.content);
+                }
+                setEditorReady(true);
+              });
+            }
+          });
         }
-        quillRef.current = quill;
+      };
+      
+      // Delay slightly to ensure DOM is ready
+      setTimeout(initTinyMCE, 100);
+    } else {
+      // Cleanup when closing editor
+      if (window.tinymce && window.tinymce.get('editor-container')) {
+        window.tinymce.get('editor-container').remove();
       }
+      setEditorReady(false);
     }
-    // Cleanup on unmount or when edit mode turns off
+    
     return () => {
-        if (!isEditingContent) {
-            quillRef.current = null;
-        }
+      if (window.tinymce && window.tinymce.get('editor-container')) {
+        window.tinymce.get('editor-container').remove();
+      }
     };
-  }, [isEditingContent]); // Removed currentNode from deps to prevent overwrite
+  }, [isEditingContent]); 
 
   // --- Handlers ---
 
@@ -212,23 +235,21 @@ export const Explorer = ({ mode }) => {
   };
 
   const handleSaveContent = async () => {
-    if (quillRef.current) {
+    const editor = window.tinymce.get('editor-container');
+    if (editor) {
       setSaving(true);
-      const newContent = quillRef.current.root.innerHTML;
+      const newContent = editor.getContent();
       try {
         const updatedNode = {
           ...currentNode,
           content: newContent
         };
         
-        // Optimistic update: Update local state immediately
         setAllNodes(prev => prev.map(n => n.id === updatedNode.id ? updatedNode : n));
         
         await apiService.saveNode(updatedNode);
         
         setIsEditingContent(false);
-        quillRef.current = null;
-        // Resume fetching
         await fetchData(true); 
       } catch (e) {
         alert("Lỗi khi lưu nội dung!");
@@ -359,7 +380,7 @@ export const Explorer = ({ mode }) => {
             ${mode === 'edit' && isEditingContent && html`
               <div className="flex gap-3">
                 <button 
-                  onClick=${() => { setIsEditingContent(false); quillRef.current = null; }}
+                  onClick=${() => setIsEditingContent(false)}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans"
                   disabled=${saving}
                 >
@@ -377,10 +398,10 @@ export const Explorer = ({ mode }) => {
             `}
           </div>
           
-          <div className="flex-1 bg-white relative">
+          <div className="flex-1 bg-white relative flex flex-col">
             ${isEditingContent ? html`
-              <div className="h-[calc(100vh-300px)] bg-white select-text">
-                <div id="editor-container" className="h-full text-lg font-sans text-slate-700"></div>
+              <div className="flex-1 bg-white select-text">
+                <textarea id="editor-container" className="h-full w-full opacity-0"></textarea>
               </div>
             ` : html`
               <div 

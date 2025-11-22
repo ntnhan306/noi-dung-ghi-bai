@@ -13,8 +13,8 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.snow.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.js"></script>
+    <!-- TinyMCE Community Edition (Free, No Ads if configured) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
 
     <style>
       /* Chặn chọn văn bản triệt để trên mọi trình duyệt */
@@ -33,6 +33,12 @@
         -ms-user-select: text;
         user-select: text;
         -webkit-touch-callout: default;
+      }
+      
+      /* TinyMCE Specific Overrides */
+      .tox-tinymce {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
       }
     </style>
 
