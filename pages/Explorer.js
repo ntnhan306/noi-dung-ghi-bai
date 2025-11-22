@@ -535,7 +535,7 @@ export const Explorer = ({ mode }) => {
               </div>
             ` : html`
               <div 
-                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif font-bold prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
+                className="p-10 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
                 dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
               ></div>
             `}
