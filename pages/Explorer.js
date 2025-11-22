@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -31,6 +31,11 @@ export const Explorer = ({ mode }) => {
   const [isEditingContent, setIsEditingContent] = useState(false);
   // We use this to track if TinyMCE is ready, but direct access goes through window.tinymce
   const [editorReady, setEditorReady] = useState(false);
+
+  // Voice Typing State
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState('vi-VN'); // 'vi-VN' or 'en-US'
+  const recognitionRef = useRef(null);
 
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
@@ -205,8 +210,70 @@ export const Explorer = ({ mode }) => {
       if (window.tinymce && window.tinymce.get('editor-container')) {
         window.tinymce.get('editor-container').remove();
       }
+      // Stop voice if active
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
     };
   }, [isEditingContent]); 
+
+  // --- Voice Logic ---
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+    } else {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        alert("Trình duyệt của bạn không hỗ trợ nhập liệu bằng giọng nói. Vui lòng thử Chrome, Edge hoặc Safari.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = voiceLang;
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Lỗi nhận diện giọng nói:", event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+            alert("Vui lòng cấp quyền truy cập Micro để sử dụng tính năng này.");
+        }
+      };
+
+      recognition.onresult = (event) => {
+        const editor = window.tinymce.get('editor-container');
+        if (!editor) return;
+
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+            // Thêm dấu cách sau mỗi câu để tự nhiên hơn
+            editor.execCommand('mceInsertContent', false, finalTranscript + ' ');
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    }
+  };
 
   // --- Handlers ---
 
@@ -381,9 +448,34 @@ export const Explorer = ({ mode }) => {
             `}
 
             ${mode === 'edit' && isEditingContent && html`
-              <div className="flex gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <!-- Voice Input Control -->
+                <div className="flex items-center bg-slate-100 rounded-xl p-1 mr-2 border border-slate-200">
+                   <button
+                     onClick=${toggleVoiceInput}
+                     className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${isListening ? 'bg-red-500 text-white shadow-md animate-pulse' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                     title=${isListening ? "Dừng ghi âm" : "Bắt đầu nhập liệu bằng giọng nói"}
+                   >
+                     ${isListening ? html`<${MicOff} size=${18} />` : html`<${Mic} size=${18} />`}
+                     ${isListening && html`<span className="text-xs font-bold">Đang nghe...</span>`}
+                   </button>
+                   <div className="h-6 w-px bg-slate-300 mx-1"></div>
+                   <div className="relative flex items-center">
+                      <${Globe} size=${14} className="absolute left-2 text-slate-400" />
+                      <select 
+                        value=${voiceLang} 
+                        onChange=${(e) => setVoiceLang(e.target.value)}
+                        className="pl-7 pr-2 py-1 bg-transparent text-xs font-medium text-slate-600 outline-none cursor-pointer hover:text-indigo-600 appearance-none"
+                        disabled=${isListening}
+                      >
+                        <option value="vi-VN">Tiếng Việt</option>
+                        <option value="en-US">English</option>
+                      </select>
+                   </div>
+                </div>
+
                 <button 
-                  onClick=${() => setIsEditingContent(false)}
+                  onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); }}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans"
                   disabled=${saving}
                 >
