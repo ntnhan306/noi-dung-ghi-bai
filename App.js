@@ -157,7 +157,7 @@ const AccessDenied = () => {
             </div>
             <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Truy cập bị từ chối</h1>
             <p className="text-slate-500 max-w-xs mx-auto">
-                Ứng dụng này chỉ được phép truy cập thông qua Ứng dụng Nội dung ghi bài chính thức.
+                Vui lòng truy cập thông qua Ứng dụng chính thức. Đường dẫn không hợp lệ.
             </p>
         </div>
     `;
@@ -170,10 +170,14 @@ const App = () => {
   const isAppMode = window.location.pathname.includes('/special-application/');
 
   useEffect(() => {
-    // 2. Security Check: Nếu là App Mode, bắt buộc UserAgent phải đúng
+    // 2. Security Check: Nếu là App Mode, kiểm tra URL Key
     if (isAppMode) {
-        const userAgent = navigator.userAgent;
-        if (!userAgent.includes("NoiDungGhiBaiApp")) {
+        // Lấy tham số từ URL hiện tại (trước khi Router xử lý hash)
+        const params = new URLSearchParams(window.location.search);
+        const key = params.get('key');
+        
+        // MÃ KHÓA BÍ MẬT
+        if (key !== 'NoiDungGhiBaiSecret2024') {
             setIsAuthorized(false);
         }
     }
