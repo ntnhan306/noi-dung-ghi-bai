@@ -97,7 +97,34 @@
   </head>
   <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none overflow-x-hidden">
     <div id="root"></div>
-    <!-- Trỏ về file index.js gốc, đi ngược lên 5 cấp thư mục -->
-    <script type="module" src="../../../../../index.js"></script>
+    <script>
+      // Script loader thông minh để xử lý đường dẫn trên GitHub Pages vs Local
+      (function() {
+        var path = window.location.pathname;
+        // Mặc định cho GitHub Pages (tuyệt đối)
+        // Đây là cách an toàn nhất để tránh lỗi 404 khi ở thư mục sâu
+        var scriptSrc = '/noi-dung-ghi-bai/index.js';
+        
+        // Nếu không chạy trên GitHub Pages (ví dụ localhost), thử dùng đường dẫn tương đối
+        if (path.indexOf('/noi-dung-ghi-bai') === -1) {
+           scriptSrc = '../../../../../index.js'; 
+        }
+
+        var script = document.createElement('script');
+        script.type = 'module';
+        script.src = scriptSrc;
+        script.onerror = function() {
+           console.error("Failed to load app script from", scriptSrc);
+           // Fallback nếu đường dẫn tuyệt đối sai (ví dụ khi dev local mà không có /noi-dung-ghi-bai)
+           if (scriptSrc.startsWith('/')) {
+              var fb = document.createElement('script');
+              fb.type = 'module';
+              fb.src = '../../../../../index.js';
+              document.body.appendChild(fb);
+           }
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>

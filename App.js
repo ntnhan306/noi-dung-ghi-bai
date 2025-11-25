@@ -63,6 +63,9 @@ const AnimatedRoutes = ({ isAppMode }) => {
                         </${AuthGuard}>
                     `} />
                 `}
+                
+                <!-- Catch-all route để tránh màn hình trắng nếu đường dẫn bị lệch -->
+                <${Route} path="*" element=${html`<${Navigate} to="/view" replace />`} />
             </${Routes}>
         </div>
     `;
@@ -183,7 +186,7 @@ const App = () => {
   // Tăng kích thước font nếu là App Mode
   useEffect(() => {
       if (isAppMode) {
-          document.documentElement.classList.add('text-lg'); // Tailwind base text size override logic if needed or handled via classes
+          document.documentElement.classList.add('text-lg'); 
       }
   }, [isAppMode]);
 
