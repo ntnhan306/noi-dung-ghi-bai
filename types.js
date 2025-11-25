@@ -1,3 +1,4 @@
+
 export const NodeType = {
   ROOT: 'ROOT',
   SUBJECT: 'SUBJECT',      // Môn
@@ -9,11 +10,11 @@ export const NodeType = {
 
 export const NODE_LABELS = {
   [NodeType.ROOT]: 'Trang chủ',
-  [NodeType.SUBJECT]: 'Môn học',
+  [NodeType.SUBJECT]: 'Môn',
   [NodeType.SUB_SUBJECT]: 'Phân môn',
   [NodeType.PART]: 'Phần',
   [NodeType.CHAPTER]: 'Chương',
-  [NodeType.LESSON]: 'Bài học',
+  [NodeType.LESSON]: 'Bài',
 };
 
 export const ALLOWED_CHILDREN = {

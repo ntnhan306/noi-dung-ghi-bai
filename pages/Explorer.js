@@ -547,7 +547,7 @@ export const Explorer = ({ mode }) => {
              onClick=${() => handleNavigate(currentNode.parentId)}
              className="group text-slate-500 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm inline-flex"
            >
-             <div className="p-1 rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại danh sách
+             <div className="p-1 rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại
            </button>
         </div>
 
@@ -565,7 +565,8 @@ export const Explorer = ({ mode }) => {
 
   return html`
     <div className="max-w-7xl mx-auto pb-20">
-      <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
+      <!-- Chỉ hiện Breadcrumbs nếu KHÔNG PHẢI là trang chủ (có currentNode) -->
+      ${currentNode && html`<${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />`}
 
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="relative">
@@ -573,7 +574,7 @@ export const Explorer = ({ mode }) => {
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
           <p className="text-slate-500 font-sans text-lg max-w-2xl">
-            ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để bắt đầu hành trình ghi chép.'}
+            ${currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để xem nội dung chi tiết.'}
           </p>
           <div className="h-1 w-20 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full mt-6"></div>
         </div>
@@ -653,8 +654,8 @@ export const Explorer = ({ mode }) => {
           <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
             <${ListIcon} className="text-indigo-300" size=${48} />
           </div>
-          <h3 className="text-xl font-serif font-medium text-slate-700">Chưa có nội dung</h3>
-          <p className="text-slate-500 font-sans mt-2">Thư mục này hiện đang trống.</p>
+          <h3 className="text-xl font-serif font-medium text-slate-700">${!currentNode ? 'Chưa có môn học nào' : 'Chưa có nội dung'}</h3>
+          <p className="text-slate-500 font-sans mt-2">Danh sách này hiện đang trống.</p>
           ${mode === 'edit' && html`
              <button 
                onClick=${() => allowedChildTypes[0] && handleCreate(allowedChildTypes[0])}

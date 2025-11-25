@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Nội dung ghi bài - App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234f46e5%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z%22/><path d=%22M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z%22/></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- TinyMCE Community Edition -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <style>
+      .select-none {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      
+      input, textarea, .select-text {
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        -ms-user-select: text;
+        user-select: text;
+        -webkit-touch-callout: default;
+      }
+
+      .tox-tinymce {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      
+      /* Ẩn thanh cuộn nhưng vẫn cho cuộn */
+      ::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+      }
+    </style>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              serif: ['"Outfit"', 'sans-serif'],
+            },
+            colors: {
+              indigo: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5' },
+              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' }
+            },
+            boxShadow: { 'soft': '0 10px 40px -10px rgba(0,0,0,0.05)' },
+            keyframes: {
+              marquee: {
+                '0%': { transform: 'translateX(100%)' },
+                '100%': { transform: 'translateX(-100%)' },
+                'slideInRight': {
+                    '0%': { transform: 'translateX(100%)', opacity: '0' },
+                    '100%': { transform: 'translateX(0)', opacity: '1' },
+                },
+                'slideInLeft': {
+                    '0%': { transform: 'translateX(-100%)', opacity: '0' },
+                    '100%': { transform: 'translateX(0)', opacity: '1' },
+                }
+              },
+              animation: {
+                marquee: 'marquee 15s linear infinite',
+                slideInRight: 'slideInRight 0.3s ease-out forwards',
+                slideInLeft: 'slideInLeft 0.3s ease-out forwards',
+              }
+            },
+          },
+        },
+      }
+    </script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0",
+        "react-dom": "https://esm.sh/react-dom@18.2.0?deps=react@18.2.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.330.0?deps=react@18.2.0",
+        "react-router-dom": "https://esm.sh/react-router-dom@6.22.0?deps=react@18.2.0,react-dom@18.2.0",
+        "htm": "https://esm.sh/htm@3.1.1",
+        "sortablejs": "https://esm.sh/sortablejs@1.15.2"
+      }
+    }
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none overflow-x-hidden">
+    <div id="root"></div>
+    <!-- Trỏ về file index.js gốc, đi ngược lên 5 cấp thư mục -->
+    <script type="module" src="../../../../../index.js"></script>
+  </body>
+</html>

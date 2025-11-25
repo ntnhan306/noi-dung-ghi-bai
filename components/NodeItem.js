@@ -19,6 +19,10 @@ export const NodeItem = ({
   const titleRef = useRef(null);
   const containerRef = useRef(null);
   
+  // Kiểm tra xem có đang chạy trong App Mode không bằng cách check URL (hoặc truyền prop từ trên xuống)
+  // Để đơn giản và nhất quán, ta check URL
+  const isAppMode = window.location.pathname.includes('/special-application/');
+  
   const isLesson = node.type === NodeType.LESSON;
 
   // Style object for robust text selection blocking across all browsers
@@ -56,7 +60,13 @@ export const NodeItem = ({
   const handleItemClick = (e) => {
     if (isSorting) return;
 
-    // Phát hiện thiết bị cảm ứng (thô)
+    // APP MODE LOGIC: Bấm là đi luôn, không lằng nhằng
+    if (isAppMode) {
+        onClick(node);
+        return;
+    }
+
+    // NORMAL WEB MODE LOGIC
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
 
     if (isTouch) {
@@ -64,21 +74,18 @@ export const NodeItem = ({
         const DOUBLE_TAP_DELAY = 300;
 
         if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
-            // Bấm 2 lần liên tục -> Truy cập (Đi tiếp)
-            // Kể cả khi nút thao tác có hiện hay không vẫn đi tiếp
+            // Bấm 2 lần liên tục -> Truy cập
             onClick(node);
-            lastTapRef.current = 0; // Reset
+            lastTapRef.current = 0; 
         } else {
             // Bấm 1 lần
-            // Nếu đang ẩn nút -> Hiện nút, chặn đi tiếp
-            // Nếu đang hiện nút -> Vẫn chặn đi tiếp (chờ double tap để đi)
             if (!isMobileActive) {
                 setIsMobileActive(true);
             }
             lastTapRef.current = now;
         }
     } else {
-        // Desktop: Click là vào luôn (Hover đã xử lý việc hiện nút)
+        // Desktop
         onClick(node);
     }
   };
@@ -86,7 +93,7 @@ export const NodeItem = ({
   return html`
     <div 
       data-id=${node.id}
-      className=${`group relative bg-white/80 backdrop-blur-sm rounded-2xl border transition-all duration-300 p-5 flex items-center justify-between overflow-hidden ${!isSorting ? 'border-white/50 shadow-soft cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'border-indigo-200 shadow-none'}`}
+      className=${`group relative bg-white/80 backdrop-blur-sm rounded-2xl border transition-all duration-300 p-5 flex items-center justify-between overflow-hidden ${!isSorting ? 'border-white/50 shadow-soft cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'border-indigo-200 shadow-none'} ${isAppMode ? 'py-6 active:bg-indigo-50/50' : ''}`}
       onClick=${handleItemClick}
       onMouseLeave=${() => setIsMobileActive(false)}
       style=${selectNoneStyle}
@@ -105,7 +112,7 @@ export const NodeItem = ({
         `}
       
         <div className=${`p-3.5 rounded-2xl flex-shrink-0 transition-all duration-300 shadow-sm ${!isSorting && 'group-hover:scale-110'} ${isLesson ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 ring-1 ring-emerald-100' : 'bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 ring-1 ring-indigo-100'}`}>
-          ${isLesson ? html`<${FileText} size=${24} strokeWidth=${1.5} />` : html`<${Folder} size=${24} strokeWidth=${1.5} />`}
+          ${isLesson ? html`<${FileText} size=${isAppMode ? 28 : 24} strokeWidth=${1.5} />` : html`<${Folder} size=${isAppMode ? 28 : 24} strokeWidth=${1.5} />`}
         </div>
         
         <!-- Content Container -->
@@ -116,12 +123,11 @@ export const NodeItem = ({
           
           <!-- Title Container -->
           <div className="relative h-8 flex items-center overflow-hidden">
-             <!-- Logic: Luôn render H3 để đo độ rộng. Nếu isOverflowing = true thì wrap trong thẻ marquee -->
              ${isOverflowing ? html`
                 <div className="whitespace-nowrap animate-marquee inline-block">
                     <h3 
                         ref=${titleRef}
-                        className="text-lg font-serif font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors leading-snug pr-8"
+                        className=${`font-serif font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors leading-snug pr-8 ${isAppMode ? 'text-xl' : 'text-lg'}`}
                         style=${selectNoneStyle}
                     >
                         ${node.title}
@@ -130,7 +136,7 @@ export const NodeItem = ({
              ` : html`
                 <h3 
                     ref=${titleRef}
-                    className="text-lg font-serif font-semibold text-slate-800 group-hover:text-indigo-700 truncate transition-colors leading-snug"
+                    className=${`font-serif font-semibold text-slate-800 group-hover:text-indigo-700 truncate transition-colors leading-snug ${isAppMode ? 'text-xl' : 'text-lg'}`}
                     style=${selectNoneStyle}
                 >
                     ${node.title}
@@ -141,9 +147,8 @@ export const NodeItem = ({
       </div>
 
       <div className="relative flex items-center pl-2 z-10 bg-transparent">
-        <!-- Actions (Only when NOT sorting) -->
-        <!-- Hiệu ứng mở rộng: max-w-0 -> max-w-xxx -->
-        ${isEditMode && !isSorting && html`
+        <!-- Actions (Only when NOT sorting AND NOT in App Mode) -->
+        ${isEditMode && !isSorting && !isAppMode && html`
           <div 
             className=${`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-in-out ${isMobileActive ? 'max-w-[140px] opacity-100 ml-2' : 'max-w-0 opacity-0 group-hover:max-w-[140px] group-hover:opacity-100 group-hover:ml-2'}`}
             onClick=${(e) => e.stopPropagation()}

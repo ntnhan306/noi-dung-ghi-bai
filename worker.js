@@ -13,6 +13,18 @@ export default {
     }
 
     const url = new URL(request.url);
+    const userAgent = request.headers.get("User-Agent") || "";
+    const referer = request.headers.get("Referer") || "";
+
+    // --- BẢO MẬT USER-AGENT CHO APP ---
+    // Nếu request đến từ đường dẫn "special-application" (App Mode)
+    // Bắt buộc User-Agent phải chứa "NoiDungGhiBaiApp"
+    if (referer.includes("/special-application/") && !userAgent.includes("NoiDungGhiBaiApp")) {
+        return new Response(JSON.stringify({ error: "Access Denied: Invalid App Environment" }), { 
+            status: 403, 
+            headers: corsHeaders 
+        });
+    }
 
     // Helper: Hàm kiểm tra mật khẩu
     async function checkPassword(pass) {
