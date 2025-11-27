@@ -227,9 +227,11 @@ export const Explorer = ({ mode, isAppMode }) => {
   // Hàm xử lý văn bản thông minh (Smart Text Processing)
   const processSmartText = (text, editor) => {
     if (!text) return '';
-    let processed = text.toLowerCase().trim();
     
-    // 1. Bản đồ thay thế dấu câu tiếng Việt
+    // 1. Giữ nguyên text gốc (không toLowerCase) để tận dụng khả năng nhận diện tên riêng của Google
+    let processed = text.trim();
+    
+    // 2. Bản đồ thay thế dấu câu (Case insensitive)
     const replacements = [
         { key: /(gạch đầu dòng)/gi, val: '-' },
         { key: /(chấm phẩy)/gi, val: ';' },
@@ -244,7 +246,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(mũi tên phải)/gi, val: '→' },
         { key: /(mũi tên trái)/gi, val: '←' },
         { key: /(suy ra)/gi, val: '⇒' },
-        { key: /(chấm)/gi, val: '.' }, // Kiểm tra sau chấm phẩy
+        { key: /(chấm)/gi, val: '.' }, 
         { key: /(phẩy)/gi, val: ',' },
         { key: /(cộng)/gi, val: '+' },
         { key: /(trừ)/gi, val: '-' }
@@ -254,10 +256,23 @@ export const Explorer = ({ mode, isAppMode }) => {
         processed = processed.replace(key, val);
     });
 
-    // 2. Xóa khoảng trắng thừa TRƯỚC dấu câu: " . " -> "."
+    // 3. Từ điển Tên riêng / Địa danh phổ biến (Fallback)
+    // Dùng để ép viết hoa nếu Google nhận diện sót
+    const properNouns = [
+        "Việt Nam", "Hà Nội", "Hồ Chí Minh", "Sài Gòn", "Đà Nẵng", "Cần Thơ", "Hải Phòng", "Huế",
+        "Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", "Vũ", "Võ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"
+    ];
+
+    properNouns.forEach(word => {
+        // Regex tìm từ (không phân biệt hoa thường) để thay bằng từ viết hoa chuẩn
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        processed = processed.replace(regex, word);
+    });
+
+    // 4. Xóa khoảng trắng thừa TRƯỚC dấu câu: " . " -> "."
     processed = processed.replace(/\s+([.,;?!%)\]}])/g, '$1');
     
-    // 3. Xử lý viết hoa theo ngữ cảnh
+    // 5. Xử lý viết hoa theo ngữ cảnh
     const rng = editor.selection.getRng();
     let needsCap = false;
 
@@ -289,7 +304,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         processed = processed.charAt(0).toUpperCase() + processed.slice(1);
     }
 
-    // 4. Viết hoa đầu câu trong chính chuỗi đang nói (nếu chuỗi dài có nhiều câu)
+    // 6. Viết hoa đầu câu trong chính chuỗi đang nói (nếu chuỗi dài có nhiều câu)
     processed = processed.replace(/([.?!])\s*([a-zà-ỹ])/g, (match, p1, p2) => p1 + ' ' + p2.toUpperCase());
 
     return processed;
