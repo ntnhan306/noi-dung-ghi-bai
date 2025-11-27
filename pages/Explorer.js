@@ -103,7 +103,7 @@ export const Explorer = ({ mode, isAppMode }) => {
       if (!isBackground) {
         if (shouldDelay) {
             const elapsed = Date.now() - startTime;
-            const MIN_LOAD_TIME = 2500; // 2.5 giây
+            const MIN_LOAD_TIME = 3000; // 3 giây
             if (elapsed < MIN_LOAD_TIME) {
                 await new Promise(resolve => setTimeout(resolve, MIN_LOAD_TIME - elapsed));
             }
