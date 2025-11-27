@@ -247,6 +247,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(mũi tên trái)/gi, val: '←' },
         { key: /(suy ra)/gi, val: '⇒' },
         { key: /(chấm)/gi, val: '.' }, 
+        { key: /(chấm hết)/gi, val: '.' }, 
         { key: /(phẩy)/gi, val: ',' },
         { key: /(cộng)/gi, val: '+' },
         { key: /(trừ)/gi, val: '-' }
