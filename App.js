@@ -175,14 +175,14 @@ const App = () => {
         // Lấy tham số từ URL hiện tại
         const params = new URLSearchParams(window.location.search);
         
-        // BẢNG ĐỐI CHIẾU KEY BẮT BUỘC (AND logic)
+        // BẢNG ĐỐI CHIẾU KEY BẮT BUỘC (AND logic) - SIÊU BẢO MẬT
         const REQUIRED_KEYS = {
             'key': 'NoiDungGhiBaiSecret2024',
-            'key1': 'xpsqzo5qiywdo9ig9569v3gdknmfc846zvox9ew5y8a1xm1ax1',
-            'key2': 'h6sx6lhzk282uyc14kecmi0hante7dzejkqp9bb54fvcv5kxbv',
-            'key3': 'd97uor31yq7am0obk4vrphx1pprvzi1xdnhntdw0rcqq7xq1pz',
-            'key4': '84tjchq95m7p4tm1l4cwuzrshyszj5y3j93832tb41qkjsom3j',
-            'key5': 'cd4zxw1y1jlymzvy13etzgrt677p6yi3acagzb7z54h6w77qjb'
+            'key1': 'lty7zpnw5osslfj1o89znurovmi0y8d9cv5zuukgxigqbowjyaf3hnek0toeee0tdh6h6gtixzt3v6fmafpr9qsowkns9pyswavb',
+            'key2': 'anklp677xs4nukuzzbiluus4q5yssi9wr662tqcth6sfacdlm0wcafae0dopwm5c7d3t36yqh1us1ok7rpt0y75dry0bsmkkpqga',
+            'key3': 'g81jkmi8bu2rrlvhffxa3kl0ameqg15ywdsvrm1b7f4j9swj6pr3rtsr2dqmwv1sygflf36ytudl3md56f8xo170f2z0zd7e70oy0idfe0fufq4eexptckzufcnkkpqt6bb6mtf498ipnevocimmi9',
+            'key4': 'xzyne6bybfqbam1bqabtrkgyo7vxsz68zr0w6w5g5od9rmjg4i3jnmobscejymmwte7wk7qcmpew8ivzyxh6witbd70q7an5aizec1fr911hogee27ve539zy3zlloqwnhzm0lkr2bfxj51pqofipo',
+            'key5': '2l36em0t88qlugivnz6x8b8rzwseoawequ578dzy2yuly7kiy58vyjwy3pvv1ap7x806mgx8vcilp0aycrn4taa01n3k12c10cymgkm3ay9ij1g25n2kim30cg0hui6697vw68qw6106b907z4efklmkfs0gb9th8mke9w0zngih3lcc2gc1204llbvvsjo5dixkupo5'
         };
 
         let isValid = true;
