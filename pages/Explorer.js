@@ -271,12 +271,10 @@ export const Explorer = ({ mode, isAppMode }) => {
     const prefix = mode === 'edit' ? '/edit' : '/view';
     let path = id ? `${prefix}/${id}` : prefix;
 
-    // QUAN TRỌNG: Bảo lưu các tham số query (đặc biệt là ?key=... cho App Mode)
-    // Nếu không có bước này, khi chuyển trang sẽ mất key -> refresh bị lỗi
-    const currentSearchParams = new URLSearchParams(location.search);
-    const key = currentSearchParams.get('key');
-    if (key) {
-        path += `?key=${key}`;
+    // QUAN TRỌNG: Bảo lưu TOÀN BỘ các tham số query (search params)
+    // Bao gồm tất cả 6 key bảo mật để không bị lỗi Access Denied khi chuyển trang
+    if (location.search) {
+        path += location.search;
     }
 
     navigate(path);

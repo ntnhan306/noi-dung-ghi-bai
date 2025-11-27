@@ -157,7 +157,7 @@ const AccessDenied = () => {
             </div>
             <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Truy cập bị từ chối</h1>
             <p className="text-slate-500 max-w-xs mx-auto">
-                Vui lòng truy cập thông qua Ứng dụng chính thức. Đường dẫn không hợp lệ.
+                Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này.
             </p>
         </div>
     `;
@@ -170,14 +170,31 @@ const App = () => {
   const isAppMode = window.location.pathname.includes('/special-application/');
 
   useEffect(() => {
-    // 2. Security Check: Nếu là App Mode, kiểm tra URL Key
+    // 2. Security Check: Nếu là App Mode, kiểm tra ĐỦ 6 URL Key
     if (isAppMode) {
-        // Lấy tham số từ URL hiện tại (trước khi Router xử lý hash)
+        // Lấy tham số từ URL hiện tại
         const params = new URLSearchParams(window.location.search);
-        const key = params.get('key');
         
-        // MÃ KHÓA BÍ MẬT
-        if (key !== 'NoiDungGhiBaiSecret2024') {
+        // BẢNG ĐỐI CHIẾU KEY BẮT BUỘC (AND logic)
+        const REQUIRED_KEYS = {
+            'key': 'NoiDungGhiBaiSecret2024',
+            'key1': 'xpsqzo5qiywdo9ig9569v3gdknmfc846zvox9ew5y8a1xm1ax1',
+            'key2': 'h6sx6lhzk282uyc14kecmi0hante7dzejkqp9bb54fvcv5kxbv',
+            'key3': 'd97uor31yq7am0obk4vrphx1pprvzi1xdnhntdw0rcqq7xq1pz',
+            'key4': '84tjchq95m7p4tm1l4cwuzrshyszj5y3j93832tb41qkjsom3j',
+            'key5': 'cd4zxw1y1jlymzvy13etzgrt677p6yi3acagzb7z54h6w77qjb'
+        };
+
+        let isValid = true;
+        // Kiểm tra từng key, nếu thiếu hoặc sai bất kỳ key nào -> Chặn
+        for (const [paramName, expectedValue] of Object.entries(REQUIRED_KEYS)) {
+            if (params.get(paramName) !== expectedValue) {
+                isValid = false;
+                break;
+            }
+        }
+
+        if (!isValid) {
             setIsAuthorized(false);
         }
     }
