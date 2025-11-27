@@ -36,6 +36,7 @@ export const Explorer = ({ mode, isAppMode }) => {
   const [isListening, setIsListening] = useState(false);
   const [voiceLang, setVoiceLang] = useState('vi-VN'); 
   const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null); // Timer để đếm ngược 30s im lặng
 
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
@@ -103,7 +104,7 @@ export const Explorer = ({ mode, isAppMode }) => {
       if (!isBackground) {
         if (shouldDelay) {
             const elapsed = Date.now() - startTime;
-            const MIN_LOAD_TIME = 3000; // 3 giây
+            const MIN_LOAD_TIME = 1000; // 1 giây
             if (elapsed < MIN_LOAD_TIME) {
                 await new Promise(resolve => setTimeout(resolve, MIN_LOAD_TIME - elapsed));
             }
@@ -212,14 +213,87 @@ export const Explorer = ({ mode, isAppMode }) => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
     };
   }, [isEditingContent]); 
 
   // --- Voice Logic ---
+  
+  // Hàm xử lý văn bản thông minh (Smart Text Processing)
+  const processSmartText = (text, editor) => {
+    if (!text) return '';
+    let processed = text.toLowerCase().trim();
+    
+    // 1. Bản đồ thay thế dấu câu tiếng Việt
+    const replacements = [
+        { key: /(chấm phẩy)/gi, val: ';' },
+        { key: /(chấm hỏi)/gi, val: '?' },
+        { key: /(chấm than)/gi, val: '!' },
+        { key: /(phần trăm)/gi, val: '%' },
+        { key: /(mở ngoặc đơn)/gi, val: '(' },
+        { key: /(đóng ngoặc đơn)/gi, val: ')' },
+        { key: /(mở ngoặc kép)/gi, val: '"' },
+        { key: /(đóng ngoặc kép)/gi, val: '"' },
+        { key: /(chấm)/gi, val: '.' }, // Kiểm tra sau chấm phẩy
+        { key: /(phẩy)/gi, val: ',' },
+        { key: /(cộng)/gi, val: '+' },
+        { key: /(trừ)/gi, val: '-' }
+    ];
+    
+    replacements.forEach(({key, val}) => {
+        processed = processed.replace(key, val);
+    });
+
+    // 2. Xóa khoảng trắng thừa TRƯỚC dấu câu: " . " -> "."
+    processed = processed.replace(/\s+([.,;?!%)\]}])/g, '$1');
+    
+    // 3. Xử lý viết hoa theo ngữ cảnh
+    const rng = editor.selection.getRng();
+    let needsCap = false;
+
+    // Kiểm tra nếu đang ở đầu vùng chọn hoặc editor trống
+    if (rng.startOffset === 0) {
+        const node = editor.selection.getNode();
+        // Nếu là đầu dòng hoặc thẻ li (gạch đầu dòng)
+        if (node.nodeName === 'LI' || node.innerText.trim().length === 0) {
+            needsCap = true;
+        }
+    } else {
+        // Lấy ký tự liền trước con trỏ để kiểm tra
+        const textContent = rng.startContainer.textContent || "";
+        // Lấy khoảng 3 ký tự trước đó để check
+        const prevContext = textContent.slice(Math.max(0, rng.startOffset - 3), rng.startOffset).trim();
+        const prevChar = textContent.charAt(rng.startOffset - 1);
+
+        // Viết hoa sau dấu ., ?, !
+        if (['.', '!', '?', '\n'].includes(prevChar) || prevContext.endsWith('.') || prevContext.endsWith('!') || prevContext.endsWith('?')) {
+            needsCap = true;
+        }
+        // Viết hoa sau dấu gạch đầu dòng (-)
+        if (prevChar === '-' || prevContext.endsWith('-')) {
+            needsCap = true;
+        }
+    }
+
+    if (needsCap && processed.length > 0) {
+        processed = processed.charAt(0).toUpperCase() + processed.slice(1);
+    }
+
+    // 4. Viết hoa đầu câu trong chính chuỗi đang nói (nếu chuỗi dài có nhiều câu)
+    processed = processed.replace(/([.?!])\s*([a-zà-ỹ])/g, (match, p1, p2) => p1 + ' ' + p2.toUpperCase());
+
+    return processed;
+  };
+
   const toggleVoiceInput = () => {
     if (isListening) {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
+      }
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
       }
       setIsListening(false);
     } else {
@@ -232,8 +306,32 @@ export const Explorer = ({ mode, isAppMode }) => {
       recognition.lang = voiceLang;
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.onstart = () => setIsListening(true);
+
+      // Hàm reset timer 30s
+      const resetSilenceTimer = () => {
+        if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+        }
+        silenceTimerRef.current = setTimeout(() => {
+            console.log("30s im lặng, tự động tắt mic.");
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setIsListening(false);
+        }, 30000); // 30 giây
+      };
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        resetSilenceTimer(); // Bắt đầu đếm ngược ngay khi mở mic
+      };
+
       recognition.onend = () => {
+        // Khi recognition dừng lại (có thể do lỗi hoặc do gọi stop())
+        // Xóa timer để tránh gọi stop() lần nữa
+        if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+        }
         setIsListening(false);
         const editor = window.tinymce.get('editor-container');
         if (editor) {
@@ -241,15 +339,23 @@ export const Explorer = ({ mode, isAppMode }) => {
              if (existingInterim) editor.dom.remove(existingInterim);
         }
       };
+
       recognition.onerror = (event) => {
         console.error("Voice error:", event.error);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         setIsListening(false);
       };
+
       recognition.onresult = (event) => {
+        // CÓ KẾT QUẢ => NGƯỜI DÙNG ĐANG NÓI => RESET TIMER
+        resetSilenceTimer();
+
         const editor = window.tinymce.get('editor-container');
         if (!editor) return;
+        
         let finalChunk = '';
         let interimChunk = '';
+        
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalChunk += event.results[i][0].transcript;
@@ -257,11 +363,19 @@ export const Explorer = ({ mode, isAppMode }) => {
             interimChunk += event.results[i][0].transcript;
           }
         }
+        
+        // Xử lý chunk cuối cùng với logic thông minh
         if (finalChunk) {
             const existingInterim = editor.dom.select('span#voice-interim')[0];
             if (existingInterim) editor.dom.remove(existingInterim);
-            editor.execCommand('mceInsertContent', false, finalChunk + ' ');
+            
+            // Áp dụng xử lý văn bản (Dấu câu, viết hoa...)
+            const smartText = processSmartText(finalChunk, editor);
+            // Thêm dấu cách sau cùng để tách từ tiếp theo
+            editor.execCommand('mceInsertContent', false, smartText + ' ');
         }
+        
+        // Hiển thị chunk tạm thời (màu xám)
         if (interimChunk) {
             const existingInterim = editor.dom.select('span#voice-interim')[0];
             if (existingInterim) {
