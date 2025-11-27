@@ -73,6 +73,11 @@ export const Explorer = ({ mode, isAppMode }) => {
   const fetchData = async (isBackground = false) => {
     if (isFetchingRef.current) return;
     
+    // Logic: Nếu là App Mode VÀ đang xem mục con (nodeId tồn tại) VÀ không phải load ngầm
+    // Thì áp dụng delay tối thiểu 1s để hiện hiệu ứng Ripple
+    const shouldDelay = isAppMode && nodeId && !isBackground;
+    const startTime = Date.now();
+
     if (!isBackground) setLoading(true);
     isFetchingRef.current = true;
 
@@ -94,14 +99,24 @@ export const Explorer = ({ mode, isAppMode }) => {
       console.error("Failed to load data", err);
     } finally {
       isFetchingRef.current = false;
-      if (!isBackground) setLoading(false);
+      
+      if (!isBackground) {
+        if (shouldDelay) {
+            const elapsed = Date.now() - startTime;
+            const MIN_LOAD_TIME = 1000; // 1 giây
+            if (elapsed < MIN_LOAD_TIME) {
+                await new Promise(resolve => setTimeout(resolve, MIN_LOAD_TIME - elapsed));
+            }
+        }
+        setLoading(false);
+      }
     }
   };
 
   // --- Effects ---
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [nodeId]); // Re-fetch when nodeId changes to trigger loader
 
   useEffect(() => {
     const intervalId = setInterval(() => {
