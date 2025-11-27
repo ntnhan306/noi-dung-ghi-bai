@@ -383,6 +383,16 @@ export const Explorer = ({ mode, isAppMode }) => {
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
   if (loading && !allNodes.length) {
+    // APP MODE && NOT ROOT (nodeId exists) => New Ripple Loader
+    if (isAppMode && nodeId) {
+        return html`
+            <div className="flex items-center justify-center h-[60vh]">
+                <div className="loader"></div>
+            </div>
+        `;
+    }
+
+    // Default / Root / Web Mode => Standard Spinner
     return html`
       <div className="flex items-center justify-center h-[60vh] text-slate-400">
         <div className="flex flex-col items-center gap-4">
