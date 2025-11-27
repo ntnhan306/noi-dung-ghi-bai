@@ -37,6 +37,7 @@ export const Explorer = ({ mode, isAppMode }) => {
   const [voiceLang, setVoiceLang] = useState('vi-VN'); 
   const recognitionRef = useRef(null);
   const silenceTimerRef = useRef(null); // Timer để đếm ngược 30s im lặng
+  const shouldListenRef = useRef(false); // Cờ kiểm soát ý định nghe liên tục
 
   // Moving (Cut/Paste) state
   const [movingNode, setMovingNode] = useState(null);
@@ -207,6 +208,8 @@ export const Explorer = ({ mode, isAppMode }) => {
       setEditorReady(false);
     }
     return () => {
+      // Cleanup on unmount
+      shouldListenRef.current = false;
       if (window.tinymce && window.tinymce.get('editor-container')) {
         window.tinymce.get('editor-container').remove();
       }
@@ -228,7 +231,9 @@ export const Explorer = ({ mode, isAppMode }) => {
     
     // 1. Bản đồ thay thế dấu câu tiếng Việt
     const replacements = [
+        { key: /(gạch đầu dòng)/gi, val: '-' },
         { key: /(chấm phẩy)/gi, val: ';' },
+        { key: /(hai chấm)/gi, val: ':' },
         { key: /(chấm hỏi)/gi, val: '?' },
         { key: /(chấm than)/gi, val: '!' },
         { key: /(phần trăm)/gi, val: '%' },
@@ -236,6 +241,9 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(đóng ngoặc đơn)/gi, val: ')' },
         { key: /(mở ngoặc kép)/gi, val: '"' },
         { key: /(đóng ngoặc kép)/gi, val: '"' },
+        { key: /(mũi tên phải)/gi, val: '→' },
+        { key: /(mũi tên trái)/gi, val: '←' },
+        { key: /(suy ra)/gi, val: '⇒' },
         { key: /(chấm)/gi, val: '.' }, // Kiểm tra sau chấm phẩy
         { key: /(phẩy)/gi, val: ',' },
         { key: /(cộng)/gi, val: '+' },
@@ -289,6 +297,8 @@ export const Explorer = ({ mode, isAppMode }) => {
 
   const toggleVoiceInput = () => {
     if (isListening) {
+      // User STOP command
+      shouldListenRef.current = false;
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
@@ -297,6 +307,7 @@ export const Explorer = ({ mode, isAppMode }) => {
       }
       setIsListening(false);
     } else {
+      // User START command
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert("Trình duyệt không hỗ trợ nhập liệu bằng giọng nói.");
@@ -307,6 +318,8 @@ export const Explorer = ({ mode, isAppMode }) => {
       recognition.continuous = true;
       recognition.interimResults = true;
 
+      shouldListenRef.current = true; // Mark intentional start
+
       // Hàm reset timer 30s
       const resetSilenceTimer = () => {
         if (silenceTimerRef.current) {
@@ -314,6 +327,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         }
         silenceTimerRef.current = setTimeout(() => {
             console.log("30s im lặng, tự động tắt mic.");
+            shouldListenRef.current = false; // Timeout reached, mark intentional stop
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
             }
@@ -327,8 +341,20 @@ export const Explorer = ({ mode, isAppMode }) => {
       };
 
       recognition.onend = () => {
-        // Khi recognition dừng lại (có thể do lỗi hoặc do gọi stop())
-        // Xóa timer để tránh gọi stop() lần nữa
+        // Kiểm tra nếu mic tắt nhưng ý định vẫn là nghe (do browser ngắt sau 8-10s)
+        if (shouldListenRef.current) {
+            console.log("Mic bị ngắt đột ngột, đang tự động bật lại...");
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error("Lỗi khi tự động bật lại mic:", e);
+                setIsListening(false);
+                shouldListenRef.current = false;
+            }
+            return;
+        }
+
+        // Tắt bình thường (User stop hoặc Timeout)
         if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
         }
@@ -342,8 +368,11 @@ export const Explorer = ({ mode, isAppMode }) => {
 
       recognition.onerror = (event) => {
         console.error("Voice error:", event.error);
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        setIsListening(false);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+             shouldListenRef.current = false;
+             setIsListening(false);
+        }
+        // Các lỗi khác như 'network', 'no-speech', 'aborted' sẽ để onend xử lý việc restart nếu cần
       };
 
       recognition.onresult = (event) => {
@@ -579,7 +608,7 @@ export const Explorer = ({ mode, isAppMode }) => {
                       </select>
                    </div>
                 </div>
-                <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
+                <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
                 <button onClick=${handleSaveContent} disabled=${saving} className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans disabled:opacity-70">${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
               </div>
             `}
