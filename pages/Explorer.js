@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe } from 'lucide-react';
+import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2 } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -31,6 +31,8 @@ export const Explorer = ({ mode, isAppMode }) => {
   // Content Editing state
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
+  const [autoFormat, setAutoFormat] = useState(true); // Restore Auto Format State
+  const tempContentRef = useRef(null); // Lưu nội dung tạm khi reload editor
 
   // Voice Typing State
   const [isListening, setIsListening] = useState(false);
@@ -160,45 +162,65 @@ export const Explorer = ({ mode, isAppMode }) => {
   useEffect(() => {
     if (isEditingContent) {
       const initTinyMCE = () => {
-        if (window.tinymce) {
-          if (window.tinymce.get('editor-container')) {
-            window.tinymce.get('editor-container').remove();
-          }
-
-          window.tinymce.init({
-            selector: '#editor-container',
-            plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
-            menubar: 'file edit view insert format tools table help',
-            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
-            toolbar_sticky: true,
-            autosave_ask_before_unload: true,
-            autosave_interval: '30s',
-            autosave_prefix: '{path}{query}-{id}-',
-            autosave_restore_when_empty: false,
-            autosave_retention: '2m',
-            image_advtab: true,
-            importcss_append: true,
-            height: '75vh', 
-            min_height: 600,
-            resize: true,
-            image_caption: true,
-            quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
-            noneditable_noneditable_class: 'mceNonEditable',
-            toolbar_mode: 'sliding',
-            contextmenu: 'link image table',
-            content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
-            branding: false,
-            promotion: false,
-            setup: (editor) => {
-              editor.on('init', () => {
-                if (currentNode && currentNode.content) {
-                    editor.setContent(currentNode.content);
-                }
-                setEditorReady(true);
-              });
-            }
-          });
+        // Lưu nội dung hiện tại trước khi init lại (nếu có)
+        if (window.tinymce && window.tinymce.get('editor-container')) {
+           tempContentRef.current = window.tinymce.get('editor-container').getContent();
+           window.tinymce.get('editor-container').remove();
         }
+
+        window.tinymce.init({
+          selector: '#editor-container',
+          // Re-added 'textpattern' plugin
+          plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons textpattern',
+          menubar: 'file edit view insert format tools table help',
+          toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
+          toolbar_sticky: true,
+          autosave_ask_before_unload: true,
+          autosave_interval: '30s',
+          autosave_prefix: '{path}{query}-{id}-',
+          autosave_restore_when_empty: false,
+          autosave_retention: '2m',
+          image_advtab: true,
+          importcss_append: true,
+          height: '75vh', 
+          min_height: 600,
+          resize: true,
+          image_caption: true,
+          quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
+          noneditable_noneditable_class: 'mceNonEditable',
+          toolbar_mode: 'sliding',
+          contextmenu: 'link image table',
+          content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
+          branding: false,
+          promotion: false,
+          // Text Pattern Config
+          textpattern_patterns: autoFormat ? [
+            {start: '*', end: '*', format: 'italic'},
+            {start: '**', end: '**', format: 'bold'},
+            {start: '#', format: 'h1'},
+            {start: '##', format: 'h2'},
+            {start: '###', format: 'h3'},
+            {start: '1. ', cmd: 'InsertOrderedList'},
+            {start: '* ', cmd: 'InsertUnorderedList'},
+            {start: '- ', cmd: 'InsertUnorderedList'}
+          ] : [],
+          setup: (editor) => {
+            editor.on('init', () => {
+              // Ưu tiên lấy từ tempContentRef (khi toggle switch), nếu không thì lấy từ DB
+              const contentToLoad = tempContentRef.current !== null ? tempContentRef.current : (currentNode && currentNode.content);
+              if (contentToLoad) {
+                  editor.setContent(contentToLoad);
+              }
+              setEditorReady(true);
+              // Clear temp ref sau khi load
+              tempContentRef.current = null;
+            });
+            // Cập nhật temp content liên tục để tránh mất khi re-render
+            editor.on('change keyup', () => {
+                tempContentRef.current = editor.getContent();
+            });
+          }
+        });
       };
       setTimeout(initTinyMCE, 100);
     } else {
@@ -206,11 +228,13 @@ export const Explorer = ({ mode, isAppMode }) => {
         window.tinymce.get('editor-container').remove();
       }
       setEditorReady(false);
+      tempContentRef.current = null;
     }
     return () => {
-      // Cleanup on unmount
       shouldListenRef.current = false;
       if (window.tinymce && window.tinymce.get('editor-container')) {
+        // Lưu lại nội dung trước khi unmount (để an toàn)
+        tempContentRef.current = window.tinymce.get('editor-container').getContent();
         window.tinymce.get('editor-container').remove();
       }
       if (recognitionRef.current) {
@@ -220,7 +244,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         clearTimeout(silenceTimerRef.current);
       }
     };
-  }, [isEditingContent]); 
+  }, [isEditingContent, autoFormat]); // Re-init when autoFormat changes
 
   // --- Voice Logic ---
   
@@ -232,10 +256,12 @@ export const Explorer = ({ mode, isAppMode }) => {
     let processed = text.trim();
     
     // 2. Bản đồ thay thế dấu câu (Case insensitive)
+    // Ưu tiên các cụm từ dài trước (chấm hết, xuống dòng)
     const replacements = [
+        { key: /(xuống dòng)/gi, val: '<br/>' }, // New Line -> Enter
+        { key: /(chấm hết)/gi, val: '.' }, // Dot only
         { key: /(gạch đầu dòng)/gi, val: '-' },
         { key: /(chấm phẩy)/gi, val: ';' },
-        { key: /(chấm hết)/gi, val: '.' }, 
         { key: /(hai chấm)/gi, val: ':' },
         { key: /(chấm hỏi)/gi, val: '?' },
         { key: /(chấm than)/gi, val: '!' },
@@ -247,7 +273,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(mũi tên phải)/gi, val: '→' },
         { key: /(mũi tên trái)/gi, val: '←' },
         { key: /(suy ra)/gi, val: '⇒' },
-        { key: /(chấm)/gi, val: '.' }, 
+        { key: /(chấm)/gi, val: '. ' }, // Dot + Space
         { key: /(phẩy)/gi, val: ',' },
         { key: /(cộng)/gi, val: '+' },
         { key: /(trừ)/gi, val: '-' }
@@ -271,6 +297,8 @@ export const Explorer = ({ mode, isAppMode }) => {
     });
 
     // 4. Xóa khoảng trắng thừa TRƯỚC dấu câu: " . " -> "."
+    // Nhưng giữ lại khoảng trắng SAU nếu dấu câu đó là ". " (từ lệnh 'chấm')
+    // Logic: Xóa space trước [.,;?!] nhưng nếu là <br/> thì không ảnh hưởng
     processed = processed.replace(/\s+([.,;?!%)\]}])/g, '$1');
     
     // 5. Xử lý viết hoa theo ngữ cảnh
@@ -301,7 +329,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         }
     }
 
-    if (needsCap && processed.length > 0) {
+    if (needsCap && processed.length > 0 && !processed.startsWith('<br')) {
         processed = processed.charAt(0).toUpperCase() + processed.slice(1);
     }
 
@@ -388,7 +416,6 @@ export const Explorer = ({ mode, isAppMode }) => {
              shouldListenRef.current = false;
              setIsListening(false);
         }
-        // Các lỗi khác như 'network', 'no-speech', 'aborted' sẽ để onend xử lý việc restart nếu cần
       };
 
       recognition.onresult = (event) => {
@@ -416,8 +443,16 @@ export const Explorer = ({ mode, isAppMode }) => {
             
             // Áp dụng xử lý văn bản (Dấu câu, viết hoa...)
             const smartText = processSmartText(finalChunk, editor);
-            // Thêm dấu cách sau cùng để tách từ tiếp theo
-            editor.execCommand('mceInsertContent', false, smartText + ' ');
+            
+            // Thêm dấu cách sau cùng để tách từ tiếp theo (trừ khi là xuống dòng)
+            const suffix = smartText.endsWith(' ') || smartText.endsWith('<br/>') ? '' : ' ';
+            editor.execCommand('mceInsertContent', false, smartText + suffix);
+            
+            // Trigger textpattern logic if enabled
+            if (autoFormat && smartText.trim().length > 0) {
+                // Simulate space to trigger TinyMCE pattern matching (e.g., "1." + space)
+                // This is tricky programmatically, but inserting a space helps
+            }
         }
         
         // Hiển thị chunk tạm thời (màu xám)
@@ -623,6 +658,14 @@ export const Explorer = ({ mode, isAppMode }) => {
                         <option value="en-US">English</option>
                       </select>
                    </div>
+                   <div className="h-6 w-px bg-slate-300 mx-1"></div>
+                   <button
+                     onClick=${() => setAutoFormat(!autoFormat)}
+                     className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${autoFormat ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                     title="Bật/Tắt Định dạng tự động (Ví dụ: 1. tự tạo list)"
+                   >
+                      <${Wand2} size=${18} />
+                   </button>
                 </div>
                 <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
                 <button onClick=${handleSaveContent} disabled=${saving} className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans disabled:opacity-70">${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
