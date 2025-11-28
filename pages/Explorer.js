@@ -21,8 +21,8 @@ export const Explorer = ({ mode, isAppMode }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  // View Scale State (Font Size)
-  const [viewScale, setViewScale] = useState(1.0);
+  // View Scale State (Font Size) - Default 1.1rem (~17.6px) for better readability
+  const [viewScale, setViewScale] = useState(1.1);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -454,7 +454,6 @@ export const Explorer = ({ mode, isAppMode }) => {
             // Trigger textpattern logic if enabled
             if (autoFormat && smartText.trim().length > 0) {
                 // Simulate space to trigger TinyMCE pattern matching (e.g., "1." + space)
-                // This is tricky programmatically, but inserting a space helps
             }
         }
         
@@ -593,7 +592,7 @@ export const Explorer = ({ mode, isAppMode }) => {
   };
   
   // Font Size Controls
-  const increaseFontSize = () => setViewScale(prev => Math.min(prev + 0.1, 2.0));
+  const increaseFontSize = () => setViewScale(prev => Math.min(prev + 0.1, 3.0));
   const decreaseFontSize = () => setViewScale(prev => Math.max(prev - 0.1, 0.5));
 
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
@@ -686,11 +685,24 @@ export const Explorer = ({ mode, isAppMode }) => {
                 <textarea id="editor-container" className="w-full"></textarea>
               </div>
             ` : html`
-              <div 
-                className="p-6 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
-                style=${{ fontSize: `${viewScale}rem` }}
-                dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
-              ></div>
+              <div className="relative bg-white flex flex-col">
+                  <!-- CSS Override: Ép buộc sử dụng đơn vị 'em' để scale theo font-size của container cha -->
+                  <style>${`
+                    .lesson-content p, .lesson-content li, .lesson-content div, .lesson-content span { font-size: 1em !important; line-height: 1.8; margin-bottom: 0.8em; }
+                    .lesson-content h1 { font-size: 1.8em !important; line-height: 1.2; margin-top: 1em; margin-bottom: 0.5em; }
+                    .lesson-content h2 { font-size: 1.5em !important; line-height: 1.3; margin-top: 0.9em; margin-bottom: 0.5em; }
+                    .lesson-content h3 { font-size: 1.25em !important; margin-top: 0.8em; margin-bottom: 0.4em; }
+                    .lesson-content h4 { font-size: 1.1em !important; }
+                    .lesson-content blockquote { font-size: 1em !important; }
+                    .lesson-content ul, .lesson-content ol { margin-left: 1.5em; margin-bottom: 1em; }
+                    .lesson-content li { margin-bottom: 0.3em; }
+                  `}</style>
+                  <div 
+                    className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
+                    style=${{ fontSize: `${viewScale}rem` }}
+                    dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
+                  ></div>
+              </div>
             `}
           </div>
         </div>
@@ -715,20 +727,23 @@ export const Explorer = ({ mode, isAppMode }) => {
         
         <!-- Font Size Floating Controls (Only in View Mode, Lesson Type, and Not App Mode) -->
         ${mode === 'view' && !isAppMode && html`
-            <div className="fixed bottom-10 right-10 flex flex-col gap-2 z-50">
+            <div className="fixed bottom-10 right-10 flex flex-col gap-3 z-50">
                 <button 
                     onClick=${increaseFontSize} 
-                    className="p-3 bg-white text-indigo-600 rounded-full shadow-lg shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none"
+                    className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
                     title="Tăng cỡ chữ"
                 >
-                    <${Plus} size=${24} />
+                    <${Plus} size=${24} strokeWidth=${2.5} />
                 </button>
+                <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-500 shadow-sm border border-slate-100 select-none">
+                    ${Math.round(viewScale * 100)}%
+                </div>
                 <button 
                     onClick=${decreaseFontSize} 
-                    className="p-3 bg-white text-indigo-600 rounded-full shadow-lg shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none"
+                    className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
                     title="Giảm cỡ chữ"
                 >
-                    <${Minus} size=${24} />
+                    <${Minus} size=${24} strokeWidth=${2.5} />
                 </button>
             </div>
         `}
