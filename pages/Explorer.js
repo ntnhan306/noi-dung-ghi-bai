@@ -262,7 +262,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(chấm hết)/gi, val: '.' }, // Dot only
         { key: /(gạch đầu dòng)/gi, val: '-' },
         { key: /(chấm phẩy)/gi, val: ';' },
-        { key: /(hai chấm)/gi, val: ':' },
+        { key: /( hai chấm)/gi, val: ':' },
         { key: /(chấm hỏi)/gi, val: '?' },
         { key: /(chấm than)/gi, val: '!' },
         { key: /(phần trăm)/gi, val: '%' },
@@ -274,7 +274,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(mũi tên trái)/gi, val: '←' },
         { key: /(suy ra)/gi, val: '⇒' },
         { key: /(chấm)/gi, val: '. ' }, // Dot + Space
-        { key: /(phẩy)/gi, val: ',' },
+        { key: /( phẩy)/gi, val: ',' },
         { key: /(cộng)/gi, val: '+' },
         { key: /(trừ)/gi, val: '-' }
     ];
