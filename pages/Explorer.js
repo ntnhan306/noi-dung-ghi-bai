@@ -235,6 +235,7 @@ export const Explorer = ({ mode, isAppMode }) => {
     const replacements = [
         { key: /(gạch đầu dòng)/gi, val: '-' },
         { key: /(chấm phẩy)/gi, val: ';' },
+        { key: /(chấm hết)/gi, val: '.' }, 
         { key: /(hai chấm)/gi, val: ':' },
         { key: /(chấm hỏi)/gi, val: '?' },
         { key: /(chấm than)/gi, val: '!' },
@@ -247,7 +248,6 @@ export const Explorer = ({ mode, isAppMode }) => {
         { key: /(mũi tên trái)/gi, val: '←' },
         { key: /(suy ra)/gi, val: '⇒' },
         { key: /(chấm)/gi, val: '.' }, 
-        { key: /(chấm hết)/gi, val: '.' }, 
         { key: /(phẩy)/gi, val: ',' },
         { key: /(cộng)/gi, val: '+' },
         { key: /(trừ)/gi, val: '-' }
