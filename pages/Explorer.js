@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2 } from 'lucide-react';
+import { Plus, Minus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2 } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
@@ -20,6 +20,9 @@ export const Explorer = ({ mode, isAppMode }) => {
   const [allNodes, setAllNodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  // View Scale State (Font Size)
+  const [viewScale, setViewScale] = useState(1.0);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -588,6 +591,10 @@ export const Explorer = ({ mode, isAppMode }) => {
     await fetchData(true);
     setLoading(false);
   };
+  
+  // Font Size Controls
+  const increaseFontSize = () => setViewScale(prev => Math.min(prev + 0.1, 2.0));
+  const decreaseFontSize = () => setViewScale(prev => Math.max(prev - 0.1, 0.5));
 
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
@@ -681,6 +688,7 @@ export const Explorer = ({ mode, isAppMode }) => {
             ` : html`
               <div 
                 className="p-6 md:p-14 prose prose-lg prose-slate max-w-none font-sans leading-loose prose-headings:font-serif prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
+                style=${{ fontSize: `${viewScale}rem` }}
                 dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
               ></div>
             `}
@@ -704,6 +712,26 @@ export const Explorer = ({ mode, isAppMode }) => {
           onClose=${() => setIsModalOpen(false)}
           onSave=${handleSaveModal}
         />
+        
+        <!-- Font Size Floating Controls (Only in View Mode, Lesson Type, and Not App Mode) -->
+        ${mode === 'view' && !isAppMode && html`
+            <div className="fixed bottom-10 right-10 flex flex-col gap-2 z-50">
+                <button 
+                    onClick=${increaseFontSize} 
+                    className="p-3 bg-white text-indigo-600 rounded-full shadow-lg shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none"
+                    title="Tăng cỡ chữ"
+                >
+                    <${Plus} size=${24} />
+                </button>
+                <button 
+                    onClick=${decreaseFontSize} 
+                    className="p-3 bg-white text-indigo-600 rounded-full shadow-lg shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none"
+                    title="Giảm cỡ chữ"
+                >
+                    <${Minus} size=${24} />
+                </button>
+            </div>
+        `}
       </div>
     `;
   }
