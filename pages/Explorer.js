@@ -125,6 +125,38 @@ export const Explorer = ({ mode, isAppMode }) => {
     fetchData();
   }, [nodeId]); // Re-fetch when nodeId changes to trigger loader
 
+  // Auto-detect font size from content when opening a lesson
+  useEffect(() => {
+    if (currentNode?.type === NodeType.LESSON && currentNode.content) {
+        // Chỉ chạy 1 lần khi mới vào bài học (khi viewFontSize đang là default 16)
+        // Dùng DOMParser để tìm font-size đầu tiên
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(currentNode.content, 'text/html');
+            // Tìm phần tử có style font-size
+            const elementWithFontSize = doc.querySelector('[style*="font-size"]');
+            if (elementWithFontSize) {
+                const style = elementWithFontSize.style.fontSize;
+                if (style) {
+                    const match = style.match(/(\d+(\.\d+)?)(pt|px)/);
+                    if (match) {
+                        let size = parseFloat(match[1]);
+                        const unit = match[3];
+                        // Convert px to pt approx (1px = 0.75pt) if needed, though usually TinyMCE saves in pt
+                        if (unit === 'px') size = size * 0.75;
+                        
+                        if (!isNaN(size) && size > 5) {
+                            setViewFontSize(Math.round(size));
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error auto-detecting font size", e);
+        }
+    }
+  }, [currentNode]);
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (navigator.onLine && !isSorting && !isEditingContent) {
@@ -685,23 +717,36 @@ export const Explorer = ({ mode, isAppMode }) => {
               </div>
             ` : html`
               <div className="relative bg-white flex flex-col">
-                  <!-- CSS Override Injection: Force relative units (em) for child elements -->
+                  <!-- CSS Override Injection: Apply font-size to direct child tags instead of container -->
                   <style>
-                    .lesson-content h1 { font-size: 2.5em !important; margin-bottom: 0.5em; }
-                    .lesson-content h2 { font-size: 2em !important; margin-bottom: 0.5em; }
-                    .lesson-content h3 { font-size: 1.75em !important; margin-bottom: 0.5em; }
-                    .lesson-content h4 { font-size: 1.5em !important; margin-bottom: 0.5em; }
-                    .lesson-content h5 { font-size: 1.25em !important; margin-bottom: 0.5em; }
-                    .lesson-content h6 { font-size: 1.1em !important; margin-bottom: 0.5em; }
-                    .lesson-content p { font-size: 1em !important; margin-bottom: 1em; }
-                    .lesson-content ul, .lesson-content ol { font-size: 1em !important; margin-bottom: 1em; padding-left: 2em; }
-                    .lesson-content li { font-size: 1em !important; margin-bottom: 0.25em; }
+                    .lesson-content p, 
+                    .lesson-content ul, 
+                    .lesson-content ol, 
+                    .lesson-content li, 
+                    .lesson-content span, 
+                    .lesson-content div,
+                    .lesson-content td,
+                    .lesson-content th,
+                    .lesson-content pre,
+                    .lesson-content code { 
+                        font-size: ${viewFontSize}pt !important; 
+                        line-height: 1.6;
+                    }
+                    /* Scaled Headings */
+                    .lesson-content h1 { font-size: ${Math.round(viewFontSize * 2.2)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                    .lesson-content h2 { font-size: ${Math.round(viewFontSize * 1.8)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                    .lesson-content h3 { font-size: ${Math.round(viewFontSize * 1.5)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                    .lesson-content h4 { font-size: ${Math.round(viewFontSize * 1.25)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                    .lesson-content h5 { font-size: ${Math.round(viewFontSize * 1.1)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                    .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
+                    
+                    .lesson-content ul, .lesson-content ol { padding-left: 2em; }
+                    .lesson-content li { margin-bottom: 0.25em; }
                   </style>
 
-                  <!-- Main Content Container with Point-based Font Size -->
+                  <!-- Main Content Container (No inline font-size on parent) -->
                   <div 
                     className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
-                    style=${{ fontSize: `${viewFontSize}pt` }}
                     dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
                   ></div>
               </div>
@@ -849,3 +894,4 @@ export const Explorer = ({ mode, isAppMode }) => {
     </div>
   `;
 };
+    
