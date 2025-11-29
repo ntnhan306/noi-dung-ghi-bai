@@ -21,8 +21,8 @@ export const Explorer = ({ mode, isAppMode }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  // View Scale State (Font Size) - Default 1.1rem (~17.6px) for better readability
-  const [viewScale, setViewScale] = useState(1.1);
+  // View Scale State (Zoom Level) - Default 100%
+  const [viewScale, setViewScale] = useState(100);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -591,9 +591,9 @@ export const Explorer = ({ mode, isAppMode }) => {
     setLoading(false);
   };
   
-  // Font Size Controls
-  const increaseFontSize = () => setViewScale(prev => Math.min(prev + 0.1, 3.0));
-  const decreaseFontSize = () => setViewScale(prev => Math.max(prev - 0.1, 0.5));
+  // Font Size Controls (Zoom Steps: +/- 4)
+  const increaseFontSize = () => setViewScale(prev => Math.min(prev + 4, 300));
+  const decreaseFontSize = () => setViewScale(prev => Math.max(prev - 4, 50));
 
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
@@ -686,20 +686,10 @@ export const Explorer = ({ mode, isAppMode }) => {
               </div>
             ` : html`
               <div className="relative bg-white flex flex-col">
-                  <!-- CSS Override: Ép buộc sử dụng đơn vị 'em' để scale theo font-size của container cha -->
-                  <style>${`
-                    .lesson-content p, .lesson-content li, .lesson-content div, .lesson-content span { font-size: 1em !important; line-height: 1.8; margin-bottom: 0.8em; }
-                    .lesson-content h1 { font-size: 1.8em !important; line-height: 1.2; margin-top: 1em; margin-bottom: 0.5em; }
-                    .lesson-content h2 { font-size: 1.5em !important; line-height: 1.3; margin-top: 0.9em; margin-bottom: 0.5em; }
-                    .lesson-content h3 { font-size: 1.25em !important; margin-top: 0.8em; margin-bottom: 0.4em; }
-                    .lesson-content h4 { font-size: 1.1em !important; }
-                    .lesson-content blockquote { font-size: 1em !important; }
-                    .lesson-content ul, .lesson-content ol { margin-left: 1.5em; margin-bottom: 1em; }
-                    .lesson-content li { margin-bottom: 0.3em; }
-                  `}</style>
+                  <!-- Sử dụng CSS zoom để scale toàn bộ nội dung mà không phá vỡ layout hoặc đơn vị -->
                   <div 
                     className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
-                    style=${{ fontSize: `${viewScale}rem` }}
+                    style=${{ zoom: `${viewScale}%` }}
                     dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
                   ></div>
               </div>
@@ -736,7 +726,7 @@ export const Explorer = ({ mode, isAppMode }) => {
                     <${Plus} size=${24} strokeWidth=${2.5} />
                 </button>
                 <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-500 shadow-sm border border-slate-100 select-none">
-                    ${Math.round(viewScale * 100)}%
+                    ${viewScale}%
                 </div>
                 <button 
                     onClick=${decreaseFontSize} 
@@ -847,3 +837,4 @@ export const Explorer = ({ mode, isAppMode }) => {
     </div>
   `;
 };
+    
