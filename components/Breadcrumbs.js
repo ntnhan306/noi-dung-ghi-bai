@@ -6,12 +6,42 @@ import { ChevronRight, Home } from 'lucide-react';
 export const Breadcrumbs = ({ items, onNavigate }) => {
   const navRef = useRef(null);
 
-  // Tự động cuộn sang phải cùng khi đường dẫn thay đổi (hữu ích cho mobile)
+  // 1. Tự động cuộn sang phải cùng khi đường dẫn thay đổi
   useEffect(() => {
-    if (navRef.current) {
-      navRef.current.scrollLeft = navRef.current.scrollWidth;
-    }
+    const timer = setTimeout(() => {
+      if (navRef.current) {
+        navRef.current.scrollTo({
+            left: navRef.current.scrollWidth,
+            behavior: 'smooth'
+        });
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
   }, [items]);
+
+  // 2. Xử lý lăn chuột trên Máy tính: Biến cuộn dọc thành cuộn ngang
+  useEffect(() => {
+    const container = navRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+        // Kiểm tra xem nội dung có bị tràn không (có cần cuộn không)
+        if (container.scrollWidth > container.clientWidth) {
+            // Ngăn trang web cuộn dọc
+            e.preventDefault();
+            // Cộng dồn độ lăn vào vị trí ngang (lăn xuống -> sang phải)
+            container.scrollLeft += e.deltaY;
+        }
+    };
+
+    // Thêm event listener với passive: false để có thể dùng preventDefault
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+        container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   return html`
     <!-- CSS để ẩn thanh cuộn nhưng vẫn cho phép cuộn -->
@@ -27,7 +57,7 @@ export const Breadcrumbs = ({ items, onNavigate }) => {
     
     <nav 
       ref=${navRef}
-      className="breadcrumbs-scroll flex items-center space-x-1 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap p-1.5 bg-white/60 backdrop-blur-md border border-white/60 rounded-full shadow-sm max-w-full"
+      className="breadcrumbs-scroll flex items-center space-x-1 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap p-1.5 bg-white/60 backdrop-blur-md border border-white/60 rounded-full shadow-sm max-w-full touch-pan-x"
     >
       <button 
         onClick=${() => onNavigate(null)}
