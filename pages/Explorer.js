@@ -23,6 +23,8 @@ export const Explorer = ({ mode, isAppMode }) => {
   
   // View Font Size State (Points) - Default 16pt
   const [viewFontSize, setViewFontSize] = useState(16);
+  // Ref to track initialized lesson to prevent reset on background fetch
+  const lastInitializedLessonId = useRef(null);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -127,33 +129,48 @@ export const Explorer = ({ mode, isAppMode }) => {
 
   // Auto-detect font size from content when opening a lesson
   useEffect(() => {
-    if (currentNode?.type === NodeType.LESSON && currentNode.content) {
-        // Chỉ chạy 1 lần khi mới vào bài học (khi viewFontSize đang là default 16)
-        // Dùng DOMParser để tìm font-size đầu tiên
-        try {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(currentNode.content, 'text/html');
-            // Tìm phần tử có style font-size
-            const elementWithFontSize = doc.querySelector('[style*="font-size"]');
-            if (elementWithFontSize) {
-                const style = elementWithFontSize.style.fontSize;
-                if (style) {
-                    const match = style.match(/(\d+(\.\d+)?)(pt|px)/);
-                    if (match) {
-                        let size = parseFloat(match[1]);
-                        const unit = match[3];
-                        // Convert px to pt approx (1px = 0.75pt) if needed, though usually TinyMCE saves in pt
-                        if (unit === 'px') size = size * 0.75;
-                        
-                        if (!isNaN(size) && size > 5) {
-                            setViewFontSize(Math.round(size));
+    if (currentNode?.type === NodeType.LESSON) {
+        // Chỉ chạy logic detect khi ID bài học thay đổi (tức là mới vào bài mới)
+        // Bỏ qua nếu update do background fetch (ID vẫn giống cũ)
+        if (lastInitializedLessonId.current !== currentNode.id) {
+            if (currentNode.content) {
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(currentNode.content, 'text/html');
+                    // Tìm phần tử có style font-size
+                    const elementWithFontSize = doc.querySelector('[style*="font-size"]');
+                    if (elementWithFontSize) {
+                        const style = elementWithFontSize.style.fontSize;
+                        if (style) {
+                            const match = style.match(/(\d+(\.\d+)?)(pt|px)/);
+                            if (match) {
+                                let size = parseFloat(match[1]);
+                                const unit = match[3];
+                                // Convert px to pt approx (1px = 0.75pt) if needed, though usually TinyMCE saves in pt
+                                if (unit === 'px') size = size * 0.75;
+                                
+                                if (!isNaN(size) && size > 5) {
+                                    setViewFontSize(Math.round(size));
+                                }
+                            }
                         }
+                    } else {
+                        // Nếu không tìm thấy font size cụ thể, reset về 16pt mặc định
+                        setViewFontSize(16);
                     }
+                } catch (e) {
+                    console.error("Error auto-detecting font size", e);
+                    setViewFontSize(16);
                 }
+            } else {
+                setViewFontSize(16);
             }
-        } catch (e) {
-            console.error("Error auto-detecting font size", e);
+            // Đánh dấu đã init cho bài học này
+            lastInitializedLessonId.current = currentNode.id;
         }
+    } else {
+        // Nếu thoát ra khỏi bài học (về folder), reset ref để lần sau vào lại sẽ detect lại
+        lastInitializedLessonId.current = null;
     }
   }, [currentNode]);
 
@@ -894,4 +911,3 @@ export const Explorer = ({ mode, isAppMode }) => {
     </div>
   `;
 };
-    
