@@ -5,46 +5,76 @@ import { ChevronRight, Home } from 'lucide-react';
 
 export const Breadcrumbs = ({ items, onNavigate }) => {
   const navRef = useRef(null);
+  const isHoveringRef = useRef(false);
+  const hasScrolledRef = useRef(false); // Đánh dấu đã cuộn cho ID hiện tại chưa
+  const lastItemsIdRef = useRef('');
 
-  // 1. Tự động cuộn sang phải cùng khi đường dẫn thay đổi
+  // Tạo ID đại diện cho danh sách items hiện tại để phát hiện thay đổi
+  const currentItemsId = items.map(i => i.id).join('-');
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (navRef.current) {
-        navRef.current.scrollTo({
+    // Nếu danh sách đường dẫn thay đổi (chuyển trang) -> Reset trạng thái cuộn
+    if (lastItemsIdRef.current !== currentItemsId) {
+        hasScrolledRef.current = false;
+        lastItemsIdRef.current = currentItemsId;
+    }
+
+    const attemptScroll = () => {
+        // Nếu đã cuộn rồi thì thôi (chặn cuộn lại khi component re-render)
+        if (hasScrolledRef.current) return;
+
+        // Nếu người dùng đang để chuột vào -> Khoan hãy cuộn
+        if (isHoveringRef.current) return;
+
+        if (navRef.current) {
+            navRef.current.scrollTo({
+                left: navRef.current.scrollWidth,
+                behavior: 'smooth'
+            });
+            hasScrolledRef.current = true; // Đánh dấu đã hoàn tất cuộn
+        }
+    };
+
+    // Đợi 300ms để giao diện ổn định rồi mới cuộn
+    const timer = setTimeout(attemptScroll, 300);
+
+    return () => clearTimeout(timer);
+  }, [currentItemsId]);
+
+  const handleMouseEnter = () => {
+    isHoveringRef.current = true;
+  };
+
+  const handleMouseLeave = () => {
+    isHoveringRef.current = false;
+    // Nếu lúc nãy chưa cuộn được do chuột đang đè lên, thì giờ cuộn luôn
+    if (!hasScrolledRef.current && navRef.current) {
+         navRef.current.scrollTo({
             left: navRef.current.scrollWidth,
             behavior: 'smooth'
         });
-      }
-    }, 200);
+        hasScrolledRef.current = true;
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [items]);
-
-  // 2. Xử lý lăn chuột trên Máy tính: Biến cuộn dọc thành cuộn ngang
+  // Xử lý lăn chuột trên Desktop: Cuộn dọc -> Cuộn ngang
   useEffect(() => {
     const container = navRef.current;
     if (!container) return;
 
     const handleWheel = (e) => {
-        // Kiểm tra xem nội dung có bị tràn không (có cần cuộn không)
+        // Chỉ can thiệp nếu nội dung bị tràn (có thanh cuộn)
         if (container.scrollWidth > container.clientWidth) {
-            // Ngăn trang web cuộn dọc
             e.preventDefault();
-            // Cộng dồn độ lăn vào vị trí ngang (lăn xuống -> sang phải)
             container.scrollLeft += e.deltaY;
         }
     };
 
-    // Thêm event listener với passive: false để có thể dùng preventDefault
     container.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-        container.removeEventListener('wheel', handleWheel);
-    };
+    return () => container.removeEventListener('wheel', handleWheel);
   }, []);
 
   return html`
-    <!-- CSS để ẩn thanh cuộn nhưng vẫn cho phép cuộn -->
     <style>
       .breadcrumbs-scroll::-webkit-scrollbar {
         display: none;
@@ -57,6 +87,8 @@ export const Breadcrumbs = ({ items, onNavigate }) => {
     
     <nav 
       ref=${navRef}
+      onMouseEnter=${handleMouseEnter}
+      onMouseLeave=${handleMouseLeave}
       className="breadcrumbs-scroll flex items-center space-x-1 text-sm text-slate-500 mb-8 overflow-x-auto whitespace-nowrap p-1.5 bg-white/60 backdrop-blur-md border border-white/60 rounded-full shadow-sm max-w-full touch-pan-x"
     >
       <button 
