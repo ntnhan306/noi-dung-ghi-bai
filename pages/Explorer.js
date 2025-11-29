@@ -640,8 +640,8 @@ export const Explorer = ({ mode, isAppMode }) => {
   };
   
   // Font Size Controls (Zoom Steps: +/- 4pt)
-  const increaseFontSize = () => setViewFontSize(prev => Math.min(prev + 4, 72));
-  const decreaseFontSize = () => setViewFontSize(prev => Math.max(prev - 4, 8));
+  const increaseFontSize = () => setViewFontSize(prev => Math.min(prev + 4, 74));
+  const decreaseFontSize = () => setViewFontSize(prev => Math.max(prev - 4, 6));
 
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
