@@ -21,8 +21,8 @@ export const Explorer = ({ mode, isAppMode }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
-  // View Scale State (Zoom Level) - Default 100%
-  const [viewScale, setViewScale] = useState(100);
+  // View Font Size State (Points) - Default 16pt
+  const [viewFontSize, setViewFontSize] = useState(16);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -204,7 +204,6 @@ export const Explorer = ({ mode, isAppMode }) => {
             {start: '##', format: 'h2'},
             {start: '###', format: 'h3'},
             {start: '1. ', cmd: 'InsertOrderedList'},
-            {start: '* ', cmd: 'InsertUnorderedList'},
             {start: '- ', cmd: 'InsertUnorderedList'}
           ] : [],
           setup: (editor) => {
@@ -591,9 +590,9 @@ export const Explorer = ({ mode, isAppMode }) => {
     setLoading(false);
   };
   
-  // Font Size Controls (Zoom Steps: +/- 4)
-  const increaseFontSize = () => setViewScale(prev => Math.min(prev + 4, 300));
-  const decreaseFontSize = () => setViewScale(prev => Math.max(prev - 4, 50));
+  // Font Size Controls (Zoom Steps: +/- 4pt)
+  const increaseFontSize = () => setViewFontSize(prev => Math.min(prev + 4, 72));
+  const decreaseFontSize = () => setViewFontSize(prev => Math.max(prev - 4, 8));
 
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
@@ -686,10 +685,23 @@ export const Explorer = ({ mode, isAppMode }) => {
               </div>
             ` : html`
               <div className="relative bg-white flex flex-col">
-                  <!-- Sử dụng CSS zoom để scale toàn bộ nội dung mà không phá vỡ layout hoặc đơn vị -->
+                  <!-- CSS Override Injection: Force relative units (em) for child elements -->
+                  <style>
+                    .lesson-content h1 { font-size: 2.5em !important; margin-bottom: 0.5em; }
+                    .lesson-content h2 { font-size: 2em !important; margin-bottom: 0.5em; }
+                    .lesson-content h3 { font-size: 1.75em !important; margin-bottom: 0.5em; }
+                    .lesson-content h4 { font-size: 1.5em !important; margin-bottom: 0.5em; }
+                    .lesson-content h5 { font-size: 1.25em !important; margin-bottom: 0.5em; }
+                    .lesson-content h6 { font-size: 1.1em !important; margin-bottom: 0.5em; }
+                    .lesson-content p { font-size: 1em !important; margin-bottom: 1em; }
+                    .lesson-content ul, .lesson-content ol { font-size: 1em !important; margin-bottom: 1em; padding-left: 2em; }
+                    .lesson-content li { font-size: 1em !important; margin-bottom: 0.25em; }
+                  </style>
+
+                  <!-- Main Content Container with Point-based Font Size -->
                   <div 
                     className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
-                    style=${{ zoom: `${viewScale}%` }}
+                    style=${{ fontSize: `${viewFontSize}pt` }}
                     dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
                   ></div>
               </div>
@@ -726,7 +738,7 @@ export const Explorer = ({ mode, isAppMode }) => {
                     <${Plus} size=${24} strokeWidth=${2.5} />
                 </button>
                 <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-500 shadow-sm border border-slate-100 select-none">
-                    ${viewScale}%
+                    ${viewFontSize}pt
                 </div>
                 <button 
                     onClick=${decreaseFontSize} 
@@ -837,4 +849,3 @@ export const Explorer = ({ mode, isAppMode }) => {
     </div>
   `;
 };
-    
