@@ -846,7 +846,7 @@ export const Explorer = ({ mode, isAppMode }) => {
   return html`
     <div className="max-w-7xl mx-auto pb-20">
       <!-- ALWAYS Render Breadcrumbs regardless of state -->
-      ${(currentNode || !loading) && html`<${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />`}
+      <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
 
       <!-- Render Main Content Area -->
       ${renderMainContent()}
