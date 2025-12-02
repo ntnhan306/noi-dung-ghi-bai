@@ -645,180 +645,144 @@ export const Explorer = ({ mode, isAppMode }) => {
 
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
-  if (loading && !allNodes.length) {
-    // APP MODE && NOT ROOT (nodeId exists) => New Ripple Loader
-    if (isAppMode && nodeId) {
+  // MAIN RENDER HELPER
+  const renderMainContent = () => {
+    // 1. Loading State
+    if (loading && !allNodes.length) {
+        if (isAppMode && nodeId) {
+            // Ripple Loader for App Mode sub-pages
+            return html`
+                <div className="flex items-center justify-center h-[60vh]">
+                    <div className="loader"></div>
+                </div>
+            `;
+        }
+        // Default Spinner
         return html`
-            <div className="flex items-center justify-center h-[60vh]">
-                <div className="loader"></div>
+          <div className="flex items-center justify-center h-[60vh] text-slate-400">
+            <div className="flex flex-col items-center gap-4">
+               <div className="relative">
+                 <div className="w-12 h-12 rounded-full border-4 border-indigo-100 animate-spin border-t-indigo-600"></div>
+               </div>
+               <span className="font-sans text-sm font-medium text-indigo-600/70">Đang tải dữ liệu...</span>
+            </div>
+          </div>
+        `;
+    }
+
+    // 2. Lesson View
+    if (currentNode?.type === NodeType.LESSON) {
+        return html`
+            <div className="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-white/60 overflow-hidden min-h-[700px] flex flex-col relative">
+              <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-100 bg-white/95 backdrop-blur-sm flex justify-between items-start sticky top-0 z-20">
+                <div>
+                  ${!isAppMode && html`
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 uppercase tracking-widest mb-3">
+                        ${NODE_LABELS[NodeType.LESSON]}
+                      </span>
+                  `}
+                  <h1 className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight">
+                    ${currentNode.title}
+                  </h1>
+                </div>
+                
+                ${mode === 'edit' && !isEditingContent && html`
+                   <div className="flex gap-3">
+                    <button onClick=${() => handleEditTitle(currentNode)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 rounded-xl font-sans text-sm font-medium transition-colors">Sửa tên</button>
+                    <button onClick=${toggleContentEditor} className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans"><${LayoutGrid} size=${18} /> Soạn thảo</button>
+                  </div>
+                `}
+    
+                ${mode === 'edit' && isEditingContent && html`
+                  <div className="flex flex-wrap items-center justify-end gap-3">
+                    <div className="flex items-center bg-slate-100 rounded-xl p-1 mr-2 border border-slate-200">
+                       <button
+                         onClick=${toggleVoiceInput}
+                         className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${isListening ? 'bg-red-500 text-white shadow-md animate-pulse' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
+                         title=${isListening ? "Dừng ghi âm" : "Bắt đầu nhập liệu bằng giọng nói"}
+                       >
+                         ${isListening ? html`<${MicOff} size=${18} />` : html`<${Mic} size=${18} />`}
+                         ${isListening && html`<span className="text-xs font-bold">Đang nghe...</span>`}
+                       </button>
+                       <div className="h-6 w-px bg-slate-300 mx-1"></div>
+                       <div className="relative flex items-center">
+                          <${Globe} size=${14} className="absolute left-2 text-slate-400" />
+                          <select value=${voiceLang} onChange=${(e) => setVoiceLang(e.target.value)} className="pl-7 pr-2 py-1 bg-transparent text-xs font-medium text-slate-600 outline-none cursor-pointer hover:text-indigo-600 appearance-none" disabled=${isListening}>
+                            <option value="vi-VN">Tiếng Việt</option>
+                            <option value="en-US">English</option>
+                          </select>
+                       </div>
+                       <div className="h-6 w-px bg-slate-300 mx-1"></div>
+                       <button
+                         onClick=${() => setAutoFormat(!autoFormat)}
+                         className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${autoFormat ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                         title="Bật/Tắt Định dạng tự động (Ví dụ: 1. tự tạo list)"
+                       >
+                          <${Wand2} size=${18} />
+                       </button>
+                    </div>
+                    <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
+                    <button onClick=${handleSaveContent} disabled=${saving} className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans disabled:opacity-70">${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
+                  </div>
+                `}
+              </div>
+              
+              <div className="flex-1 bg-white relative flex flex-col">
+                ${isEditingContent ? html`
+                  <div className="bg-white select-text min-h-[600px]">
+                    <textarea id="editor-container" className="w-full"></textarea>
+                  </div>
+                ` : html`
+                  <div className="relative bg-white flex flex-col">
+                      <!-- CSS Override Injection -->
+                      <style>
+                        .lesson-content p, 
+                        .lesson-content ul, 
+                        .lesson-content ol, 
+                        .lesson-content li, 
+                        .lesson-content span, 
+                        .lesson-content div,
+                        .lesson-content td,
+                        .lesson-content th,
+                        .lesson-content pre,
+                        .lesson-content code { 
+                            font-size: ${viewFontSize}pt !important; 
+                            line-height: 1.6;
+                        }
+                        /* Scaled Headings */
+                        .lesson-content h1 { font-size: ${Math.round(viewFontSize * 2.2)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                        .lesson-content h2 { font-size: ${Math.round(viewFontSize * 1.8)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                        .lesson-content h3 { font-size: ${Math.round(viewFontSize * 1.5)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                        .lesson-content h4 { font-size: ${Math.round(viewFontSize * 1.25)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                        .lesson-content h5 { font-size: ${Math.round(viewFontSize * 1.1)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
+                        .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
+                        
+                        .lesson-content ul, .lesson-content ol { padding-left: 2em; }
+                        .lesson-content li { margin-bottom: 0.25em; }
+                      </style>
+    
+                      <div 
+                        className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
+                        dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
+                      ></div>
+                  </div>
+                `}
+              </div>
+            </div>
+            
+            <div className="mt-8 px-4">
+               <button 
+                 onClick=${() => handleNavigate(currentNode.parentId)}
+                 className="group text-slate-500 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm inline-flex"
+               >
+                 <div className="p-1 rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại
+               </button>
             </div>
         `;
     }
 
-    // Default / Root / Web Mode => Standard Spinner
+    // 3. List View
     return html`
-      <div className="flex items-center justify-center h-[60vh] text-slate-400">
-        <div className="flex flex-col items-center gap-4">
-           <div className="relative">
-             <div className="w-12 h-12 rounded-full border-4 border-indigo-100 animate-spin border-t-indigo-600"></div>
-           </div>
-           <span className="font-sans text-sm font-medium text-indigo-600/70">Đang tải dữ liệu...</span>
-        </div>
-      </div>
-    `;
-  }
-
-  if (currentNode?.type === NodeType.LESSON) {
-    return html`
-      <div className="max-w-5xl mx-auto pb-20">
-        <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
-        
-        <div className="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-white/60 overflow-hidden min-h-[700px] flex flex-col relative">
-          <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-100 bg-white/95 backdrop-blur-sm flex justify-between items-start sticky top-0 z-20">
-            <div>
-              ${!isAppMode && html`
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 uppercase tracking-widest mb-3">
-                    ${NODE_LABELS[NodeType.LESSON]}
-                  </span>
-              `}
-              <h1 className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight">
-                ${currentNode.title}
-              </h1>
-            </div>
-            
-            ${mode === 'edit' && !isEditingContent && html`
-               <div className="flex gap-3">
-                <button onClick=${() => handleEditTitle(currentNode)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 rounded-xl font-sans text-sm font-medium transition-colors">Sửa tên</button>
-                <button onClick=${toggleContentEditor} className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans"><${LayoutGrid} size=${18} /> Soạn thảo</button>
-              </div>
-            `}
-
-            ${mode === 'edit' && isEditingContent && html`
-              <div className="flex flex-wrap items-center justify-end gap-3">
-                <div className="flex items-center bg-slate-100 rounded-xl p-1 mr-2 border border-slate-200">
-                   <button
-                     onClick=${toggleVoiceInput}
-                     className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${isListening ? 'bg-red-500 text-white shadow-md animate-pulse' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
-                     title=${isListening ? "Dừng ghi âm" : "Bắt đầu nhập liệu bằng giọng nói"}
-                   >
-                     ${isListening ? html`<${MicOff} size=${18} />` : html`<${Mic} size=${18} />`}
-                     ${isListening && html`<span className="text-xs font-bold">Đang nghe...</span>`}
-                   </button>
-                   <div className="h-6 w-px bg-slate-300 mx-1"></div>
-                   <div className="relative flex items-center">
-                      <${Globe} size=${14} className="absolute left-2 text-slate-400" />
-                      <select value=${voiceLang} onChange=${(e) => setVoiceLang(e.target.value)} className="pl-7 pr-2 py-1 bg-transparent text-xs font-medium text-slate-600 outline-none cursor-pointer hover:text-indigo-600 appearance-none" disabled=${isListening}>
-                        <option value="vi-VN">Tiếng Việt</option>
-                        <option value="en-US">English</option>
-                      </select>
-                   </div>
-                   <div className="h-6 w-px bg-slate-300 mx-1"></div>
-                   <button
-                     onClick=${() => setAutoFormat(!autoFormat)}
-                     className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${autoFormat ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                     title="Bật/Tắt Định dạng tự động (Ví dụ: 1. tự tạo list)"
-                   >
-                      <${Wand2} size=${18} />
-                   </button>
-                </div>
-                <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
-                <button onClick=${handleSaveContent} disabled=${saving} className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans disabled:opacity-70">${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
-              </div>
-            `}
-          </div>
-          
-          <div className="flex-1 bg-white relative flex flex-col">
-            ${isEditingContent ? html`
-              <div className="bg-white select-text min-h-[600px]">
-                <textarea id="editor-container" className="w-full"></textarea>
-              </div>
-            ` : html`
-              <div className="relative bg-white flex flex-col">
-                  <!-- CSS Override Injection: Apply font-size to direct child tags instead of container -->
-                  <style>
-                    .lesson-content p, 
-                    .lesson-content ul, 
-                    .lesson-content ol, 
-                    .lesson-content li, 
-                    .lesson-content span, 
-                    .lesson-content div,
-                    .lesson-content td,
-                    .lesson-content th,
-                    .lesson-content pre,
-                    .lesson-content code { 
-                        font-size: ${viewFontSize}pt !important; 
-                        line-height: 1.6;
-                    }
-                    /* Scaled Headings */
-                    .lesson-content h1 { font-size: ${Math.round(viewFontSize * 2.2)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                    .lesson-content h2 { font-size: ${Math.round(viewFontSize * 1.8)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                    .lesson-content h3 { font-size: ${Math.round(viewFontSize * 1.5)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                    .lesson-content h4 { font-size: ${Math.round(viewFontSize * 1.25)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                    .lesson-content h5 { font-size: ${Math.round(viewFontSize * 1.1)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                    .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
-                    
-                    .lesson-content ul, .lesson-content ol { padding-left: 2em; }
-                    .lesson-content li { margin-bottom: 0.25em; }
-                  </style>
-
-                  <!-- Main Content Container (No inline font-size on parent) -->
-                  <div 
-                    className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
-                    dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
-                  ></div>
-              </div>
-            `}
-          </div>
-        </div>
-        
-        <div className="mt-8 px-4">
-           <button 
-             onClick=${() => handleNavigate(currentNode.parentId)}
-             className="group text-slate-500 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm inline-flex"
-           >
-             <div className="p-1 rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại
-           </button>
-        </div>
-
-        <${EditorModal} 
-          isOpen=${isModalOpen}
-          mode=${modalMode}
-          targetType=${currentNode.type}
-          initialData=${editingNode}
-          onClose=${() => setIsModalOpen(false)}
-          onSave=${handleSaveModal}
-        />
-        
-        <!-- Font Size Floating Controls (Only in View Mode, Lesson Type, and Not App Mode) -->
-        ${mode === 'view' && !isAppMode && html`
-            <div className="fixed bottom-10 right-10 flex flex-col gap-3 z-50">
-                <button 
-                    onClick=${increaseFontSize} 
-                    className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
-                    title="Tăng cỡ chữ"
-                >
-                    <${Plus} size=${24} strokeWidth=${2.5} />
-                </button>
-                <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-500 shadow-sm border border-slate-100 select-none">
-                    ${viewFontSize}pt
-                </div>
-                <button 
-                    onClick=${decreaseFontSize} 
-                    className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
-                    title="Giảm cỡ chữ"
-                >
-                    <${Minus} size=${24} strokeWidth=${2.5} />
-                </button>
-            </div>
-        `}
-      </div>
-    `;
-  }
-
-  return html`
-    <div className="max-w-7xl mx-auto pb-20">
-      ${currentNode && html`<${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />`}
-
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
         <div className="relative">
           <h1 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 mb-3 tracking-tight">
@@ -876,7 +840,18 @@ export const Explorer = ({ mode, isAppMode }) => {
           `)}
         </div>
       `}
+    `;
+  };
 
+  return html`
+    <div className="max-w-7xl mx-auto pb-20">
+      <!-- ALWAYS Render Breadcrumbs regardless of state -->
+      ${(currentNode || !loading) && html`<${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />`}
+
+      <!-- Render Main Content Area -->
+      ${renderMainContent()}
+
+      <!-- Global Modals and Overlays -->
       ${movingNode && html`
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-6 animate-in slide-in-from-bottom-10">
             <div className="flex items-center gap-3">
@@ -908,6 +883,29 @@ export const Explorer = ({ mode, isAppMode }) => {
         onClose=${() => setIsPasswordModalOpen(false)}
         onSave=${handleChangePassword}
       />
+      
+      <!-- Font Size Floating Controls (Only in View Mode, Lesson Type, and Not App Mode) -->
+      ${mode === 'view' && !isAppMode && currentNode?.type === NodeType.LESSON && html`
+          <div className="fixed bottom-10 right-10 flex flex-col gap-3 z-50">
+              <button 
+                  onClick=${increaseFontSize} 
+                  className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
+                  title="Tăng cỡ chữ"
+              >
+                  <${Plus} size=${24} strokeWidth=${2.5} />
+              </button>
+              <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-500 shadow-sm border border-slate-100 select-none">
+                  ${viewFontSize}pt
+              </div>
+              <button 
+                  onClick=${decreaseFontSize} 
+                  className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
+                  title="Giảm cỡ chữ"
+              >
+                  <${Minus} size=${24} strokeWidth=${2.5} />
+              </button>
+          </div>
+      `}
     </div>
   `;
 };
