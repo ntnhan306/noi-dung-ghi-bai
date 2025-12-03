@@ -4,8 +4,7 @@ import { html } from './utils/html.js';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Explorer } from './pages/Explorer.js';
 import { AuthGuard } from './pages/AuthGuard.js';
-import { BookOpen, Lock, ShieldAlert, Settings } from 'lucide-react';
-import { SettingsModal } from './components/SettingsModal.js';
+import { BookOpen, Lock, ShieldAlert } from 'lucide-react';
 import { apiService } from './services/apiService.js';
 
 // Detect basename for GitHub Pages vs Cloudflare/Local
@@ -62,7 +61,6 @@ const Layout = ({ children, isAppMode }) => {
   const navigate = useNavigate();
   const isEditMode = location.pathname.startsWith('/edit');
   const [secretCount, setSecretCount] = useState(0);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Background State
   const [backgroundList, setBackgroundList] = useState([]);
@@ -156,13 +154,6 @@ const Layout = ({ children, isAppMode }) => {
 
           <nav className="flex items-center gap-3">
             ${isEditMode && !isAppMode && html`
-              <button 
-                onClick=${() => setIsSettingsOpen(true)}
-                className="p-2.5 text-slate-600 bg-white/30 hover:bg-white/60 border border-white/60 rounded-full transition-all shadow-glass hover:shadow-lg backdrop-blur-md group"
-                title="Cài đặt giao diện"
-              >
-                <${Settings} size=${20} className="group-hover:rotate-90 transition-transform duration-500" />
-              </button>
               <${Link} 
                 to="/view" 
                 className="relative overflow-hidden flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-indigo-900 bg-white/30 hover:bg-white/60 border border-white/60 rounded-full transition-all shadow-glass hover:shadow-lg backdrop-blur-md group"
@@ -187,8 +178,6 @@ const Layout = ({ children, isAppMode }) => {
           </p>
         </div>
       </footer>
-      
-      <${SettingsModal} isOpen=${isSettingsOpen} onClose=${() => setIsSettingsOpen(false)} />
     </div>
   `;
 };

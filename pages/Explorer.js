@@ -2,13 +2,14 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Minus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2 } from 'lucide-react';
+import { Plus, Minus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2, Settings } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
 import { Breadcrumbs } from '../components/Breadcrumbs.js';
 import { NodeItem } from '../components/NodeItem.js';
 import { EditorModal } from '../components/EditorModal.js';
 import { ChangePasswordModal } from '../components/ChangePasswordModal.js';
+import { SettingsModal } from '../components/SettingsModal.js';
 import Sortable from 'sortablejs';
 
 export const Explorer = ({ mode, isAppMode }) => {
@@ -24,6 +25,7 @@ export const Explorer = ({ mode, isAppMode }) => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('CREATE');
   const [editingNode, setEditingNode] = useState(undefined);
   const [targetType, setTargetType] = useState(NodeType.SUBJECT);
@@ -460,6 +462,7 @@ export const Explorer = ({ mode, isAppMode }) => {
         ${mode === 'edit' && !currentNode && html`
           <div className="flex items-center gap-3 relative z-10">
             <button onClick=${() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 px-6 py-3 text-slate-700 bg-white/40 backdrop-blur-md border border-white/50 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white/70 rounded-2xl transition-all text-sm font-bold shadow-glass hover:shadow-lg hover:-translate-y-0.5"><${KeyRound} size=${18} /> Đổi mật khẩu</button>
+            <button onClick=${() => setIsSettingsModalOpen(true)} className="flex items-center gap-2 px-6 py-3 text-slate-700 bg-white/40 backdrop-blur-md border border-white/50 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white/70 rounded-2xl transition-all text-sm font-bold shadow-glass hover:shadow-lg hover:-translate-y-0.5"><${Settings} size=${18} /> Cài đặt</button>
             <button onClick=${handleLogout} className="flex items-center gap-2 px-6 py-3 text-red-500 bg-white/40 backdrop-blur-md border border-white/50 hover:border-red-200 hover:text-red-600 hover:bg-red-50/50 rounded-2xl transition-all text-sm font-bold shadow-glass hover:shadow-lg hover:-translate-y-0.5"><${LogOut} size=${18} /> Đăng xuất</button>
           </div>
         `}
@@ -514,6 +517,7 @@ export const Explorer = ({ mode, isAppMode }) => {
       `}
       <${EditorModal} isOpen=${isModalOpen} mode=${modalMode} targetType=${targetType} initialData=${editingNode} onClose=${() => setIsModalOpen(false)} onSave=${handleSaveModal} />
       <${ChangePasswordModal} isOpen=${isPasswordModalOpen} onClose=${() => setIsPasswordModalOpen(false)} onSave=${handleChangePassword} />
+      <${SettingsModal} isOpen=${isSettingsModalOpen} onClose=${() => setIsSettingsModalOpen(false)} />
       ${mode === 'view' && !isAppMode && currentNode?.type === NodeType.LESSON && html`
           <div className="fixed bottom-12 right-12 flex flex-col gap-4 z-50">
               <button onClick=${increaseFontSize} className="p-4 bg-white/80 backdrop-blur-xl text-indigo-600 rounded-full shadow-glass hover:shadow-neon hover:bg-white hover:scale-110 active:scale-95 transition-all select-none border border-white/60"><${Plus} size=${24} strokeWidth=${3} /></button>
