@@ -78,10 +78,10 @@ export const NodeItem = ({
     }
   };
 
-  // Dynamic Classes based on Mode
+  // Dynamic Classes based on Mode (Using Glassmorphism)
   const containerClasses = isAppMode 
-    ? 'border-b border-slate-100 py-4 px-4 bg-white active:bg-slate-50 transition-colors' // App Mode: List item style, compact, no radius
-    : `group relative bg-white/80 backdrop-blur-sm rounded-2xl border transition-all duration-300 p-5 ${!isSorting ? 'border-white/50 shadow-soft cursor-pointer hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'border-indigo-200 shadow-none'}`;
+    ? 'border-b border-white/30 py-4 px-4 bg-white/40 backdrop-blur-sm active:bg-white/60 transition-colors' 
+    : `group relative bg-white/40 backdrop-blur-md rounded-2xl border transition-all duration-300 p-5 ${!isSorting ? 'border-white/50 shadow-glass cursor-pointer hover:bg-white/60 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'border-indigo-200/50 shadow-none'}`;
 
   return html`
     <div 
@@ -93,19 +93,19 @@ export const NodeItem = ({
     >
       <!-- Decoration (Web Mode Only) -->
       ${!isSorting && !isAppMode && html`
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-white/40 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"></div>
       `}
 
       <div className="relative flex items-center gap-4 flex-1 overflow-hidden z-10">
         <!-- Drag Handle (Only in Sort Mode) -->
         ${isSorting && html`
-          <div className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+          <div className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-indigo-50/50 rounded-lg hover:bg-indigo-100/50 transition-colors">
             <${GripVertical} size=${24} />
           </div>
         `}
       
         <!-- Icon -->
-        <div className=${`flex-shrink-0 transition-all duration-300 ${isAppMode ? 'text-indigo-600' : `p-3.5 rounded-2xl shadow-sm ${!isSorting && 'group-hover:scale-110'} ${isLesson ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 ring-1 ring-emerald-100' : 'bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 ring-1 ring-indigo-100'}`}`}>
+        <div className=${`flex-shrink-0 transition-all duration-300 ${isAppMode ? 'text-indigo-600' : `p-3.5 rounded-2xl shadow-sm ${!isSorting && 'group-hover:scale-110'} ${isLesson ? 'bg-emerald-100/60 text-emerald-600 ring-1 ring-emerald-200/50' : 'bg-indigo-100/60 text-indigo-600 ring-1 ring-indigo-200/50'}`}`}>
           ${isLesson ? html`<${FileText} size=${isAppMode ? 24 : 24} strokeWidth=${1.5} />` : html`<${Folder} size=${isAppMode ? 24 : 24} strokeWidth=${1.5} />`}
         </div>
         
@@ -113,7 +113,7 @@ export const NodeItem = ({
         <div className="min-w-0 flex-1" ref=${containerRef}>
           <!-- Label (Hidden in App Mode) -->
           ${!isAppMode && html`
-            <span className="text-[10px] font-sans font-bold text-slate-400 uppercase tracking-widest mb-1.5 block group-hover:text-indigo-400 transition-colors" style=${selectNoneStyle}>
+            <span className="text-[10px] font-sans font-bold text-slate-500 uppercase tracking-widest mb-1.5 block group-hover:text-indigo-500 transition-colors" style=${selectNoneStyle}>
                 ${NODE_LABELS[node.type]}
             </span>
           `}
@@ -131,7 +131,7 @@ export const NodeItem = ({
                     <div className="whitespace-nowrap animate-marquee inline-block">
                         <h3 
                             ref=${titleRef}
-                            className="font-serif font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors leading-snug text-lg"
+                            className="font-serif font-semibold text-slate-800 group-hover:text-indigo-800 transition-colors leading-snug text-lg"
                             style=${selectNoneStyle}
                         >
                             ${node.title}
@@ -140,7 +140,7 @@ export const NodeItem = ({
                 ` : html`
                     <h3 
                         ref=${titleRef}
-                        className="font-serif font-semibold text-slate-800 group-hover:text-indigo-700 truncate transition-colors leading-snug text-lg"
+                        className="font-serif font-semibold text-slate-800 group-hover:text-indigo-800 truncate transition-colors leading-snug text-lg"
                         style=${selectNoneStyle}
                     >
                         ${node.title}
@@ -161,7 +161,7 @@ export const NodeItem = ({
             >
                 <button 
                 onClick=${() => onStartMove && onStartMove(node)}
-                className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-colors flex-shrink-0"
+                className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-100/50 rounded-full transition-colors flex-shrink-0"
                 title="Di chuyển sang thư mục khác"
                 >
                 <${FolderInput} size=${16} />
@@ -169,14 +169,14 @@ export const NodeItem = ({
 
                 <button 
                 onClick=${() => onEdit && onEdit(node)}
-                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex-shrink-0"
+                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-100/50 rounded-full transition-colors flex-shrink-0"
                 title="Sửa tên"
                 >
                 <${Edit2} size=${16} />
                 </button>
                 <button 
                 onClick=${() => onDelete && onDelete(node)}
-                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
+                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-100/50 rounded-full transition-colors flex-shrink-0"
                 title="Xóa"
                 >
                 <${Trash2} size=${16} />
@@ -185,8 +185,8 @@ export const NodeItem = ({
             `}
             
             ${!isSorting && html`
-            <div className="w-8 h-8 rounded-full bg-transparent group-hover:bg-white flex items-center justify-center transition-colors ml-2 flex-shrink-0">
-                <${ChevronRight} className="text-slate-300 group-hover:text-indigo-500 transition-colors transform group-hover:translate-x-0.5" />
+            <div className="w-8 h-8 rounded-full bg-transparent group-hover:bg-white/40 flex items-center justify-center transition-colors ml-2 flex-shrink-0">
+                <${ChevronRight} className="text-slate-400 group-hover:text-indigo-500 transition-colors transform group-hover:translate-x-0.5" />
             </div>
             `}
         </div>

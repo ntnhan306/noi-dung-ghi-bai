@@ -38,8 +38,10 @@
       }
 
       .tox-tinymce {
-        border-radius: 0.75rem !important;
-        border: 1px solid #e2e8f0 !important;
+        border-radius: 1rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        backdrop-filter: blur(8px);
       }
       
       /* Ẩn thanh cuộn nhưng vẫn cho cuộn */
@@ -88,7 +90,10 @@
               indigo: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5' },
               violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' }
             },
-            boxShadow: { 'soft': '0 10px 40px -10px rgba(0,0,0,0.05)' },
+            boxShadow: { 
+                'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
+                'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+            },
             keyframes: {
               marquee: {
                 '0%': { transform: 'translateX(100%)' },
@@ -102,12 +107,19 @@
                     '100%': { transform: 'translateX(0)', opacity: '1' },
                 }
               },
-              animation: {
-                marquee: 'marquee 15s linear infinite',
-                slideInRight: 'slideInRight 0.3s ease-out forwards',
-                slideInLeft: 'slideInLeft 0.3s ease-out forwards',
+              blob: {
+                "0%": { transform: "translate(0px, 0px) scale(1)" },
+                "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                "100%": { transform: "translate(0px, 0px) scale(1)" }
               }
             },
+            animation: {
+              marquee: 'marquee 15s linear infinite',
+              slideInRight: 'slideInRight 0.3s ease-out forwards',
+              slideInLeft: 'slideInLeft 0.3s ease-out forwards',
+              blob: "blob 7s infinite",
+            }
           },
         },
       }

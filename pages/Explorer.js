@@ -56,6 +56,9 @@ export const Explorer = ({ mode, isAppMode }) => {
 
   // Fetch Lock to prevent race conditions
   const isFetchingRef = useRef(false);
+  
+  // Breadcrumbs Visual State (Freeze during loading)
+  const [visibleBreadcrumbs, setVisibleBreadcrumbs] = useState([]);
 
   // --- Derived State (Moved to top to prevent ReferenceError) ---
   const currentNode = useMemo(() => 
@@ -68,7 +71,8 @@ export const Explorer = ({ mode, isAppMode }) => {
       .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), 
   [allNodes, nodeId]);
 
-  const breadcrumbs = useMemo(() => {
+  // Calculated Breadcrumbs (Based on current data, might change instantly on navigation)
+  const calculatedBreadcrumbs = useMemo(() => {
     const path = [];
     let curr = currentNode;
     while (curr) {
@@ -77,6 +81,13 @@ export const Explorer = ({ mode, isAppMode }) => {
     }
     return path;
   }, [currentNode, allNodes]);
+
+  // Sync visible breadcrumbs with calculated ones ONLY when not loading
+  useEffect(() => {
+    if (!loading) {
+        setVisibleBreadcrumbs(calculatedBreadcrumbs);
+    }
+  }, [loading, calculatedBreadcrumbs]);
 
   // --- Fetch Data Function ---
   const fetchData = async (isBackground = false) => {
@@ -242,7 +253,7 @@ export const Explorer = ({ mode, isAppMode }) => {
           noneditable_noneditable_class: 'mceNonEditable',
           toolbar_mode: 'sliding',
           contextmenu: 'link image table',
-          content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
+          content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; background-color: #ffffff; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
           // Text Pattern Config
@@ -659,12 +670,12 @@ export const Explorer = ({ mode, isAppMode }) => {
         }
         // Default Spinner
         return html`
-          <div className="flex items-center justify-center h-[60vh] text-slate-400">
+          <div className="flex items-center justify-center h-[60vh] text-slate-500">
             <div className="flex flex-col items-center gap-4">
                <div className="relative">
-                 <div className="w-12 h-12 rounded-full border-4 border-indigo-100 animate-spin border-t-indigo-600"></div>
+                 <div className="w-12 h-12 rounded-full border-4 border-white/20 animate-spin border-t-indigo-600 shadow-glass"></div>
                </div>
-               <span className="font-sans text-sm font-medium text-indigo-600/70">Đang tải dữ liệu...</span>
+               <span className="font-sans text-sm font-medium text-indigo-600/80">Đang tải dữ liệu...</span>
             </div>
           </div>
         `;
@@ -673,11 +684,11 @@ export const Explorer = ({ mode, isAppMode }) => {
     // 2. Lesson View
     if (currentNode?.type === NodeType.LESSON) {
         return html`
-            <div className="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 border border-white/60 overflow-hidden min-h-[700px] flex flex-col relative">
-              <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-100 bg-white/95 backdrop-blur-sm flex justify-between items-start sticky top-0 z-20">
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-glass border border-white/40 overflow-hidden min-h-[700px] flex flex-col relative">
+              <div className="px-6 md:px-10 py-6 md:py-8 border-b border-white/30 bg-white/50 backdrop-blur-md flex justify-between items-start sticky top-0 z-20">
                 <div>
                   ${!isAppMode && html`
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 uppercase tracking-widest mb-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50/80 text-indigo-600 uppercase tracking-widest mb-3">
                         ${NODE_LABELS[NodeType.LESSON]}
                       </span>
                   `}
@@ -688,14 +699,14 @@ export const Explorer = ({ mode, isAppMode }) => {
                 
                 ${mode === 'edit' && !isEditingContent && html`
                    <div className="flex gap-3">
-                    <button onClick=${() => handleEditTitle(currentNode)} className="px-4 py-2 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 rounded-xl font-sans text-sm font-medium transition-colors">Sửa tên</button>
+                    <button onClick=${() => handleEditTitle(currentNode)} className="px-4 py-2 text-slate-600 hover:bg-white/50 hover:text-indigo-600 rounded-xl font-sans text-sm font-medium transition-colors border border-transparent hover:border-white/50">Sửa tên</button>
                     <button onClick=${toggleContentEditor} className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans"><${LayoutGrid} size=${18} /> Soạn thảo</button>
                   </div>
                 `}
     
                 ${mode === 'edit' && isEditingContent && html`
                   <div className="flex flex-wrap items-center justify-end gap-3">
-                    <div className="flex items-center bg-slate-100 rounded-xl p-1 mr-2 border border-slate-200">
+                    <div className="flex items-center bg-white/50 backdrop-blur rounded-xl p-1 mr-2 border border-white/50 shadow-sm">
                        <button
                          onClick=${toggleVoiceInput}
                          className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${isListening ? 'bg-red-500 text-white shadow-md animate-pulse' : 'text-slate-600 hover:bg-white hover:text-indigo-600'}`}
@@ -721,19 +732,19 @@ export const Explorer = ({ mode, isAppMode }) => {
                           <${Wand2} size=${18} />
                        </button>
                     </div>
-                    <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
+                    <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-white/50 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 font-sans" disabled=${saving}><${X} size=${18} /> Hủy</button>
                     <button onClick=${handleSaveContent} disabled=${saving} className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 font-sans disabled:opacity-70">${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
                   </div>
                 `}
               </div>
               
-              <div className="flex-1 bg-white relative flex flex-col">
+              <div className="flex-1 relative flex flex-col">
                 ${isEditingContent ? html`
-                  <div className="bg-white select-text min-h-[600px]">
+                  <div className="bg-white/80 select-text min-h-[600px]">
                     <textarea id="editor-container" className="w-full"></textarea>
                   </div>
                 ` : html`
-                  <div className="relative bg-white flex flex-col">
+                  <div className="relative flex flex-col bg-white/40 min-h-[500px]">
                       <!-- CSS Override Injection -->
                       <style>
                         .lesson-content p, 
@@ -763,7 +774,7 @@ export const Explorer = ({ mode, isAppMode }) => {
     
                       <div 
                         className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-xl prose-img:shadow-lg select-text"
-                        dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-slate-100 rounded-full mb-4"></div><p class="font-serif italic text-xl">Chưa có nội dung bài học.</p></div>' }}
+                        dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}
                       ></div>
                   </div>
                 `}
@@ -773,9 +784,9 @@ export const Explorer = ({ mode, isAppMode }) => {
             <div className="mt-8 px-4">
                <button 
                  onClick=${() => handleNavigate(currentNode.parentId)}
-                 className="group text-slate-500 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white hover:shadow-sm inline-flex"
+                 className="group text-slate-600 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-medium px-4 py-2 rounded-xl hover:bg-white/60 hover:shadow-glass inline-flex backdrop-blur-sm border border-transparent hover:border-white/50"
                >
-                 <div className="p-1 rounded-full bg-slate-100 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại
+                 <div className="p-1 rounded-full bg-slate-200/50 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại
                </button>
             </div>
         `;
@@ -785,19 +796,19 @@ export const Explorer = ({ mode, isAppMode }) => {
     return html`
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
         <div className="relative">
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 mb-3 tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 mb-3 tracking-tight drop-shadow-sm">
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
-          <p className="text-slate-500 font-sans text-lg max-w-2xl">
+          <p className="text-slate-600 font-sans text-lg max-w-2xl font-medium">
             ${isAppMode ? '' : (currentNode ? NODE_LABELS[currentNode.type] : 'Chọn một môn học để xem nội dung chi tiết.')}
           </p>
-          <div className="h-1 w-20 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full mt-4 md:mt-6"></div>
+          <div className="h-1.5 w-24 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full mt-4 md:mt-6 shadow-lg shadow-indigo-500/20"></div>
         </div>
         
         ${mode === 'edit' && !currentNode && html`
           <div className="flex items-center gap-3">
-            <button onClick=${() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 text-slate-600 bg-white/60 backdrop-blur border border-white/60 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white rounded-xl transition-all text-sm font-medium shadow-sm hover:shadow-md"><${KeyRound} size=${18} /> Đổi mật khẩu</button>
-            <button onClick=${handleLogout} className="flex items-center gap-2 px-5 py-2.5 text-red-500 bg-white/60 backdrop-blur border border-white/60 hover:border-red-200 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm font-medium shadow-sm hover:shadow-md" title="Đăng xuất"><${LogOut} size=${18} /> Đăng xuất</button>
+            <button onClick=${() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 px-5 py-2.5 text-slate-700 bg-white/40 backdrop-blur-md border border-white/50 hover:border-indigo-200 hover:text-indigo-600 hover:bg-white/60 rounded-xl transition-all text-sm font-medium shadow-glass hover:shadow-lg hover:-translate-y-0.5"><${KeyRound} size=${18} /> Đổi mật khẩu</button>
+            <button onClick=${handleLogout} className="flex items-center gap-2 px-5 py-2.5 text-red-500 bg-white/40 backdrop-blur-md border border-white/50 hover:border-red-200 hover:text-red-600 hover:bg-red-50/50 rounded-xl transition-all text-sm font-medium shadow-glass hover:shadow-lg hover:-translate-y-0.5" title="Đăng xuất"><${LogOut} size=${18} /> Đăng xuất</button>
           </div>
         `}
       </header>
@@ -805,21 +816,21 @@ export const Explorer = ({ mode, isAppMode }) => {
       ${mode === 'edit' && allowedChildTypes.length > 0 && html`
         <div className="mb-10 flex flex-wrap items-center gap-4 font-sans px-2">
           ${isSorting ? html`
-             <button onClick=${handleSaveOrder} disabled=${saving} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide">${saving ? html`<${Loader2} size=${18} className="animate-spin" />` : html`<${Save} size=${18} strokeWidth=${2.5} />`} Lưu vị trí</button>
-             <button onClick=${() => { setIsSorting(false); fetchData(); }} disabled=${saving} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all text-sm font-semibold tracking-wide"><${X} size=${18} strokeWidth=${2.5} /> Hủy</button>
-             <span className="text-indigo-600 font-medium animate-pulse flex items-center gap-2 px-2"><${ArrowUpDown} size=${16} /> Kéo thả biểu tượng <${ClipboardList} size=${16} /> để sắp xếp</span>
+             <button onClick=${handleSaveOrder} disabled=${saving} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide border border-transparent">${saving ? html`<${Loader2} size=${18} className="animate-spin" />` : html`<${Save} size=${18} strokeWidth=${2.5} />`} Lưu vị trí</button>
+             <button onClick=${() => { setIsSorting(false); fetchData(); }} disabled=${saving} className="flex items-center gap-2 px-6 py-3 bg-white/60 backdrop-blur border border-white/50 text-slate-600 rounded-xl hover:bg-white/80 transition-all text-sm font-semibold tracking-wide shadow-glass"><${X} size=${18} strokeWidth=${2.5} /> Hủy</button>
+             <span className="text-indigo-600 font-bold animate-pulse flex items-center gap-2 px-4 py-2 bg-indigo-50/50 rounded-lg border border-indigo-100/50"><${ArrowUpDown} size=${16} /> Kéo thả biểu tượng <${ClipboardList} size=${16} /> để sắp xếp</span>
           ` : html`
              ${allowedChildTypes.map(type => html`
-                <button key=${type} onClick=${() => handleCreate(type)} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide"><${Plus} size=${18} strokeWidth=${2.5} /> Thêm ${NODE_LABELS[type]}</button>
+                <button key=${type} onClick=${() => handleCreate(type)} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 hover:-translate-y-0.5 transition-all text-sm font-semibold tracking-wide border border-transparent"><${Plus} size=${18} strokeWidth=${2.5} /> Thêm ${NODE_LABELS[type]}</button>
              `)}
-             ${children.length > 1 && html`<div className="w-px h-8 bg-slate-300 mx-2"></div><button onClick=${() => setIsSorting(true)} className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-all text-sm font-medium" title="Sắp xếp lại thứ tự"><${ArrowUpDown} size=${18} /> Sắp xếp</button>`}
+             ${children.length > 1 && html`<div className="w-px h-8 bg-slate-300/50 mx-2"></div><button onClick=${() => setIsSorting(true)} className="flex items-center gap-2 px-5 py-3 bg-white/40 backdrop-blur border border-white/50 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 rounded-xl shadow-glass hover:shadow-lg transition-all text-sm font-medium" title="Sắp xếp lại thứ tự"><${ArrowUpDown} size=${18} /> Sắp xếp</button>`}
           `}
         </div>
       `}
 
       ${children.length === 0 ? html`
-        <div className="text-center py-32 bg-white/60 backdrop-blur-sm rounded-3xl border border-dashed border-slate-300/80 hover:border-indigo-300 transition-colors mx-2">
-          <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"><${ListIcon} className="text-indigo-300" size=${48} /></div>
+        <div className="text-center py-32 bg-white/40 backdrop-blur-md rounded-3xl border border-dashed border-white/60 hover:border-indigo-300 transition-colors mx-2 shadow-glass">
+          <div className="w-24 h-24 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"><${ListIcon} className="text-indigo-300" size=${48} /></div>
           <h3 className="text-xl font-serif font-medium text-slate-700">${!currentNode ? 'Chưa có môn học nào' : 'Chưa có nội dung'}</h3>
           <p className="text-slate-500 font-sans mt-2">Danh sách này hiện đang trống.</p>
           ${mode === 'edit' && html`<button onClick=${() => allowedChildTypes[0] && handleCreate(allowedChildTypes[0])} className="mt-6 text-indigo-600 font-medium hover:underline decoration-2 underline-offset-4 font-sans">Tạo mục mới ngay</button>`}
@@ -846,14 +857,14 @@ export const Explorer = ({ mode, isAppMode }) => {
   return html`
     <div className="max-w-7xl mx-auto pb-20">
       <!-- ALWAYS Render Breadcrumbs regardless of state -->
-      <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} />
+      <${Breadcrumbs} items=${visibleBreadcrumbs} onNavigate=${handleNavigate} />
 
       <!-- Render Main Content Area -->
       ${renderMainContent()}
 
       <!-- Global Modals and Overlays -->
       ${movingNode && html`
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-6 animate-in slide-in-from-bottom-10">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/80 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-6 animate-in slide-in-from-bottom-10 border border-white/10">
             <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-600 rounded-lg"><${ClipboardList} size=${20}/></div>
                 <div>
@@ -889,17 +900,17 @@ export const Explorer = ({ mode, isAppMode }) => {
           <div className="fixed bottom-10 right-10 flex flex-col gap-3 z-50">
               <button 
                   onClick=${increaseFontSize} 
-                  className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
+                  className="p-3 bg-white/80 backdrop-blur text-indigo-600 rounded-full shadow-lg shadow-indigo-500/20 hover:bg-white hover:scale-110 active:scale-95 transition-all select-none border border-white/50"
                   title="Tăng cỡ chữ"
               >
                   <${Plus} size=${24} strokeWidth=${2.5} />
               </button>
-              <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-500 shadow-sm border border-slate-100 select-none">
+              <div className="bg-white/80 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-center text-slate-600 shadow-glass border border-white/50 select-none">
                   ${viewFontSize}pt
               </div>
               <button 
                   onClick=${decreaseFontSize} 
-                  className="p-3 bg-white text-indigo-600 rounded-full shadow-xl shadow-indigo-500/20 hover:bg-indigo-50 hover:scale-110 active:scale-95 transition-all select-none ring-1 ring-indigo-50"
+                  className="p-3 bg-white/80 backdrop-blur text-indigo-600 rounded-full shadow-lg shadow-indigo-500/20 hover:bg-white hover:scale-110 active:scale-95 transition-all select-none border border-white/50"
                   title="Giảm cỡ chữ"
               >
                   <${Minus} size=${24} strokeWidth=${2.5} />

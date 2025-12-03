@@ -104,18 +104,26 @@ const Layout = ({ children, isAppMode }) => {
   };
 
   return html`
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex flex-col overflow-x-hidden">
+    <!-- LIQUID BACKGROUND CONTAINER -->
+    <div className="fixed inset-0 -z-10 bg-slate-50 overflow-hidden pointer-events-none">
+        <!-- Blobs -->
+        <div className="absolute top-0 left-[-10%] w-[500px] h-[500px] bg-indigo-200/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+        <div className="absolute top-0 right-[-10%] w-[500px] h-[500px] bg-violet-200/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-32 left-[20%] w-[500px] h-[500px] bg-pink-200/40 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       <!-- App Mode Header gọn hơn -->
-      <header className=${`bg-white/80 backdrop-blur-md border-b border-white/50 sticky top-0 z-30 shadow-sm transition-all ${isAppMode ? 'h-16' : 'h-20'}`}>
+      <header className=${`bg-white/30 backdrop-blur-lg border-b border-white/20 sticky top-0 z-30 shadow-glass transition-all ${isAppMode ? 'h-16' : 'h-20'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <div 
             className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
             onClick=${handleSecretEntry}
           >
-            <div className=${`p-2 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/30 text-white transition-all duration-300 ${secretCount > 0 ? 'ring-4 ring-indigo-100' : ''}`}>
+            <div className=${`p-2 rounded-2xl bg-gradient-to-br from-indigo-500/90 to-violet-500/90 shadow-lg shadow-indigo-500/20 text-white transition-all duration-300 ${secretCount > 0 ? 'ring-4 ring-indigo-300/50' : ''}`}>
               <${BookOpen} className=${isAppMode ? "w-5 h-5" : "w-6 h-6"} strokeWidth=${2.5} />
             </div>
-            <span className=${`font-serif font-bold bg-gradient-to-r from-slate-800 to-indigo-900 bg-clip-text text-transparent tracking-tight ${isAppMode ? 'text-xl' : 'text-2xl'}`}>
+            <span className=${`font-serif font-bold bg-gradient-to-r from-slate-800 to-indigo-900 bg-clip-text text-transparent tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'}`}>
               Nội dung ghi bài
             </span>
           </div>
@@ -124,7 +132,7 @@ const Layout = ({ children, isAppMode }) => {
             ${isEditMode && !isAppMode && html`
               <${Link} 
                 to="/view" 
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-indigo-600 bg-white/50 hover:bg-white border border-transparent hover:border-indigo-100 rounded-full transition-all shadow-sm hover:shadow-md"
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-700 hover:text-indigo-600 bg-white/40 hover:bg-white/80 border border-white/50 hover:border-indigo-100 rounded-full transition-all shadow-sm hover:shadow-glass backdrop-blur-sm"
               >
                 <${BookOpen} size=${16} /> Chế độ xem
               </${Link}>
@@ -137,11 +145,11 @@ const Layout = ({ children, isAppMode }) => {
         ${children}
       </main>
 
-      <footer className="bg-white/60 border-t border-white/50 backdrop-blur-sm py-6 mt-auto">
+      <footer className="bg-white/20 border-t border-white/20 backdrop-blur-md py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-slate-400 text-sm font-sans font-medium">
+          <p className="text-slate-500 text-sm font-sans font-medium">
             &copy; ${new Date().getFullYear()} Nội dung ghi bài.
-            ${!isAppMode && html` <span className="text-slate-300 mx-2">|</span> <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Cloudflare Workers & D1</span>`}
+            ${!isAppMode && html` <span className="text-slate-400 mx-2">|</span> <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Cloudflare Workers & D1</span>`}
           </p>
         </div>
       </footer>
@@ -151,12 +159,12 @@ const Layout = ({ children, isAppMode }) => {
 
 const AccessDenied = () => {
     return html`
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
-            <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-6 animate-bounce">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-24 h-24 bg-red-100/50 backdrop-blur text-red-500 rounded-full flex items-center justify-center mb-6 animate-bounce shadow-xl">
                 <${ShieldAlert} size=${40} />
             </div>
-            <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Truy cập bị từ chối</h1>
-            <p className="text-slate-500 max-w-xs mx-auto">
+            <h1 className="text-3xl font-serif font-bold text-slate-800 mb-2">Truy cập bị từ chối</h1>
+            <p className="text-slate-600 max-w-xs mx-auto font-medium">
                 Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này.
             </p>
         </div>

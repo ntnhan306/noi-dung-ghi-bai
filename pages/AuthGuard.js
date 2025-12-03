@@ -46,36 +46,41 @@ export const AuthGuard = ({ children }) => {
   }
 
   return html`
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-sans">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="bg-blue-600 p-8 text-center">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+    <div className="min-h-screen flex items-center justify-center px-4 font-sans relative overflow-hidden">
+      <!-- Background handled by App.js layout, just centering here -->
+      
+      <div className="max-w-md w-full bg-white/40 backdrop-blur-xl rounded-3xl shadow-glass border border-white/50 overflow-hidden relative z-10 animate-in zoom-in-95 duration-300">
+        <div className="bg-gradient-to-br from-indigo-600/90 to-violet-600/90 p-8 text-center relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+            
+          <div className="w-16 h-16 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <${Lock} className="text-white w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Khu vực Quản trị</h2>
-          <p className="text-blue-100 mt-2 text-sm">Vui lòng nhập mật khẩu để chỉnh sửa nội dung.</p>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Khu vực Quản trị</h2>
+          <p className="text-indigo-100 mt-2 text-sm font-medium">Vui lòng nhập mật khẩu để tiếp tục</p>
         </div>
 
-        <div className="p-8">
+        <div className="p-8 bg-white/30">
           <form onSubmit=${handleLogin}>
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu bảo vệ</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">Mật khẩu bảo vệ</label>
               <input 
                 type="password" 
                 value=${password}
                 onChange=${(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-lg select-text"
+                className="w-full px-5 py-3.5 rounded-xl border border-white/60 bg-white/60 focus:bg-white focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-lg select-text shadow-inner"
                 placeholder="Nhập mật khẩu..."
                 autoFocus
               />
-              ${error && html`<p className="text-red-500 text-sm mt-2">${error}</p>`}
-              <p className="text-xs text-gray-400 mt-2 italic">Gợi ý demo: nhập 'admin' hoặc 'secret123'</p>
+              ${error && html`<p className="text-red-500 text-sm mt-3 font-medium bg-red-50/50 p-2 rounded-lg border border-red-100 text-center">${error}</p>`}
+              <p className="text-xs text-slate-500 mt-3 text-center">Gợi ý demo: 'admin' hoặc 'secret123'</p>
             </div>
 
             <button 
               type="submit"
               disabled=${checking}
-              className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-900/20 disabled:opacity-50"
+              className="w-full bg-slate-900/90 hover:bg-slate-800 text-white py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ${checking ? 'Đang kiểm tra...' : html`
                 <${React.Fragment}>Truy cập <${ArrowRight} size=${18} /></${React.Fragment}>
@@ -83,8 +88,8 @@ export const AuthGuard = ({ children }) => {
             </button>
           </form>
           
-          <div className="mt-6 text-center">
-             <${Link} to="/view" className="text-sm text-gray-500 hover:text-blue-600 hover:underline">
+          <div className="mt-8 text-center border-t border-slate-200/50 pt-6">
+             <${Link} to="/view" className="text-sm font-medium text-slate-600 hover:text-indigo-600 hover:underline decoration-2 underline-offset-4 transition-colors">
                Quay lại trang xem
              </${Link}>
           </div>
