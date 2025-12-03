@@ -18,16 +18,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
 
     <style>
-      /* Chặn chọn văn bản triệt để trên mọi trình duyệt */
       .select-none {
-        -webkit-user-select: none; /* Safari */
-        -moz-user-select: none;    /* Firefox */
-        -ms-user-select: none;     /* IE10+/Edge */
-        user-select: none;         /* Standard */
-        -webkit-touch-callout: none; /* iOS Safari - Chặn menu ngữ cảnh khi giữ lâu */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
       }
       
-      /* Cho phép chọn lại ở input */
       input, textarea, .select-text {
         -webkit-user-select: text;
         -moz-user-select: text;
@@ -37,10 +35,11 @@
       }
       
       .tox-tinymce {
-        border-radius: 1rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        background-color: rgba(255, 255, 255, 0.5) !important;
-        backdrop-filter: blur(8px);
+        border-radius: 1.5rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(16px) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
       }
     </style>
 
@@ -55,11 +54,14 @@
             colors: {
               primary: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb' },
               indigo: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5' },
-              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' }
+              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' },
+              cyan: { 300: '#67e8f9', 400: '#22d3ee' },
+              pink: { 300: '#f9a8d4', 400: '#f472b6' },
+              yellow: { 300: '#fde047' },
             },
             boxShadow: {
-              'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
-              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+              'glass-hover': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
             },
             keyframes: {
               marquee: {
@@ -71,11 +73,21 @@
                 "33%": { transform: "translate(30px, -50px) scale(1.1)" },
                 "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
                 "100%": { transform: "translate(0px, 0px) scale(1)" }
+              },
+              float: {
+                "0%, 100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-10px)" }
+              },
+              shimmer: {
+                "0%": { backgroundPosition: "200% 0" },
+                "100%": { backgroundPosition: "-200% 0" }
               }
             },
             animation: {
               marquee: 'marquee 15s linear infinite',
               blob: "blob 7s infinite",
+              float: "float 6s ease-in-out infinite",
+              shimmer: "shimmer 3s linear infinite",
             }
           },
         },
@@ -95,20 +107,16 @@
     }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900">
     <div id="root"></div>
     <script>
-      // Script loader thông minh để xử lý đường dẫn trên GitHub Pages vs Local
       (function() {
         var path = window.location.pathname;
-        // Mặc định giả định chạy ở root
         var scriptSrc = '/index.js';
         
-        // Nếu phát hiện đang chạy trong thư mục repo (GitHub Pages)
         if (path.indexOf('/noi-dung-ghi-bai') === 0) {
            scriptSrc = '/noi-dung-ghi-bai/index.js';
         } else {
-           // Fallback: Thử tìm file index.js tương đối nếu có thể
            scriptSrc = './index.js'; 
         }
 
@@ -117,7 +125,6 @@
         script.src = scriptSrc;
         script.onerror = function() {
            console.error("Failed to load app script from", scriptSrc);
-           // Thử fallback cuối cùng về root relative
            if (scriptSrc !== './index.js') {
               var fb = document.createElement('script');
               fb.type = 'module';

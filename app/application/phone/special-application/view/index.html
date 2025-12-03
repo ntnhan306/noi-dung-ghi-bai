@@ -12,7 +12,7 @@
     <!-- Primary Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     
-    <!-- Mobile Fallback Fonts (Replacements for system fonts missing on phones) -->
+    <!-- Mobile Fallback Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Cousine:ital,wght@0,400;0,700;1,400;1,700&family=Dancing+Script:wght@400;700&family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Montserrat:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Open+Sans:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,24 +38,24 @@
       }
 
       .tox-tinymce {
-        border-radius: 1rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        background-color: rgba(255, 255, 255, 0.5) !important;
-        backdrop-filter: blur(8px);
+        border-radius: 1.5rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        background-color: rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(16px) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
       }
       
-      /* Ẩn thanh cuộn nhưng vẫn cho cuộn */
       ::-webkit-scrollbar {
         width: 0px;
         background: transparent;
       }
 
-      /* RIPPLE LOADER - Xanh dương nhạt */
+      /* RIPPLE LOADER */
       .loader {
-        width: 40px; /* ~1cm */
+        width: 40px;
         aspect-ratio: 1;
         border-radius: 50%;
-        background: #00b4ff; /* Blue */
+        background: #00b4ff;
         box-shadow: 0 0 0 0 #00b4ff44;
         animation: l2 0.8s infinite linear;
         position: relative;
@@ -88,11 +88,15 @@
             },
             colors: {
               indigo: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5' },
-              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' }
+              violet: { 50: '#f5f3ff', 500: '#8b5cf6', 600: '#7c3aed' },
+              cyan: { 300: '#67e8f9', 400: '#22d3ee' },
+              pink: { 300: '#f9a8d4', 400: '#f472b6' },
+              yellow: { 300: '#fde047' },
             },
             boxShadow: { 
                 'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
                 'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+                'neon': '0 0 20px rgba(99, 102, 241, 0.4)',
             },
             keyframes: {
               marquee: {
@@ -112,6 +116,14 @@
                 "33%": { transform: "translate(30px, -50px) scale(1.1)" },
                 "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
                 "100%": { transform: "translate(0px, 0px) scale(1)" }
+              },
+              float: {
+                "0%, 100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-10px)" }
+              },
+              shimmer: {
+                "0%": { backgroundPosition: "200% 0" },
+                "100%": { backgroundPosition: "-200% 0" }
               }
             },
             animation: {
@@ -119,6 +131,8 @@
               slideInRight: 'slideInRight 0.3s ease-out forwards',
               slideInLeft: 'slideInLeft 0.3s ease-out forwards',
               blob: "blob 7s infinite",
+              float: "float 6s ease-in-out infinite",
+              shimmer: "shimmer 3s linear infinite",
             }
           },
         },
@@ -138,17 +152,13 @@
     }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none overflow-x-hidden">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none overflow-x-hidden selection:bg-indigo-200 selection:text-indigo-900">
     <div id="root"></div>
     <script>
-      // Script loader thông minh để xử lý đường dẫn trên GitHub Pages vs Local
       (function() {
         var path = window.location.pathname;
-        // Mặc định cho GitHub Pages (tuyệt đối)
-        // Đây là cách an toàn nhất để tránh lỗi 404 khi ở thư mục sâu
         var scriptSrc = '/noi-dung-ghi-bai/index.js';
         
-        // Nếu không chạy trên GitHub Pages (ví dụ localhost), thử dùng đường dẫn tương đối
         if (path.indexOf('/noi-dung-ghi-bai') === -1) {
            scriptSrc = '../../../../../index.js'; 
         }
@@ -158,7 +168,6 @@
         script.src = scriptSrc;
         script.onerror = function() {
            console.error("Failed to load app script from", scriptSrc);
-           // Fallback nếu đường dẫn tuyệt đối sai (ví dụ khi dev local mà không có /noi-dung-ghi-bai)
            if (scriptSrc.startsWith('/')) {
               var fb = document.createElement('script');
               fb.type = 'module';

@@ -30,17 +30,14 @@ export const NodeItem = ({
     WebkitTouchCallout: 'none'
   };
 
-  // Chỉ kiểm tra tràn text khi KHÔNG PHẢI chế độ App (vì App mode dùng wrap text)
   useLayoutEffect(() => {
     if (isAppMode) return;
-
     const checkOverflow = () => {
       if (titleRef.current && containerRef.current) {
         const isOver = titleRef.current.scrollWidth > containerRef.current.clientWidth;
         setIsOverflowing(isOver);
       }
     };
-
     checkOverflow();
     const timeout = setTimeout(checkOverflow, 350);
     window.addEventListener('resize', checkOverflow);
@@ -52,18 +49,14 @@ export const NodeItem = ({
 
   const handleItemClick = (e) => {
     if (isSorting) return;
-
     if (isAppMode) {
         onClick(node);
         return;
     }
-
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
-
     if (isTouch) {
         const now = Date.now();
         const DOUBLE_TAP_DELAY = 300;
-
         if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
             onClick(node);
             lastTapRef.current = 0; 
@@ -78,60 +71,66 @@ export const NodeItem = ({
     }
   };
 
-  // Dynamic Classes based on Mode (Using Glassmorphism)
+  // Glass Pebble Styles
   const containerClasses = isAppMode 
-    ? 'border-b border-white/30 py-4 px-4 bg-white/40 backdrop-blur-sm active:bg-white/60 transition-colors' 
-    : `group relative bg-white/40 backdrop-blur-md rounded-2xl border transition-all duration-300 p-5 ${!isSorting ? 'border-white/50 shadow-glass cursor-pointer hover:bg-white/60 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1' : 'border-indigo-200/50 shadow-none'}`;
+    ? 'border-b border-white/20 py-5 px-5 bg-white/20 backdrop-blur-lg active:bg-white/40 transition-all' 
+    : `group relative rounded-3xl p-6 transition-all duration-300 ease-out border backdrop-blur-md overflow-hidden
+       ${!isSorting 
+          ? 'bg-white/40 border-white/60 shadow-glass hover:shadow-glass-hover hover:bg-white/60 hover:-translate-y-1 hover:border-white/80 cursor-pointer' 
+          : 'bg-white/20 border-white/30 shadow-none'}`;
+
+  // Colored shadows for web mode items
+  const shadowColorClass = isLesson 
+    ? 'group-hover:shadow-[0_20px_40px_-10px_rgba(16,185,129,0.15)]' 
+    : 'group-hover:shadow-[0_20px_40px_-10px_rgba(99,102,241,0.15)]';
 
   return html`
     <div 
       data-id=${node.id}
-      className=${`flex items-center justify-between overflow-hidden ${containerClasses}`}
+      className=${`flex items-center justify-between ${containerClasses} ${!isAppMode && !isSorting ? shadowColorClass : ''}`}
       onClick=${handleItemClick}
       onMouseLeave=${() => setIsMobileActive(false)}
       style=${selectNoneStyle}
     >
-      <!-- Decoration (Web Mode Only) -->
+      <!-- Shine/Reflection Effect (Web Mode) -->
       ${!isSorting && !isAppMode && html`
-        <div className="absolute inset-0 bg-gradient-to-r from-white/40 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shimmer pointer-events-none" />
       `}
 
-      <div className="relative flex items-center gap-4 flex-1 overflow-hidden z-10">
-        <!-- Drag Handle (Only in Sort Mode) -->
+      <div className="relative flex items-center gap-5 flex-1 overflow-hidden z-10">
+        <!-- Drag Handle -->
         ${isSorting && html`
-          <div className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-indigo-50/50 rounded-lg hover:bg-indigo-100/50 transition-colors">
+          <div className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-white/40 rounded-xl hover:bg-white/60 transition-colors">
             <${GripVertical} size=${24} />
           </div>
         `}
       
-        <!-- Icon -->
-        <div className=${`flex-shrink-0 transition-all duration-300 ${isAppMode ? 'text-indigo-600' : `p-3.5 rounded-2xl shadow-sm ${!isSorting && 'group-hover:scale-110'} ${isLesson ? 'bg-emerald-100/60 text-emerald-600 ring-1 ring-emerald-200/50' : 'bg-indigo-100/60 text-indigo-600 ring-1 ring-indigo-200/50'}`}`}>
-          ${isLesson ? html`<${FileText} size=${isAppMode ? 24 : 24} strokeWidth=${1.5} />` : html`<${Folder} size=${isAppMode ? 24 : 24} strokeWidth=${1.5} />`}
+        <!-- Icon Bubble -->
+        <div className=${`flex-shrink-0 transition-all duration-300 relative ${isAppMode ? 'text-indigo-600' : `p-4 rounded-2xl shadow-inner ${!isSorting && 'group-hover:scale-105 group-hover:rotate-3'} ${isLesson ? 'bg-emerald-100/50 text-emerald-600 border border-emerald-200/50' : 'bg-indigo-100/50 text-indigo-600 border border-indigo-200/50'}`}`}>
+          ${isLesson ? html`<${FileText} size=${isAppMode ? 24 : 26} strokeWidth=${1.5} />` : html`<${Folder} size=${isAppMode ? 24 : 26} strokeWidth=${1.5} />`}
         </div>
         
-        <!-- Content Container -->
         <div className="min-w-0 flex-1" ref=${containerRef}>
-          <!-- Label (Hidden in App Mode) -->
+          <!-- Label -->
           ${!isAppMode && html`
-            <span className="text-[10px] font-sans font-bold text-slate-500 uppercase tracking-widest mb-1.5 block group-hover:text-indigo-500 transition-colors" style=${selectNoneStyle}>
+            <span className="text-[11px] font-sans font-extrabold text-slate-400/80 uppercase tracking-widest mb-1 block group-hover:text-indigo-500 transition-colors" style=${selectNoneStyle}>
                 ${NODE_LABELS[node.type]}
             </span>
           `}
           
-          <!-- Title Container -->
+          <!-- Title -->
           ${isAppMode ? html`
-             <!-- App Mode: Wrap text, Standard font size -->
-             <h3 className="font-serif font-medium text-slate-800 text-lg leading-snug whitespace-normal" style=${selectNoneStyle}>
+             <h3 className="font-serif font-semibold text-slate-800 text-lg leading-snug whitespace-normal" style=${selectNoneStyle}>
                 ${node.title}
              </h3>
           ` : html`
-             <!-- Web Mode: Marquee logic -->
              <div className="relative h-8 flex items-center overflow-hidden">
                 ${isOverflowing ? html`
                     <div className="whitespace-nowrap animate-marquee inline-block">
                         <h3 
                             ref=${titleRef}
-                            className="font-serif font-semibold text-slate-800 group-hover:text-indigo-800 transition-colors leading-snug text-lg"
+                            className="font-serif font-bold text-slate-800 group-hover:text-indigo-900 transition-colors leading-snug text-xl"
                             style=${selectNoneStyle}
                         >
                             ${node.title}
@@ -140,7 +139,7 @@ export const NodeItem = ({
                 ` : html`
                     <h3 
                         ref=${titleRef}
-                        className="font-serif font-semibold text-slate-800 group-hover:text-indigo-800 truncate transition-colors leading-snug text-lg"
+                        className="font-serif font-bold text-slate-800 group-hover:text-indigo-900 truncate transition-colors leading-snug text-xl"
                         style=${selectNoneStyle}
                     >
                         ${node.title}
@@ -151,42 +150,29 @@ export const NodeItem = ({
         </div>
       </div>
 
-      <!-- Actions (Web Mode Only) -->
+      <!-- Actions (Web Mode) -->
       ${!isAppMode && html`
-        <div className="relative flex items-center pl-2 z-10 bg-transparent">
+        <div className="relative flex items-center pl-4 z-10 bg-transparent">
             ${isEditMode && !isSorting && html`
             <div 
-                className=${`flex items-center gap-1 overflow-hidden transition-all duration-300 ease-in-out ${isMobileActive ? 'max-w-[140px] opacity-100 ml-2' : 'max-w-0 opacity-0 group-hover:max-w-[140px] group-hover:opacity-100 group-hover:ml-2'}`}
+                className=${`flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out ${isMobileActive ? 'max-w-[200px] opacity-100 ml-4' : 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100 group-hover:ml-4'}`}
                 onClick=${(e) => e.stopPropagation()}
             >
-                <button 
-                onClick=${() => onStartMove && onStartMove(node)}
-                className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-100/50 rounded-full transition-colors flex-shrink-0"
-                title="Di chuyển sang thư mục khác"
-                >
-                <${FolderInput} size=${16} />
+                <button onClick=${() => onStartMove && onStartMove(node)} className="p-2.5 text-amber-500 hover:text-amber-700 bg-amber-50/50 hover:bg-amber-100/80 rounded-xl transition-colors shadow-sm" title="Di chuyển">
+                    <${FolderInput} size=${18} />
                 </button>
-
-                <button 
-                onClick=${() => onEdit && onEdit(node)}
-                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-100/50 rounded-full transition-colors flex-shrink-0"
-                title="Sửa tên"
-                >
-                <${Edit2} size=${16} />
+                <button onClick=${() => onEdit && onEdit(node)} className="p-2.5 text-blue-500 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-100/80 rounded-xl transition-colors shadow-sm" title="Sửa tên">
+                    <${Edit2} size=${18} />
                 </button>
-                <button 
-                onClick=${() => onDelete && onDelete(node)}
-                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-100/50 rounded-full transition-colors flex-shrink-0"
-                title="Xóa"
-                >
-                <${Trash2} size=${16} />
+                <button onClick=${() => onDelete && onDelete(node)} className="p-2.5 text-red-500 hover:text-red-700 bg-red-50/50 hover:bg-red-100/80 rounded-xl transition-colors shadow-sm" title="Xóa">
+                    <${Trash2} size=${18} />
                 </button>
             </div>
             `}
             
             ${!isSorting && html`
-            <div className="w-8 h-8 rounded-full bg-transparent group-hover:bg-white/40 flex items-center justify-center transition-colors ml-2 flex-shrink-0">
-                <${ChevronRight} className="text-slate-400 group-hover:text-indigo-500 transition-colors transform group-hover:translate-x-0.5" />
+            <div className="w-10 h-10 rounded-full bg-white/0 group-hover:bg-white/40 flex items-center justify-center transition-all duration-300 ml-2 shadow-none group-hover:shadow-sm">
+                <${ChevronRight} className="text-slate-300 group-hover:text-indigo-500 transition-colors transform group-hover:translate-x-0.5" strokeWidth=${2.5} size=${20} />
             </div>
             `}
         </div>
