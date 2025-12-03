@@ -157,6 +157,24 @@ export default {
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
+      // --- API: Config Backgrounds (GET) ---
+      if (url.pathname === "/api/config/backgrounds" && request.method === "GET") {
+        try {
+            const result = await env.DB.prepare("SELECT value FROM config WHERE key = 'background_images'").first();
+            const images = result && result.value ? JSON.parse(result.value) : [];
+            return new Response(JSON.stringify(images), { headers: corsHeaders });
+        } catch (e) {
+            return new Response(JSON.stringify([]), { headers: corsHeaders });
+        }
+      }
+
+      // --- API: Config Backgrounds (POST) ---
+      if (url.pathname === "/api/config/backgrounds" && request.method === "POST") {
+        const images = await request.json();
+        await env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_images', ?)`).bind(JSON.stringify(images)).run();
+        return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+      }
+
       return new Response("Not found", { status: 404, headers: corsHeaders });
 
     } catch (err) {

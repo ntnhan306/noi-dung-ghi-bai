@@ -143,5 +143,32 @@ export const apiService = {
       console.error("Change password error:", error);
       return false;
     }
+  },
+
+  // Lấy danh sách ảnh nền
+  getBackgrounds: async () => {
+    try {
+        const response = await fetch(`${API_URL}/api/config/backgrounds`);
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (e) {
+        console.error("Error fetching backgrounds", e);
+        return [];
+    }
+  },
+
+  // Lưu danh sách ảnh nền
+  saveBackgrounds: async (images) => {
+    try {
+        const response = await fetch(`${API_URL}/api/config/backgrounds`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(images)
+        });
+        return response.ok;
+    } catch (e) {
+        console.error("Error saving backgrounds", e);
+        return false;
+    }
   }
 };

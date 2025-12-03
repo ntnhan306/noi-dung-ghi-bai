@@ -4,7 +4,9 @@ import { html } from './utils/html.js';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Explorer } from './pages/Explorer.js';
 import { AuthGuard } from './pages/AuthGuard.js';
-import { BookOpen, Lock, ShieldAlert } from 'lucide-react';
+import { BookOpen, Lock, ShieldAlert, Settings } from 'lucide-react';
+import { SettingsModal } from './components/SettingsModal.js';
+import { apiService } from './services/apiService.js';
 
 // Detect basename for GitHub Pages vs Cloudflare/Local
 const getBasename = () => {
@@ -60,6 +62,11 @@ const Layout = ({ children, isAppMode }) => {
   const navigate = useNavigate();
   const isEditMode = location.pathname.startsWith('/edit');
   const [secretCount, setSecretCount] = useState(0);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Background State
+  const [backgroundList, setBackgroundList] = useState([]);
+  const [currentBg, setCurrentBg] = useState(null);
 
   useEffect(() => {
     let timer;
@@ -68,6 +75,31 @@ const Layout = ({ children, isAppMode }) => {
     }
     return () => clearTimeout(timer);
   }, [secretCount]);
+
+  // Load Backgrounds on Mount
+  useEffect(() => {
+    const initBg = async () => {
+        const bgs = await apiService.getBackgrounds();
+        if (bgs && bgs.length > 0) {
+            setBackgroundList(bgs);
+            setCurrentBg(bgs[Math.floor(Math.random() * bgs.length)]);
+        }
+    };
+    initBg();
+  }, []);
+
+  // Rotate Background every 60s
+  useEffect(() => {
+    if (backgroundList.length <= 1) return;
+    const interval = setInterval(() => {
+        const otherBgs = backgroundList.filter(bg => bg !== currentBg);
+        if (otherBgs.length > 0) {
+            const nextBg = otherBgs[Math.floor(Math.random() * otherBgs.length)];
+            setCurrentBg(nextBg);
+        }
+    }, 60000); // 60s
+    return () => clearInterval(interval);
+  }, [backgroundList, currentBg]);
 
   const handleSecretEntry = () => {
     if (isAppMode) return; 
@@ -81,14 +113,24 @@ const Layout = ({ children, isAppMode }) => {
   };
 
   return html`
-    <!-- LIQUID BACKGROUND CONTAINER -->
-    <div className="fixed inset-0 -z-10 bg-slate-50 overflow-hidden pointer-events-none">
-        <!-- Intense Blobs -->
-        <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob"></div>
-        <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-32 left-[20%] w-[800px] h-[800px] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-4000"></div>
-        <div className="absolute top-[40%] right-[30%] w-[600px] h-[600px] bg-cyan-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-yellow-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-4000"></div>
+    <!-- BACKGROUND CONTAINER -->
+    <div className="fixed inset-0 -z-10 bg-slate-50 overflow-hidden pointer-events-none transition-all duration-1000">
+        ${currentBg ? html`
+            <!-- Custom Image Background -->
+            <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out"
+                style=${{ backgroundImage: `url('${currentBg}')` }}
+            >
+                <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]"></div>
+            </div>
+        ` : html`
+            <!-- Default Liquid Background -->
+            <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-32 left-[20%] w-[800px] h-[800px] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-4000"></div>
+            <div className="absolute top-[40%] right-[30%] w-[600px] h-[600px] bg-cyan-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-2000"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-yellow-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-4000"></div>
+        `}
     </div>
 
     <div className="min-h-screen flex flex-col overflow-x-hidden">
@@ -114,6 +156,13 @@ const Layout = ({ children, isAppMode }) => {
 
           <nav className="flex items-center gap-3">
             ${isEditMode && !isAppMode && html`
+              <button 
+                onClick=${() => setIsSettingsOpen(true)}
+                className="p-2.5 text-slate-600 bg-white/30 hover:bg-white/60 border border-white/60 rounded-full transition-all shadow-glass hover:shadow-lg backdrop-blur-md group"
+                title="Cài đặt giao diện"
+              >
+                <${Settings} size=${20} className="group-hover:rotate-90 transition-transform duration-500" />
+              </button>
               <${Link} 
                 to="/view" 
                 className="relative overflow-hidden flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-indigo-900 bg-white/30 hover:bg-white/60 border border-white/60 rounded-full transition-all shadow-glass hover:shadow-lg backdrop-blur-md group"
@@ -138,6 +187,8 @@ const Layout = ({ children, isAppMode }) => {
           </p>
         </div>
       </footer>
+      
+      <${SettingsModal} isOpen=${isSettingsOpen} onClose=${() => setIsSettingsOpen(false)} />
     </div>
   `;
 };
