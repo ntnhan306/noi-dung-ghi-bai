@@ -1,10 +1,11 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { html } from '../utils/html.js';
-import { X, Save, Plus, Trash2, Edit2, Image as ImageIcon, Check, Loader2 } from 'lucide-react';
+import { X, Save, Plus, Trash2, Edit2, Image as ImageIcon, Check, Loader2, Power } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 
-const BackgroundItem = ({ url, index, onChange, onDelete }) => {
+const BackgroundItem = ({ url, index, onChange, onDelete, disabled }) => {
   const [isEditing, setIsEditing] = useState(!url);
   const [inputValue, setInputValue] = useState(url || '');
   const [isValidImage, setIsValidImage] = useState(false);
@@ -31,18 +32,12 @@ const BackgroundItem = ({ url, index, onChange, onDelete }) => {
 
   const handleBlur = () => {
     if (!inputValue.trim()) {
-        if (!url) onDelete(); // Delete empty new row
-        else setIsEditing(false); // Revert to view if empty input on existing
+        if (!url) onDelete();
+        else setIsEditing(false);
         return;
     }
     
-    // Optimistic check
     checkImage(inputValue);
-    // If it seems like a valid check logic will run in useEffect if we pass it up,
-    // but here we want to update the parent only if we confirm logic or user intent.
-    // For now, let's just save whatever the user typed, the parent handles data.
-    // But the requirements say: "try probe... if ok then hide input".
-    
     const img = new Image();
     img.onload = () => {
         setIsValidImage(true);
@@ -51,7 +46,6 @@ const BackgroundItem = ({ url, index, onChange, onDelete }) => {
     };
     img.onerror = () => {
         setIsValidImage(false);
-        // Keep editing mode if invalid
     };
     img.src = inputValue;
   };
@@ -72,7 +66,8 @@ const BackgroundItem = ({ url, index, onChange, onDelete }) => {
                 onChange=${(e) => setInputValue(e.target.value)}
                 onBlur=${handleBlur}
                 onKeyDown=${handleKeyDown}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/40 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm font-medium shadow-inner"
+                disabled=${disabled}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/40 bg-white/50 focus:bg-white/80 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all text-sm font-medium shadow-inner disabled:opacity-50"
                 placeholder="Dán liên kết ảnh hoặc Base64..."
                 autoFocus
             />
@@ -80,7 +75,7 @@ const BackgroundItem = ({ url, index, onChange, onDelete }) => {
                 <${ImageIcon} size=${16} />
             </div>
         </div>
-        <button onClick=${onDelete} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Xóa">
+        <button onClick=${onDelete} disabled=${disabled} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50" title="Xóa">
             <${Trash2} size=${18} />
         </button>
       </div>
@@ -88,18 +83,20 @@ const BackgroundItem = ({ url, index, onChange, onDelete }) => {
   }
 
   return html`
-    <div className="group relative aspect-video rounded-xl overflow-hidden border border-white/50 shadow-sm hover:shadow-md transition-all mb-3 bg-slate-100">
+    <div className=${`group relative aspect-video rounded-xl overflow-hidden border border-white/50 shadow-sm hover:shadow-md transition-all mb-3 bg-slate-100 ${disabled ? 'opacity-50 grayscale' : ''}`}>
       <img src=${url} alt="Background" className="w-full h-full object-cover" />
       
       <!-- Overlay Actions -->
-      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
-        <button onClick=${() => setIsEditing(true)} className="p-2 bg-white/90 text-indigo-600 rounded-lg hover:scale-110 transition-transform shadow-lg" title="Sửa link">
-            <${Edit2} size=${18} />
-        </button>
-        <button onClick=${onDelete} className="p-2 bg-white/90 text-red-500 rounded-lg hover:scale-110 transition-transform shadow-lg" title="Xóa ảnh">
-            <${Trash2} size=${18} />
-        </button>
-      </div>
+      ${!disabled && html`
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
+            <button onClick=${() => setIsEditing(true)} className="p-2 bg-white/90 text-indigo-600 rounded-lg hover:scale-110 transition-transform shadow-lg" title="Sửa link">
+                <${Edit2} size=${18} />
+            </button>
+            <button onClick=${onDelete} className="p-2 bg-white/90 text-red-500 rounded-lg hover:scale-110 transition-transform shadow-lg" title="Xóa ảnh">
+                <${Trash2} size=${18} />
+            </button>
+        </div>
+      `}
       
       <div className="absolute top-2 right-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md opacity-60">
         #${index + 1}
@@ -110,6 +107,7 @@ const BackgroundItem = ({ url, index, onChange, onDelete }) => {
 
 export const SettingsModal = ({ isOpen, onClose }) => {
   const [backgrounds, setBackgrounds] = useState([]);
+  const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -121,12 +119,14 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
   const loadSettings = async () => {
     setLoading(true);
-    const imgs = await apiService.getBackgrounds();
-    setBackgrounds(imgs || []);
+    const config = await apiService.getBackgrounds();
+    setBackgrounds(config.images || []);
+    setIsActive(config.active || false);
     setLoading(false);
   };
 
   const handleAddRow = () => {
+    if (!isActive) return;
     setBackgrounds([...backgrounds, '']);
   };
 
@@ -145,11 +145,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     setSaving(true);
     // Filter out empty strings
     const cleanList = backgrounds.filter(url => url && url.trim().length > 0);
-    const success = await apiService.saveBackgrounds(cleanList);
+    const success = await apiService.saveBackgrounds(cleanList, isActive);
     setSaving(false);
     if (success) {
       onClose();
-      window.location.reload(); // Reload to apply background changes immediately
+      window.location.reload(); 
     } else {
       alert("Có lỗi khi lưu cài đặt!");
     }
@@ -165,22 +165,42 @@ export const SettingsModal = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2 text-slate-800">
             <h2 className="text-xl font-bold font-serif">Cài đặt giao diện</h2>
           </div>
-          <button onClick=${onClose} className="text-slate-400 hover:text-slate-600 hover:bg-white/60 rounded-full p-2 transition-colors">
+          <button onClick=${onClose} className="text-slate-400 hover:text-slate-600 hover:bg-white/60 rounded-full p-2.5 transition-colors">
             <${X} size=${24} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider flex items-center justify-between">
-                <span>Ảnh nền tùy chỉnh</span>
-                <span className="text-xs normal-case font-normal bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">Thay đổi mỗi 60s</span>
+            <!-- Main Toggle Switch -->
+            <div 
+                className=${`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer mb-6 ${isActive ? 'bg-indigo-50/80 border-indigo-200' : 'bg-slate-50/80 border-white/40'}`}
+                onClick=${() => setIsActive(!isActive)}
+            >
+                <div className="flex items-center gap-3">
+                    <div className=${`p-2.5 rounded-xl transition-colors ${isActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-200 text-slate-500'}`}>
+                        <${ImageIcon} size=${20} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-700">Ảnh nền tùy chỉnh</h3>
+                        <p className="text-xs text-slate-500 font-medium">${isActive ? 'Đang bật chế độ trình chiếu' : 'Đang sử dụng nền mặc định'}</p>
+                    </div>
+                </div>
+                
+                <div className=${`w-12 h-7 rounded-full transition-colors relative ${isActive ? 'bg-indigo-500' : 'bg-slate-300'}`}>
+                    <div className=${`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isActive ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                </div>
+            </div>
+
+            <h3 className="text-xs font-extrabold text-slate-400 mb-4 uppercase tracking-wider flex items-center justify-between pl-1">
+                <span>Danh sách ảnh</span>
+                ${isActive && html`<span className="text-[10px] normal-case font-bold bg-white/50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100">Thay đổi mỗi 60s</span>`}
             </h3>
             
             ${loading ? html`
                 <div className="flex justify-center py-10"><${Loader2} className="animate-spin text-indigo-500" /></div>
             ` : html`
-                <div className="space-y-1">
+                <div className="space-y-1 transition-opacity ${!isActive ? 'opacity-50 pointer-events-none' : ''}">
                     ${backgrounds.map((url, index) => html`
                         <${BackgroundItem} 
                             key=${index} 
@@ -188,20 +208,22 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             url=${url} 
                             onChange=${(val) => handleChange(index, val)} 
                             onDelete=${() => handleDelete(index)} 
+                            disabled=${!isActive}
                         />
                     `)}
                 </div>
                 
-                ${backgrounds.length === 0 && html`
+                ${backgrounds.length === 0 && isActive && html`
                     <div className="text-center py-8 border-2 border-dashed border-slate-300/50 rounded-xl bg-slate-50/50 mb-4">
                         <p className="text-slate-400 text-sm">Chưa có ảnh nền nào.</p>
-                        <p className="text-slate-400 text-xs mt-1">Sử dụng nền mặc định.</p>
+                        <p className="text-slate-400 text-xs mt-1">Thêm ảnh để bắt đầu trình chiếu.</p>
                     </div>
                 `}
 
                 <button 
                     onClick=${handleAddRow}
-                    className="w-full py-3 border-2 border-dashed border-indigo-300/50 text-indigo-600 rounded-xl hover:bg-indigo-50 hover:border-indigo-400 transition-all text-sm font-bold flex items-center justify-center gap-2"
+                    disabled=${!isActive}
+                    className="w-full py-3 border-2 border-dashed border-indigo-300/50 text-indigo-600 rounded-xl hover:bg-indigo-50 hover:border-indigo-400 transition-all text-sm font-bold flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <${Plus} size=${18} /> Thêm ảnh mới
                 </button>

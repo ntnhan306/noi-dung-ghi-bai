@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { html } from './utils/html.js';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
@@ -63,7 +64,7 @@ const Layout = ({ children, isAppMode }) => {
   const [secretCount, setSecretCount] = useState(0);
   
   // Background State
-  const [backgroundList, setBackgroundList] = useState([]);
+  const [bgConfig, setBgConfig] = useState({ images: [], active: false });
   const [currentBg, setCurrentBg] = useState(null);
 
   useEffect(() => {
@@ -77,10 +78,10 @@ const Layout = ({ children, isAppMode }) => {
   // Load Backgrounds on Mount
   useEffect(() => {
     const initBg = async () => {
-        const bgs = await apiService.getBackgrounds();
-        if (bgs && bgs.length > 0) {
-            setBackgroundList(bgs);
-            setCurrentBg(bgs[Math.floor(Math.random() * bgs.length)]);
+        const config = await apiService.getBackgrounds();
+        setBgConfig(config);
+        if (config.active && config.images.length > 0) {
+            setCurrentBg(config.images[Math.floor(Math.random() * config.images.length)]);
         }
     };
     initBg();
@@ -88,16 +89,16 @@ const Layout = ({ children, isAppMode }) => {
 
   // Rotate Background every 60s
   useEffect(() => {
-    if (backgroundList.length <= 1) return;
+    if (!bgConfig.active || bgConfig.images.length <= 1) return;
     const interval = setInterval(() => {
-        const otherBgs = backgroundList.filter(bg => bg !== currentBg);
+        const otherBgs = bgConfig.images.filter(bg => bg !== currentBg);
         if (otherBgs.length > 0) {
             const nextBg = otherBgs[Math.floor(Math.random() * otherBgs.length)];
             setCurrentBg(nextBg);
         }
     }, 60000); // 60s
     return () => clearInterval(interval);
-  }, [backgroundList, currentBg]);
+  }, [bgConfig, currentBg]);
 
   const handleSecretEntry = () => {
     if (isAppMode) return; 
@@ -113,7 +114,7 @@ const Layout = ({ children, isAppMode }) => {
   return html`
     <!-- BACKGROUND CONTAINER -->
     <div className="fixed inset-0 -z-10 bg-slate-50 overflow-hidden pointer-events-none transition-all duration-1000">
-        ${currentBg ? html`
+        ${(bgConfig.active && currentBg) ? html`
             <!-- Custom Image Background -->
             <div 
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out"

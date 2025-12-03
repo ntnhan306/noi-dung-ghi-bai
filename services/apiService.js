@@ -1,4 +1,5 @@
 
+
 import { NodeType } from '../types.js';
 
 const API_URL = 'https://noi-dung-ghi-bai.nhanns23062012.workers.dev';
@@ -145,25 +146,29 @@ export const apiService = {
     }
   },
 
-  // Lấy danh sách ảnh nền
+  // Lấy cấu hình ảnh nền
   getBackgrounds: async () => {
     try {
         const response = await fetch(`${API_URL}/api/config/backgrounds`);
-        if (!response.ok) return [];
-        return await response.json();
+        if (!response.ok) return { images: [], active: false };
+        // Worker now returns { images: [], active: bool }
+        const data = await response.json();
+        // Fallback for old data structure if it returns just array
+        if (Array.isArray(data)) return { images: data, active: false };
+        return data;
     } catch (e) {
         console.error("Error fetching backgrounds", e);
-        return [];
+        return { images: [], active: false };
     }
   },
 
-  // Lưu danh sách ảnh nền
-  saveBackgrounds: async (images) => {
+  // Lưu cấu hình ảnh nền
+  saveBackgrounds: async (images, active) => {
     try {
         const response = await fetch(`${API_URL}/api/config/backgrounds`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(images)
+            body: JSON.stringify({ images, active })
         });
         return response.ok;
     } catch (e) {

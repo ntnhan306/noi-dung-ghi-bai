@@ -160,18 +160,25 @@ export default {
       // --- API: Config Backgrounds (GET) ---
       if (url.pathname === "/api/config/backgrounds" && request.method === "GET") {
         try {
-            const result = await env.DB.prepare("SELECT value FROM config WHERE key = 'background_images'").first();
-            const images = result && result.value ? JSON.parse(result.value) : [];
-            return new Response(JSON.stringify(images), { headers: corsHeaders });
+            const imgRes = await env.DB.prepare("SELECT value FROM config WHERE key = 'background_images'").first();
+            const activeRes = await env.DB.prepare("SELECT value FROM config WHERE key = 'background_active'").first();
+            
+            const images = imgRes && imgRes.value ? JSON.parse(imgRes.value) : [];
+            const active = activeRes ? activeRes.value === 'true' : false;
+            
+            return new Response(JSON.stringify({ images, active }), { headers: corsHeaders });
         } catch (e) {
-            return new Response(JSON.stringify([]), { headers: corsHeaders });
+            return new Response(JSON.stringify({ images: [], active: false }), { headers: corsHeaders });
         }
       }
 
       // --- API: Config Backgrounds (POST) ---
       if (url.pathname === "/api/config/backgrounds" && request.method === "POST") {
-        const images = await request.json();
-        await env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_images', ?)`).bind(JSON.stringify(images)).run();
+        const { images, active } = await request.json();
+        await env.DB.batch([
+            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_images', ?)`).bind(JSON.stringify(images)),
+            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_active', ?)`).bind(String(active))
+        ]);
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
