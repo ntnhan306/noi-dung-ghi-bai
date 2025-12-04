@@ -1,55 +1,25 @@
 
-
 import { NodeType } from '../types.js';
 
 const API_URL = 'https://noi-dung-ghi-bai.nhanns23062012.workers.dev';
 
 export const apiService = {
-  // Lấy tất cả dữ liệu từ D1
-  // password: Mật khẩu hiện tại (nếu có) để xác thực phiên
   getAllNodes: async (password = null) => {
     try {
       const headers = {};
-      if (password) {
-        headers['X-Auth-Pass'] = password;
-      }
-
-      const response = await fetch(`${API_URL}/api/get`, {
-        method: 'GET',
-        headers: headers
-      });
-      
-      // Xử lý trường hợp mật khẩu sai/hết hạn
-      if (response.status === 401) {
-        throw new Error('UNAUTHORIZED');
-      }
-
+      if (password) headers['X-Auth-Pass'] = password;
+      const response = await fetch(`${API_URL}/api/get`, { method: 'GET', headers: headers });
+      if (response.status === 401) throw new Error('UNAUTHORIZED');
       if (!response.ok) throw new Error('Network response was not ok');
-      
       const text = await response.text();
-      
-      // Basic check to ensure we didn't get an HTML error page
-      if (text.trim().startsWith('<')) {
-         console.error("Received HTML instead of JSON:", text.substring(0, 50) + "...");
-         return null;
-      }
-
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        console.error("Invalid JSON response:", text);
-        return null; // Trả về null nếu parse lỗi để không xóa dữ liệu UI
-      }
+      if (text.trim().startsWith('<')) return null;
+      try { return JSON.parse(text); } catch (e) { return null; }
     } catch (error) {
       if (error.message === 'UNAUTHORIZED') throw error;
-      
-      console.error("Error fetching nodes:", error);
-      // QUAN TRỌNG: Trả về null khi lỗi để không ghi đè dữ liệu cũ bằng mảng rỗng
       return null;
     }
   },
 
-  // Lưu hoặc cập nhật (Node hoặc Bài học) vào D1
   saveNode: async (node) => {
     try {
       const payload = {
@@ -61,119 +31,60 @@ export const apiService = {
         createdAt: node.createdAt || Date.now(),
         orderIndex: node.orderIndex !== undefined ? node.orderIndex : 0
       };
-
-      const response = await fetch(`${API_URL}/api/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
+      const response = await fetch(`${API_URL}/api/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!response.ok) throw new Error('Save failed');
       return await response.json();
-    } catch (error) {
-      console.error("Error saving node:", error);
-      throw error;
-    }
+    } catch (error) { throw error; }
   },
 
-  // Cập nhật hàng loạt (cho việc sắp xếp hoặc di chuyển)
   batchUpdateNodes: async (updates) => {
-    // updates: Array of { id, orderIndex, parentId }
     try {
-      const response = await fetch(`${API_URL}/api/batch-update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-
+      const response = await fetch(`${API_URL}/api/batch-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
       if (!response.ok) throw new Error('Batch update failed');
       return true;
-    } catch (error) {
-      console.error("Error batch updating nodes:", error);
-      return false;
-    }
+    } catch (error) { return false; }
   },
 
-  // Xóa dữ liệu khỏi D1
   deleteNode: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      
+      const response = await fetch(`${API_URL}/api/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
       if (!response.ok) throw new Error('Delete failed');
       return true;
-    } catch (error) {
-      console.error("Error deleting node:", error);
-      return false;
-    }
+    } catch (error) { return false; }
   },
   
-  // Xác thực mật khẩu
   verifyPassword: async (password) => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      });
-      
-      if (response.status === 200) {
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Auth error:", error);
-      return false;
-    }
+      const response = await fetch(`${API_URL}/api/auth/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+      return response.status === 200;
+    } catch (error) { return false; }
   },
 
-  // Đổi mật khẩu lưu trong D1
   changePassword: async (newPassword) => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword })
-      });
-      
+      const response = await fetch(`${API_URL}/api/auth/change-password`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newPassword }) });
       return response.ok;
-    } catch (error) {
-      console.error("Change password error:", error);
-      return false;
-    }
+    } catch (error) { return false; }
   },
 
-  // Lấy cấu hình ảnh nền
-  getBackgrounds: async () => {
+  getFullConfig: async () => {
     try {
-        const response = await fetch(`${API_URL}/api/config/backgrounds`);
-        if (!response.ok) return { images: [], active: false };
-        // Worker now returns { images: [], active: bool }
-        const data = await response.json();
-        // Fallback for old data structure if it returns just array
-        if (Array.isArray(data)) return { images: data, active: false };
-        return data;
+        const response = await fetch(`${API_URL}/api/config/full`);
+        if (!response.ok) return { background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
+        return await response.json();
     } catch (e) {
-        console.error("Error fetching backgrounds", e);
-        return { images: [], active: false };
+        return { background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
     }
   },
 
-  // Lưu cấu hình ảnh nền
-  saveBackgrounds: async (images, active) => {
+  saveFullConfig: async (config) => {
     try {
-        const response = await fetch(`${API_URL}/api/config/backgrounds`, {
+        const response = await fetch(`${API_URL}/api/config/full`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ images, active })
+            body: JSON.stringify(config)
         });
         return response.ok;
-    } catch (e) {
-        console.error("Error saving backgrounds", e);
-        return false;
-    }
+    } catch (e) { return false; }
   }
 };
