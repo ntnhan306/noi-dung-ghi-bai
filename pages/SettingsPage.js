@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { html } from '../utils/html.js';
-import { ArrowLeft, Save, Plus, Trash2, Edit2, Image as ImageIcon, Check, Loader2, LayoutTemplate, ZoomIn, Smartphone, Monitor, Edit3 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Edit2, Image as ImageIcon, Check, Loader2, LayoutTemplate, ZoomIn, Smartphone, Monitor, Edit3, ChevronDown } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { useNavigate } from 'react-router-dom';
 
@@ -71,15 +71,32 @@ const BackgroundItem = ({ url, index, onChange, onDelete, disabled }) => {
   `;
 };
 
-const Section = ({ title, icon: Icon, children }) => html`
-  <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-glass border border-white/60 p-6 md:p-8 mb-6 relative overflow-hidden">
-     <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600 shadow-sm"><${Icon} size=${24} strokeWidth=${2} /></div>
-        <h2 className="text-xl font-serif font-bold text-slate-800">${title}</h2>
-     </div>
-     ${children}
-  </div>
-`;
+const Section = ({ title, icon: Icon, children }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return html`
+    <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-glass border border-white/60 p-6 md:p-8 mb-6 relative overflow-hidden">
+        <div 
+            className="flex items-center justify-between cursor-pointer group"
+            onClick=${() => setIsOpen(!isOpen)}
+        >
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600 shadow-sm"><${Icon} size=${24} strokeWidth=${2} /></div>
+                <h2 className="text-xl font-serif font-bold text-slate-800">${title}</h2>
+            </div>
+            <div className=${`p-2 rounded-full text-slate-400 hover:bg-white transition-all duration-300 ${isOpen ? 'rotate-180 bg-white shadow-sm text-indigo-600' : ''}`}>
+                <${ChevronDown} size=${20} />
+            </div>
+        </div>
+        
+        ${isOpen && html`
+            <div className="mt-6 animate-in slide-in-from-top-4 fade-in duration-300">
+                ${children}
+            </div>
+        `}
+    </div>
+  `;
+};
 
 const Toggle = ({ label, subLabel, checked, onChange, icon: Icon }) => html`
   <div className=${`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${checked ? 'bg-indigo-50/80 border-indigo-200' : 'bg-slate-50/80 border-slate-200 hover:border-slate-300'}`} onClick=${() => onChange(!checked)}>

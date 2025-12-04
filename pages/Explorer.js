@@ -49,13 +49,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
 
-  // Check Zoom availability based on config
-  const canShowZoom = uiConfig?.zoom ? (
-      (isAppMode && uiConfig.zoom.app) ||
-      (mode === 'edit' && uiConfig.zoom.edit) ||
-      (mode === 'view' && !isAppMode && uiConfig.zoom.view)
-  ) : true;
-
   const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
   const children = useMemo(() => allNodes.filter(n => n.parentId === (nodeId || null)).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), [allNodes, nodeId]);
   const calculatedBreadcrumbs = useMemo(() => {
@@ -67,6 +60,13 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }
     return path;
   }, [currentNode, allNodes]);
+
+  // Check Zoom availability: Must be LESSON type AND enabled in config
+  const canShowZoom = currentNode?.type === NodeType.LESSON && (uiConfig?.zoom ? (
+      (isAppMode && uiConfig.zoom.app) ||
+      (mode === 'edit' && uiConfig.zoom.edit) ||
+      (mode === 'view' && !isAppMode && uiConfig.zoom.view)
+  ) : true);
 
   useEffect(() => { if (!loading) setVisibleBreadcrumbs(calculatedBreadcrumbs); }, [loading, calculatedBreadcrumbs]);
 
@@ -394,9 +394,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }
 
     if (currentNode?.type === NodeType.LESSON) {
+        // NON-LIQUID STYLES: Solid white, reduced shadow, no transparency
         const containerStyle = isLiquid 
             ? 'bg-white/50 backdrop-blur-xl rounded-[2.5rem] shadow-glass border border-white/50 ring-1 ring-white/60'
-            : 'bg-white rounded-3xl shadow-lg border border-slate-200';
+            : 'bg-white rounded-3xl shadow-sm border border-slate-200';
         
         const headerStyle = isLiquid
             ? 'border-b border-white/30 bg-white/40 backdrop-blur-md sticky top-0'

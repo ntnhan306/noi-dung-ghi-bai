@@ -11,7 +11,8 @@ export const NodeItem = ({
   onClick, 
   onEdit, 
   onDelete, 
-  onStartMove
+  onStartMove,
+  uiStyle
 }) => {
   const [isMobileActive, setIsMobileActive] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
@@ -21,6 +22,7 @@ export const NodeItem = ({
   
   const isAppMode = window.location.pathname.includes('/special-application/');
   const isLesson = node.type === NodeType.LESSON;
+  const isLiquid = uiStyle === 'liquid';
 
   const selectNoneStyle = {
     userSelect: 'none',
@@ -71,13 +73,22 @@ export const NodeItem = ({
     }
   };
 
-  // Glass Pebble Styles
-  const containerClasses = isAppMode 
+  // Styles logic
+  // Liquid: bg-white/40, border-white/60, shadow-glass, backdrop-blur-md
+  // Normal: bg-white, border-slate-200, shadow-sm, no opacity/blur
+  
+  const baseClasses = isAppMode 
     ? 'border-b border-white/20 py-5 px-5 bg-white/20 backdrop-blur-lg active:bg-white/40 transition-all' 
-    : `group relative rounded-3xl p-6 transition-all duration-300 ease-out border backdrop-blur-md overflow-hidden
-       ${!isSorting 
-          ? 'bg-white/40 border-white/60 shadow-glass hover:shadow-glass-hover hover:bg-white/60 hover:-translate-y-1 hover:border-white/80 cursor-pointer' 
-          : 'bg-white/20 border-white/30 shadow-none'}`;
+    : `group relative rounded-3xl p-6 transition-all duration-300 ease-out border overflow-hidden
+       ${isLiquid 
+            ? 'backdrop-blur-md bg-white/40 border-white/60 shadow-glass hover:shadow-glass-hover hover:bg-white/60 hover:border-white/80' 
+            : 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:bg-slate-50'
+       }
+       ${!isSorting ? 'cursor-pointer hover:-translate-y-1' : ''}`;
+
+  const sortingClasses = 'bg-white/20 border-white/30 shadow-none';
+  
+  const containerClasses = isSorting ? sortingClasses : baseClasses;
 
   // Colored shadows for web mode items
   const shadowColorClass = isLesson 
@@ -92,8 +103,8 @@ export const NodeItem = ({
       onMouseLeave=${() => setIsMobileActive(false)}
       style=${selectNoneStyle}
     >
-      <!-- Shine/Reflection Effect (Web Mode) -->
-      ${!isSorting && !isAppMode && html`
+      <!-- Shine/Reflection Effect (Web Mode - Liquid Only) -->
+      ${!isSorting && !isAppMode && isLiquid && html`
         <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
         <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shimmer pointer-events-none" />
       `}
