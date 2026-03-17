@@ -203,7 +203,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 <div className="space-y-1 transition-opacity ${!isActive ? 'opacity-50 pointer-events-none' : ''}">
                     ${backgrounds.map((url, index) => html`
                         <${BackgroundItem} 
-                            key=${index} 
                             index=${index}
                             url=${url} 
                             onChange=${(val) => handleChange(index, val)} 

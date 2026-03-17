@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Outfit", ui-serif, Georgia, serif;
+}
+
+.prose {
+  max-width: 65ch;
+  color: var(--tw-prose-body);
+  line-height: 1.75;
+}
+
+.prose h1 {
+  color: var(--tw-prose-headings);
+  font-weight: 800;
+  font-size: 2.25em;
+  margin-top: 0;
+  margin-bottom: 0.8888889em;
+  line-height: 1.1111111;
+}
+
+.select-none {
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input, textarea, .select-text {
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+.tox-tinymce {
+  border-radius: 1.5rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
+}

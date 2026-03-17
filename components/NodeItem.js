@@ -105,40 +105,40 @@ export const NodeItem = ({
     >
       <!-- Shine/Reflection Effect (Web Mode - Liquid Only) -->
       ${!isSorting && !isAppMode && isLiquid && html`
-        <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-        <div className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shimmer pointer-events-none" />
+        <div key="shine-1" className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div key="shine-2" className="absolute -inset-full top-0 block h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-shimmer pointer-events-none" />
       `}
 
       <div className="relative flex items-center gap-5 flex-1 overflow-hidden z-10">
         <!-- Drag Handle -->
         ${isSorting && html`
-          <div className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-white/40 rounded-xl hover:bg-white/60 transition-colors">
+          <div key="drag-handle" className="drag-handle text-indigo-500 cursor-grab active:cursor-grabbing -ml-1 flex-shrink-0 p-2 bg-white/40 rounded-xl hover:bg-white/60 transition-colors">
             <${GripVertical} size=${24} />
           </div>
         `}
       
         <!-- Icon Bubble -->
-        <div className=${`flex-shrink-0 transition-all duration-300 relative ${isAppMode ? 'text-indigo-600' : `p-4 rounded-2xl shadow-inner ${!isSorting && 'group-hover:scale-105 group-hover:rotate-3'} ${isLesson ? 'bg-emerald-100/50 text-emerald-600 border border-emerald-200/50' : 'bg-indigo-100/50 text-indigo-600 border border-indigo-200/50'}`}`}>
-          ${isLesson ? html`<${FileText} size=${isAppMode ? 24 : 26} strokeWidth=${1.5} />` : html`<${Folder} size=${isAppMode ? 24 : 26} strokeWidth=${1.5} />`}
+        <div key="icon-bubble" className=${`flex-shrink-0 transition-all duration-300 relative ${isAppMode ? 'text-indigo-600' : `p-4 rounded-2xl shadow-inner ${!isSorting && 'group-hover:scale-105 group-hover:rotate-3'} ${isLesson ? 'bg-emerald-100/50 text-emerald-600 border border-emerald-200/50' : 'bg-indigo-100/50 text-indigo-600 border border-indigo-200/50'}`}`}>
+          ${isLesson ? html`<${FileText} key="icon-lesson" size=${isAppMode ? 24 : 26} strokeWidth=${1.5} />` : html`<${Folder} key="icon-folder" size=${isAppMode ? 24 : 26} strokeWidth=${1.5} />`}
         </div>
         
         <div className="min-w-0 flex-1" ref=${containerRef}>
           <!-- Label -->
           ${!isAppMode && html`
-            <span className="text-[11px] font-sans font-extrabold text-slate-400/80 uppercase tracking-widest mb-1 block group-hover:text-indigo-500 transition-colors" style=${selectNoneStyle}>
+            <span key="node-label" className="text-[11px] font-sans font-extrabold text-slate-400/80 uppercase tracking-widest mb-1 block group-hover:text-indigo-500 transition-colors" style=${selectNoneStyle}>
                 ${NODE_LABELS[node.type]}
             </span>
           `}
           
           <!-- Title -->
           ${isAppMode ? html`
-             <h3 className="font-serif font-semibold text-slate-800 text-lg leading-snug whitespace-normal" style=${selectNoneStyle}>
+             <h3 key="app-title" className="font-serif font-semibold text-slate-800 text-lg leading-snug whitespace-normal" style=${selectNoneStyle}>
                 ${node.title}
              </h3>
           ` : html`
-             <div className="relative h-8 flex items-center overflow-hidden">
+             <div key="web-title-container" className="relative h-8 flex items-center overflow-hidden">
                 ${isOverflowing ? html`
-                    <div className="whitespace-nowrap animate-marquee inline-block">
+                    <div key="marquee" className="whitespace-nowrap animate-marquee inline-block">
                         <h3 
                             ref=${titleRef}
                             className="font-serif font-bold text-slate-800 group-hover:text-indigo-900 transition-colors leading-snug text-xl"
@@ -149,6 +149,7 @@ export const NodeItem = ({
                     </div>
                 ` : html`
                     <h3 
+                        key="static-title"
                         ref=${titleRef}
                         className="font-serif font-bold text-slate-800 group-hover:text-indigo-900 truncate transition-colors leading-snug text-xl"
                         style=${selectNoneStyle}
@@ -166,23 +167,24 @@ export const NodeItem = ({
         <div className="relative flex items-center pl-4 z-10 bg-transparent">
             ${isEditMode && !isSorting && html`
             <div 
+                key="edit-actions"
                 className=${`flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out ${isMobileActive ? 'max-w-[200px] opacity-100 ml-4' : 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100 group-hover:ml-4'}`}
                 onClick=${(e) => e.stopPropagation()}
             >
-                <button onClick=${() => onStartMove && onStartMove(node)} className="p-2.5 text-amber-500 hover:text-amber-700 bg-amber-50/50 hover:bg-amber-100/80 rounded-xl transition-colors shadow-sm" title="Di chuyển">
+                <button key="btn-move" onClick=${() => onStartMove && onStartMove(node)} className="p-2.5 text-amber-500 hover:text-amber-700 bg-amber-50/50 hover:bg-amber-100/80 rounded-xl transition-colors shadow-sm" title="Di chuyển">
                     <${FolderInput} size=${18} />
                 </button>
-                <button onClick=${() => onEdit && onEdit(node)} className="p-2.5 text-blue-500 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-100/80 rounded-xl transition-colors shadow-sm" title="Sửa tên">
+                <button key="btn-edit" onClick=${() => onEdit && onEdit(node)} className="p-2.5 text-blue-500 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-100/80 rounded-xl transition-colors shadow-sm" title="Sửa tên">
                     <${Edit2} size=${18} />
                 </button>
-                <button onClick=${() => onDelete && onDelete(node)} className="p-2.5 text-red-500 hover:text-red-700 bg-red-50/50 hover:bg-red-100/80 rounded-xl transition-colors shadow-sm" title="Xóa">
+                <button key="btn-delete" onClick=${() => onDelete && onDelete(node)} className="p-2.5 text-red-500 hover:text-red-700 bg-red-50/50 hover:bg-red-100/80 rounded-xl transition-colors shadow-sm" title="Xóa">
                     <${Trash2} size=${18} />
                 </button>
             </div>
             `}
             
             ${!isSorting && html`
-            <div className="w-10 h-10 rounded-full bg-white/0 group-hover:bg-white/40 flex items-center justify-center transition-all duration-300 ml-2 shadow-none group-hover:shadow-sm">
+            <div key="chevron-container" className="w-10 h-10 rounded-full bg-white/0 group-hover:bg-white/40 flex items-center justify-center transition-all duration-300 ml-2 shadow-none group-hover:shadow-sm">
                 <${ChevronRight} className="text-slate-300 group-hover:text-indigo-500 transition-colors transform group-hover:translate-x-0.5" strokeWidth=${2.5} size=${20} />
             </div>
             `}

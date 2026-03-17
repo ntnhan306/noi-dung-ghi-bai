@@ -69,8 +69,17 @@ export default {
 
       if (url.pathname === "/api/delete" && request.method === "POST") {
         const { id } = await request.json();
-        await env.DB.prepare("DELETE FROM nodes WHERE id = ?").bind(id).run();
-        try { await env.DB.prepare(`DELETE FROM nodes WHERE parentId = ?`).bind(id).run(); } catch(e) {}
+        await env.DB.prepare(`
+          DELETE FROM nodes 
+          WHERE id IN (
+            WITH RECURSIVE descendants AS (
+              SELECT id FROM nodes WHERE id = ?
+              UNION ALL
+              SELECT n.id FROM nodes n JOIN descendants d ON n.parentId = d.id
+            )
+            SELECT id FROM descendants
+          )
+        `).bind(id).run();
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 

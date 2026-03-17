@@ -404,35 +404,35 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             : 'border-b border-slate-100 bg-white sticky top-0';
 
         return html`
-            <div className=${`${containerStyle} overflow-hidden min-h-[700px] flex flex-col relative`}>
+            <div key="lesson-container" className=${`${containerStyle} overflow-hidden min-h-[700px] flex flex-col relative`}>
               <div className=${`px-6 md:px-12 py-6 md:py-8 flex justify-between items-start z-20 ${headerStyle}`}>
-                <div>
+                <div key="lesson-header-info">
                   ${!isAppMode && html`
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-indigo-500 to-violet-500 text-white uppercase tracking-widest mb-3 shadow-md shadow-indigo-500/20">
+                      <span key="lesson-type-badge" className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-indigo-500 to-violet-500 text-white uppercase tracking-widest mb-3 shadow-md shadow-indigo-500/20">
                         ${NODE_LABELS[NodeType.LESSON]}
                       </span>
                   `}
-                  <h1 className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
+                  <h1 key="lesson-title" className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
                     ${currentNode.title}
                   </h1>
                 </div>
                 ${mode === 'edit' && !isEditingContent && html`
-                   <div className="flex gap-3">
-                    <button onClick=${() => handleEditTitle(currentNode)} className=${`px-4 py-2 text-slate-600 rounded-xl font-sans text-sm font-bold transition-all border ${isLiquid ? 'hover:bg-white/60 hover:text-indigo-600 border-transparent hover:border-white/50 hover:shadow-sm' : 'hover:bg-slate-50 border-slate-200'}`}>Sửa tên</button>
-                    <button onClick=${toggleContentEditor} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-white/20"><${LayoutGrid} size=${18} /> Soạn thảo</button>
+                   <div key="edit-actions" className="flex gap-3">
+                    <button key="btn-edit-title" onClick=${() => handleEditTitle(currentNode)} className=${`px-4 py-2 text-slate-600 rounded-xl font-sans text-sm font-bold transition-all border ${isLiquid ? 'hover:bg-white/60 hover:text-indigo-600 border-transparent hover:border-white/50 hover:shadow-sm' : 'hover:bg-slate-50 border-slate-200'}`}>Sửa tên</button>
+                    <button key="btn-open-editor" onClick=${toggleContentEditor} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-white/20"><${LayoutGrid} size=${18} /> Soạn thảo</button>
                   </div>
                 `}
                 ${mode === 'edit' && isEditingContent && html`
                   <div className="flex flex-wrap items-center justify-end gap-3">
-                    <div className=${`flex items-center rounded-xl p-1 mr-2 border shadow-sm ${isLiquid ? 'bg-white/50 backdrop-blur border-white/50' : 'bg-white border-slate-200'}`}>
-                       <button onClick=${toggleVoiceInput} className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${isListening ? 'bg-red-500 text-white shadow-md animate-pulse' : 'text-slate-600 hover:bg-slate-100 hover:text-indigo-600'}`}>${isListening ? html`<${MicOff} size=${18} />` : html`<${Mic} size=${18} />`}</button>
-                       <div className="h-6 w-px bg-slate-300 mx-1"></div>
-                       <select value=${voiceLang} onChange=${(e) => setVoiceLang(e.target.value)} className="bg-transparent text-xs font-bold text-slate-600 outline-none cursor-pointer" disabled=${isListening}><option value="vi-VN">VN</option><option value="en-US">EN</option></select>
-                       <div className="h-6 w-px bg-slate-300 mx-1"></div>
-                       <button onClick=${() => setAutoFormat(!autoFormat)} className=${`p-2 rounded-lg transition-all ${autoFormat ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400'}`}><${Wand2} size=${18} /></button>
+                    <div key="voice-controls" className=${`flex items-center rounded-xl p-1 mr-2 border shadow-sm ${isLiquid ? 'bg-white/50 backdrop-blur border-white/50' : 'bg-white border-slate-200'}`}>
+                       <button key="btn-voice" onClick=${toggleVoiceInput} className=${`p-2 rounded-lg transition-all flex items-center gap-2 ${isListening ? 'bg-red-500 text-white shadow-md animate-pulse' : 'text-slate-600 hover:bg-slate-100 hover:text-indigo-600'}`}>${isListening ? html`<${MicOff} key="mic-off" size=${18} />` : html`<${Mic} key="mic-on" size=${18} />`}</button>
+                       <div key="sep-1" className="h-6 w-px bg-slate-300 mx-1"></div>
+                       <select key="lang-select" value=${voiceLang} onChange=${(e) => setVoiceLang(e.target.value)} className="bg-transparent text-xs font-bold text-slate-600 outline-none cursor-pointer" disabled=${isListening}><option value="vi-VN">VN</option><option value="en-US">EN</option></select>
+                       <div key="sep-2" className="h-6 w-px bg-slate-300 mx-1"></div>
+                       <button key="btn-autoformat" onClick=${() => setAutoFormat(!autoFormat)} className=${`p-2 rounded-lg transition-all ${autoFormat ? 'text-indigo-600 bg-white shadow-sm' : 'text-slate-400'}`}><${Wand2} size=${18} /></button>
                     </div>
-                    <button onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-colors border border-transparent hover:border-white/50"><${X} size=${18} /> Hủy</button>
-                    <button onClick=${handleSaveContent} disabled=${saving} className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-white/20">${saving ? html`<${Loader2} size=${18} className="animate-spin"/>` : html`<${Save} size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
+                    <button key="btn-cancel" onClick=${() => { setIsEditingContent(false); if(recognitionRef.current) recognitionRef.current.stop(); shouldListenRef.current = false; }} className="px-4 py-2 text-slate-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-colors border border-transparent hover:border-white/50"><${X} size=${18} /> Hủy</button>
+                    <button key="btn-save" onClick=${handleSaveContent} disabled=${saving} className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-white/20">${saving ? html`<${Loader2} key="loader-icon" size=${18} className="animate-spin"/>` : html`<${Save} key="save-icon" size=${18} />`} ${saving ? 'Đang lưu...' : 'Lưu bài'}</button>
                   </div>
                 `}
               </div>
@@ -459,54 +459,54 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                 `}
               </div>
             </div>
-            <div className="mt-8 px-4">
-               <button onClick=${() => handleNavigate(currentNode.parentId)} className=${`group text-slate-600 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-bold px-5 py-2.5 rounded-2xl hover:bg-white/50 hover:shadow-glass inline-flex backdrop-blur-sm border border-transparent ${isLiquid ? 'hover:border-white/50' : 'hover:border-slate-200'}`}><div className="p-1 rounded-full bg-slate-200/50 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} size=${16} /></div> Quay lại</button>
+            <div key="back-button-container" className="mt-8 px-4">
+               <button key="btn-back" onClick=${() => handleNavigate(currentNode.parentId)} className=${`group text-slate-600 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-bold px-5 py-2.5 rounded-2xl hover:bg-white/50 hover:shadow-glass inline-flex backdrop-blur-sm border border-transparent ${isLiquid ? 'hover:border-white/50' : 'hover:border-slate-200'}`}><div key="icon-bg" className="p-1 rounded-full bg-slate-200/50 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} key="icon" size=${16} /></div> Quay lại</button>
             </div>
         `;
     }
 
     return html`
-      <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-        <div>
-          ${!isAppMode && html`<h2 className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
-          <h1 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
+      <header key="explorer-header" className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div key="header-title-container">
+          ${!isAppMode && html`<h2 key="node-label" className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div key="label-dot" className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
+          <h1 key="main-title" className="text-3xl md:text-5xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
         </div>
         
         ${mode === 'edit' && !isAppMode && !nodeId && html`
-           <div className="flex items-center gap-2 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-glass">
-             <button onClick=${() => setIsPasswordModalOpen(true)} className="px-4 py-2 text-slate-600 hover:text-indigo-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${KeyRound} size=${16} /> Đổi mật khẩu</button>
-             <button onClick=${() => navigate('/edit/settings')} className="px-4 py-2 text-slate-600 hover:text-indigo-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${Settings} size=${16} /> Cài đặt</button>
-             <div className="w-px h-6 bg-slate-300 mx-1"></div>
-             <button onClick=${handleLogout} className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${LogOut} size=${16} /> Đăng xuất</button>
+           <div key="edit-actions" className="flex items-center gap-2 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-glass">
+             <button key="btn-pass" onClick=${() => setIsPasswordModalOpen(true)} className="px-4 py-2 text-slate-600 hover:text-indigo-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${KeyRound} size=${16} /> Đổi mật khẩu</button>
+             <button key="btn-settings" onClick=${() => navigate('/edit/settings')} className="px-4 py-2 text-slate-600 hover:text-indigo-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${Settings} size=${16} /> Cài đặt</button>
+             <div key="sep" className="w-px h-6 bg-slate-300 mx-1"></div>
+             <button key="btn-logout" onClick=${handleLogout} className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${LogOut} size=${16} /> Đăng xuất</button>
            </div>
         `}
       </header>
 
       ${movingNode && html`
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom-10">
-            <div className="max-w-xl mx-auto bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between border border-slate-700/50 backdrop-blur-xl">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500 rounded-lg"><${ClipboardList} size=${20} /></div>
-                    <div>
+        <div key="moving-node-bar" className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom-10">
+            <div key="moving-bar-inner" className="max-w-xl mx-auto bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between border border-slate-700/50 backdrop-blur-xl">
+                <div key="moving-info" className="flex items-center gap-3">
+                    <div key="moving-icon" className="p-2 bg-indigo-500 rounded-lg"><${ClipboardList} size=${20} /></div>
+                    <div key="moving-text">
                         <p className="text-sm font-bold text-slate-200">Đang di chuyển: <span className="text-white">${movingNode.title}</span></p>
                         <p className="text-xs text-slate-400">Đến: ${currentNode ? currentNode.title : 'Thư mục gốc'}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button onClick=${handleCancelMove} className="px-4 py-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl text-sm font-bold transition-colors">Hủy</button>
-                    <button onClick=${handlePasteNode} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/50 flex items-center gap-2"><${CornerDownRight} size=${16} /> Dán vào đây</button>
+                <div key="moving-actions" className="flex items-center gap-2">
+                    <button key="btn-cancel-move" onClick=${handleCancelMove} className="px-4 py-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl text-sm font-bold transition-colors">Hủy</button>
+                    <button key="btn-paste" onClick=${handlePasteNode} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/50 flex items-center gap-2"><${CornerDownRight} size=${16} /> Dán vào đây</button>
                 </div>
             </div>
         </div>
       `}
 
       ${mode === 'edit' && allowedChildTypes.length > 0 && !isSorting && html`
-        <div className="mb-8 flex flex-wrap gap-3">
+        <div key="edit-controls" className="mb-8 flex flex-wrap gap-3">
           ${allowedChildTypes.map(type => html`
             <button
-              key=${type}
+              key=${`add-${type}`}
               onClick=${() => handleCreate(type)}
               className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 hover:shadow-indigo-500/50 transition-all text-sm font-bold border-t border-white/20"
             >
@@ -515,7 +515,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             </button>
           `)}
           ${children.length > 1 && html`
-            <button onClick=${() => setIsSorting(true)} className="flex items-center gap-2 px-5 py-3 bg-white text-slate-600 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:text-indigo-600 transition-all text-sm font-bold ml-auto shadow-sm">
+            <button key="btn-sort" onClick=${() => setIsSorting(true)} className="flex items-center gap-2 px-5 py-3 bg-white text-slate-600 border border-slate-200 rounded-2xl hover:bg-slate-50 hover:text-indigo-600 transition-all text-sm font-bold ml-auto shadow-sm">
                 <${ArrowUpDown} size=${18} /> Sắp xếp
             </button>
           `}
@@ -523,17 +523,17 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       `}
       
       ${isSorting && html`
-        <div className="mb-6 flex items-center justify-between bg-indigo-50 p-4 rounded-2xl border border-indigo-100 animate-in fade-in">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600"><${ArrowUpDown} size=${20} /></div>
-                <div>
+        <div key="sorting-controls" className="mb-6 flex items-center justify-between bg-indigo-50 p-4 rounded-2xl border border-indigo-100 animate-in fade-in">
+            <div key="sorting-info" className="flex items-center gap-3">
+                <div key="sorting-icon" className="p-2 bg-indigo-100 rounded-xl text-indigo-600"><${ArrowUpDown} size=${20} /></div>
+                <div key="sorting-text">
                     <h3 className="font-bold text-indigo-900">Chế độ sắp xếp</h3>
                     <p className="text-xs text-indigo-600">Kéo thả các mục để thay đổi vị trí</p>
                 </div>
             </div>
-            <div className="flex gap-2">
-                <button onClick=${() => { setIsSorting(false); fetchData(); }} className="px-4 py-2 text-slate-500 hover:text-slate-700 font-bold text-sm">Hủy</button>
-                <button onClick=${handleSaveOrder} disabled=${saving} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition-colors flex items-center gap-2">
+            <div key="sorting-actions" className="flex gap-2">
+                <button key="btn-cancel-sort" onClick=${() => { setIsSorting(false); fetchData(); }} className="px-4 py-2 text-slate-500 hover:text-slate-700 font-bold text-sm">Hủy</button>
+                <button key="btn-save-sort" onClick=${handleSaveOrder} disabled=${saving} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition-colors flex items-center gap-2">
                     ${saving ? html`<${Loader2} className="animate-spin" size=${16} />` : html`<${Save} size=${16} />`} Lưu vị trí
                 </button>
             </div>
@@ -541,15 +541,15 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       `}
 
       ${children.length === 0 ? html`
-        <div className=${`text-center py-24 rounded-[2.5rem] border-2 border-dashed flex flex-col items-center justify-center ${isLiquid ? 'bg-white/20 border-white/40 shadow-glass' : 'bg-white border-slate-200'}`}>
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
-            <${ListIcon} className="text-slate-300" size=${40} />
+        <div key="empty-state" className=${`text-center py-24 rounded-[2.5rem] border-2 border-dashed flex flex-col items-center justify-center ${isLiquid ? 'bg-white/20 border-white/40 shadow-glass' : 'bg-white border-slate-200'}`}>
+          <div key="empty-icon-container" className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
+            <${ListIcon} key="empty-icon" className="text-slate-300" size=${40} />
           </div>
-          <p className="text-slate-500 font-bold text-lg mb-1">Chưa có mục nào ở đây.</p>
-          ${mode === 'edit' && html`<p className="text-sm text-slate-400 font-medium">Hãy thêm mục mới để bắt đầu hành trình học tập.</p>`}
+          <p key="empty-text" className="text-slate-500 font-bold text-lg mb-1">Chưa có mục nào ở đây.</p>
+          ${mode === 'edit' && html`<p key="empty-hint" className="text-sm text-slate-400 font-medium">Hãy thêm mục mới để bắt đầu hành trình học tập.</p>`}
         </div>
       ` : html`
-        <div ref=${sortableListRef} className="grid grid-cols-1 gap-4">
+        <div key="nodes-list" ref=${sortableListRef} className="grid grid-cols-1 gap-4">
           ${children.map(node => html`
             <${NodeItem} 
               key=${node.id}
@@ -583,10 +583,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
       <!-- Floating Zoom Controls -->
       ${canShowZoom && html`
-        <div className="fixed bottom-8 right-6 flex flex-col gap-2 z-40 animate-in slide-in-from-right-10">
-            <button onClick=${increaseFontSize} className="p-3 bg-white/80 backdrop-blur-md border border-white/60 text-indigo-600 rounded-2xl shadow-glass hover:shadow-glass-hover hover:scale-110 active:scale-95 transition-all"><${Plus} size=${24} /></button>
-            <div className="bg-white/80 backdrop-blur-md border border-white/60 text-slate-600 font-bold text-xs py-1 px-2 rounded-lg text-center shadow-sm select-none">${viewFontSize}pt</div>
-            <button onClick=${decreaseFontSize} className="p-3 bg-white/80 backdrop-blur-md border border-white/60 text-slate-600 rounded-2xl shadow-glass hover:shadow-glass-hover hover:scale-110 active:scale-95 transition-all"><${Minus} size=${24} /></button>
+        <div key="zoom-controls" className="fixed bottom-8 right-6 flex flex-col gap-2 z-40 animate-in slide-in-from-right-10">
+            <button key="btn-zoom-in" onClick=${increaseFontSize} className="p-3 bg-white/80 backdrop-blur-md border border-white/60 text-indigo-600 rounded-2xl shadow-glass hover:shadow-glass-hover hover:scale-110 active:scale-95 transition-all"><${Plus} size=${24} /></button>
+            <div key="zoom-level" className="bg-white/80 backdrop-blur-md border border-white/60 text-slate-600 font-bold text-xs py-1 px-2 rounded-lg text-center shadow-sm select-none">${viewFontSize}pt</div>
+            <button key="btn-zoom-out" onClick=${decreaseFontSize} className="p-3 bg-white/80 backdrop-blur-md border border-white/60 text-slate-600 rounded-2xl shadow-glass hover:shadow-glass-hover hover:scale-110 active:scale-95 transition-all"><${Minus} size=${24} /></button>
         </div>
       `}
 

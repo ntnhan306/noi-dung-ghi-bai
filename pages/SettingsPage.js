@@ -224,7 +224,7 @@ export const SettingsPage = () => {
              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Danh sách ảnh</h3>
              <div className="space-y-1">
                 ${config.background.images.map((url, idx) => html`
-                    <${BackgroundItem} key=${idx} index=${idx} url=${url} onChange=${(v) => handleBgChange(idx, v)} onDelete=${() => handleBgDelete(idx)} disabled=${!config.background.active} />
+                    <${BackgroundItem} index=${idx} url=${url} onChange=${(v) => handleBgChange(idx, v)} onDelete=${() => handleBgDelete(idx)} disabled=${!config.background.active} />
                 `)}
              </div>
              <button onClick=${handleAddBg} disabled=${!config.background.active} className="w-full py-3 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all font-bold flex items-center justify-center gap-2 mt-3"><${Plus} size=${18} /> Thêm ảnh mới</button>

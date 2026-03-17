@@ -37,15 +37,17 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
     return html`
         <div key=${location.pathname} className=${`w-full ${animationClass}`}>
             <${Routes} location=${location}>
-                <${Route} path="/" element=${html`<${Navigate} to="/view" replace />`} />
-                <${Route} path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
-                <${Route} path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
+                <${Route} key="route-home" path="/" element=${html`<${Navigate} to="/view" replace />`} />
+                <${Route} key="route-view" path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
+                <${Route} key="route-view-node" path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 ${!isAppMode && html`
-                    <${Route} path="/edit" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
-                    <${Route} path="/edit/settings" element=${html`<${AuthGuard}><${SettingsPage} /></${AuthGuard}>`} />
-                    <${Route} path="/edit/:nodeId" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
+                    <${React.Fragment} key="edit-routes">
+                        <${Route} key="route-edit" path="/edit" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
+                        <${Route} key="route-settings" path="/edit/settings" element=${html`<${AuthGuard}><${SettingsPage} /></${AuthGuard}>`} />
+                        <${Route} key="route-edit-node" path="/edit/:nodeId" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
+                    </${React.Fragment}>
                 `}
-                <${Route} path="*" element=${html`<${Navigate} to="/view" replace />`} />
+                <${Route} key="route-catch-all" path="*" element=${html`<${Navigate} to="/view" replace />`} />
             </${Routes}>
         </div>
     `;
@@ -78,40 +80,42 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
 
   return html`
     <!-- BACKGROUND -->
-    <div className="fixed inset-0 -z-10 bg-slate-50 overflow-hidden pointer-events-none transition-all duration-1000">
+    <div key="layout-background" className="fixed inset-0 -z-10 bg-slate-50 overflow-hidden pointer-events-none transition-all duration-1000">
         ${(uiConfig.backgroundActive && currentBg) ? html`
-            <div className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out" style=${{ backgroundImage: `url('${currentBg}')` }}>
+            <div key="bg-image" className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 ease-in-out" style=${{ backgroundImage: `url('${currentBg}')` }}>
                 <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]"></div>
             </div>
         ` : isLiquid ? html`
-            <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob"></div>
-            <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-32 left-[20%] w-[800px] h-[800px] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-4000"></div>
-            <div className="absolute top-[40%] right-[30%] w-[600px] h-[600px] bg-cyan-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-2000"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-yellow-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-4000"></div>
+            <div key="liquid-blobs" className="absolute inset-0 overflow-hidden">
+                <div key="blob-1" className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob"></div>
+                <div key="blob-2" className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-2000"></div>
+                <div key="blob-3" className="absolute -bottom-32 left-[20%] w-[800px] h-[800px] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 animate-blob animation-delay-4000"></div>
+                <div key="blob-4" className="absolute top-[40%] right-[30%] w-[600px] h-[600px] bg-cyan-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-2000"></div>
+                <div key="blob-5" className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-yellow-200/40 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-4000"></div>
+            </div>
         ` : html`
-             <div className="absolute inset-0 bg-slate-50"></div>
+             <div key="bg-default" className="absolute inset-0 bg-slate-50"></div>
         `}
     </div>
 
-    <div className="min-h-screen flex flex-col overflow-x-hidden">
+    <div key="layout-main" className="min-h-screen flex flex-col overflow-x-hidden">
       <header className=${`sticky top-0 z-30 transition-all duration-300 ${isAppMode ? 'h-16' : 'h-20'} ${isAppMode || isLiquid ? 'bg-white/60 backdrop-blur-xl border-b border-white/20' : 'bg-white border-b border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <div className="flex items-center gap-4 cursor-pointer select-none active:scale-95 transition-transform group" onClick=${handleSecretEntry}>
-            <div className=${`relative p-2.5 rounded-2xl border transition-all duration-500 overflow-hidden ${isLiquid ? 'bg-white/20 backdrop-blur-md border-white/50 shadow-glass group-hover:shadow-neon' : 'bg-indigo-50 border-indigo-100 shadow-sm'} ${secretCount > 0 ? 'ring-2 ring-indigo-400' : ''}`}>
-              ${isLiquid && html`<div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>`}
-              <${BookOpen} className=${`relative z-10 text-indigo-600 drop-shadow-sm ${isAppMode ? "w-5 h-5" : "w-7 h-7"}`} strokeWidth=${2.5} />
+            <div key="logo-container" className=${`relative p-2.5 rounded-2xl border transition-all duration-500 overflow-hidden ${isLiquid ? 'bg-white/20 backdrop-blur-md border-white/50 shadow-glass group-hover:shadow-neon' : 'bg-indigo-50 border-indigo-100 shadow-sm'} ${secretCount > 0 ? 'ring-2 ring-indigo-400' : ''}`}>
+              ${isLiquid && html`<div key="liquid-bg" className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>`}
+              <${BookOpen} key="logo-icon" className=${`relative z-10 text-indigo-600 drop-shadow-sm ${isAppMode ? "w-5 h-5" : "w-7 h-7"}`} strokeWidth=${2.5} />
             </div>
-            <div className="flex flex-col">
-                <span className=${`font-serif font-bold tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'} ${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-violet-900' : 'text-slate-800'}`}>Nội dung ghi bài</span>
-                ${!isAppMode && html`<span className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase opacity-0 group-hover:opacity-100 transition-opacity -mt-1">Cloud Learning</span>`}
+            <div key="logo-text" className="flex flex-col">
+                <span key="main-label" className=${`font-serif font-bold tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'} ${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-violet-900' : 'text-slate-800'}`}>Nội dung ghi bài</span>
+                ${!isAppMode && html`<span key="sub-label" className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase opacity-0 group-hover:opacity-100 transition-opacity -mt-1">Cloud Learning</span>`}
             </div>
           </div>
           <nav className="flex items-center gap-3">
             ${isEditMode && !isAppMode && html`
-              <${Link} to="/view" className=${`relative overflow-hidden flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full transition-all group ${isLiquid ? 'text-indigo-900 bg-white/30 hover:bg-white/60 border border-white/60 shadow-glass hover:shadow-lg backdrop-blur-md' : 'text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-indigo-600'}`}>
-                ${isLiquid && html`<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>`}
-                <${BookOpen} size=${16} /> Chế độ xem
+              <${Link} key="view-mode-link" to="/view" className=${`relative overflow-hidden flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full transition-all group ${isLiquid ? 'text-indigo-900 bg-white/30 hover:bg-white/60 border border-white/60 shadow-glass hover:shadow-lg backdrop-blur-md' : 'text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-indigo-600'}`}>
+                ${isLiquid && html`<div key="liquid-overlay" className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>`}
+                <${BookOpen} key="view-icon" size=${16} /> Chế độ xem
               </${Link}>
             `}
           </nav>
@@ -122,9 +126,14 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       </main>
       <footer className=${`border-t py-8 mt-auto ${isLiquid ? 'bg-white/10 border-white/20 backdrop-blur-sm' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-slate-500 text-sm font-sans font-medium">
-            &copy; ${new Date().getFullYear()} Nội dung ghi bài.
-            ${!isAppMode && html` <span className="text-slate-400 mx-2">|</span> <span className=${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 font-bold' : 'text-indigo-600 font-bold'}>Cloud System</span>`}
+          <p key="footer-text" className="text-slate-500 text-sm font-sans font-medium">
+            <span key="copyright">&copy; ${new Date().getFullYear()} Nội dung ghi bài.</span>
+            ${!isAppMode && html`
+              <${React.Fragment} key="footer-extra">
+                <span key="sep" className="text-slate-400 mx-2">|</span>
+                <span key="system" className=${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 font-bold' : 'text-indigo-600 font-bold'}>Cloud System</span>
+              </${React.Fragment}>
+            `}
           </p>
         </div>
       </footer>
