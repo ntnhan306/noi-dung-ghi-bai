@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { html } from '../utils/html.js';
 
 const BreadcrumbContext = createContext();
 
@@ -10,7 +11,11 @@ export const BreadcrumbProvider = ({ children }) => {
     setBreadcrumbs(newBreadcrumbs);
   }, []);
 
-  return React.createElement(BreadcrumbContext.Provider, { value: { breadcrumbs, updateBreadcrumbs } }, children);
+  return html`
+    <${BreadcrumbContext.Provider} value=${{ breadcrumbs, updateBreadcrumbs }}>
+      ${children}
+    </${BreadcrumbContext.Provider}>
+  `;
 };
 
 export const useBreadcrumbs = () => {

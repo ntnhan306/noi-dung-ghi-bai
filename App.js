@@ -30,15 +30,15 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
         if (currentDepth > prevDepth.current) setDirection('right');
         else if (currentDepth < prevDepth.current) setDirection('left');
         prevDepth.current = currentDepth;
-    }, [location]);
+    }, [location.pathname]);
 
     const animationClass = isAppMode 
         ? (direction === 'right' ? 'animate-[slideInRight_0.3s_ease-out]' : 'animate-[slideInLeft_0.3s_ease-out]') 
         : '';
 
     return html`
-        <div key=${location.pathname} className=${`w-full ${animationClass}`}>
-            <${Routes} location=${location}>
+        <div className=${`w-full ${animationClass}`}>
+            <${Routes}>
                 <${Route} key="route-home" path="/" element=${html`<${Navigate} to="/view" replace />`} />
                 <${Route} key="route-view" path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 <${Route} key="route-view-node" path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
