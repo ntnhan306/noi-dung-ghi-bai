@@ -124,9 +124,9 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         ${children}
       </main>
-      <footer className=${`border-t py-8 mt-auto ${isLiquid ? 'bg-white/10 border-white/20 backdrop-blur-sm' : 'bg-white border-gray-200'}`}>
+      <footer className=${`border-t py-8 mt-auto ${isLiquid ? 'bg-white/30 border-white/20 backdrop-blur-sm' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p key="footer-text" className="text-slate-500 text-sm font-sans font-medium">
+          <p key="footer-text" className="text-slate-900 text-sm font-sans font-medium">
             <span key="copyright">© ${new Date().getFullYear()} Nội dung ghi bài.</span>
             ${!isAppMode && html`
               <${React.Fragment} key="footer-extra">
