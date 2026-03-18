@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { ChevronRight, Home } from 'lucide-react';
 
-export const Breadcrumbs = ({ items, onNavigate }) => {
+export const Breadcrumbs = ({ items, onNavigate, isLiquid }) => {
   const navRef = useRef(null);
   const isHoveringRef = useRef(false);
   const hasScrolledRef = useRef(false); // Đánh dấu đã cuộn cho ID hiện tại chưa
@@ -90,12 +90,12 @@ export const Breadcrumbs = ({ items, onNavigate }) => {
       ref=${navRef}
       onMouseEnter=${handleMouseEnter}
       onMouseLeave=${handleMouseLeave}
-      className="breadcrumbs-scroll flex items-center space-x-1 text-sm text-slate-600 mb-8 overflow-x-auto whitespace-nowrap p-1.5 bg-white/40 backdrop-blur-md border border-white/50 rounded-full shadow-glass max-w-full touch-pan-x"
+      className=${`breadcrumbs-scroll flex items-center space-x-1 text-sm text-slate-600 mb-8 overflow-x-auto whitespace-nowrap p-1.5 rounded-full max-w-full touch-pan-x border ${isLiquid ? 'bg-white/40 backdrop-blur-md border-white/50 shadow-glass' : 'bg-white border-slate-200 shadow-sm'}`}
     >
       <button 
         key="home-button"
         onClick=${() => onNavigate(null)}
-        className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-white/60 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 shadow-sm transition-all border border-transparent hover:border-indigo-100"
+        className=${`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-slate-600 hover:text-indigo-600 shadow-sm transition-all border ${isLiquid ? 'bg-white/60 border-transparent hover:border-indigo-100 hover:bg-indigo-50' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'}`}
         title="Trang chủ"
       >
         <${Home} className="w-4 h-4" />
@@ -107,7 +107,7 @@ export const Breadcrumbs = ({ items, onNavigate }) => {
           <button
             key=${`btn-${item.id || index}`}
             onClick=${() => onNavigate(item.id)}
-            className="flex-shrink-0 hover:text-indigo-700 font-bold transition-colors px-3 py-1.5 rounded-full hover:bg-white/60 hover:shadow-sm text-slate-600 border border-transparent hover:border-white/50"
+            className=${`flex-shrink-0 hover:text-indigo-700 font-bold transition-colors px-3 py-1.5 rounded-full border border-transparent text-slate-600 ${isLiquid ? 'hover:bg-white/60 hover:shadow-sm hover:border-white/50' : 'hover:bg-slate-50 hover:border-slate-100'}`}
           >
             ${item.title}
           </button>

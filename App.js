@@ -99,10 +99,10 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
     </div>
 
     <div key="layout-main" className="min-h-screen flex flex-col overflow-x-hidden">
-      <header className=${`sticky top-0 z-30 transition-all duration-300 ${isAppMode ? 'h-16' : 'h-20'} ${isAppMode || isLiquid ? 'bg-white/60 backdrop-blur-xl border-b border-white/20' : 'bg-white border-b border-gray-200'}`}>
+      <header className=${`sticky top-0 z-30 transition-all duration-300 ${isAppMode ? 'h-16' : 'h-20'} ${isLiquid ? 'bg-white/60 backdrop-blur-xl border-b border-white/20' : 'bg-white border-b border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <div className="flex items-center gap-4 cursor-pointer select-none active:scale-95 transition-transform group" onClick=${handleSecretEntry}>
-            <div key="logo-container" className=${`relative p-2.5 rounded-2xl border transition-all duration-500 overflow-hidden ${isLiquid ? 'bg-white/20 backdrop-blur-md border-white/50 shadow-glass group-hover:shadow-neon' : 'bg-indigo-50 border-indigo-100 shadow-sm'} ${secretCount > 0 ? 'ring-2 ring-indigo-400' : ''}`}>
+            <div key="logo-container" className=${`relative p-2.5 rounded-2xl border transition-all duration-500 overflow-hidden ${isLiquid ? 'bg-white/20 backdrop-blur-md border-white/50 shadow-glass group-hover:shadow-neon' : 'bg-white border-slate-200 shadow-sm'} ${secretCount > 0 ? 'ring-2 ring-indigo-400' : ''}`}>
               ${isLiquid && html`<div key="liquid-bg" className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>`}
               <${BookOpen} key="logo-icon" className=${`relative z-10 text-indigo-600 drop-shadow-sm ${isAppMode ? "w-5 h-5" : "w-7 h-7"}`} strokeWidth=${2.5} />
             </div>

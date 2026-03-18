@@ -460,7 +460,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
               </div>
             </div>
             <div key="back-button-container" className="mt-8 px-4">
-               <button key="btn-back" onClick=${() => handleNavigate(currentNode.parentId)} className=${`group text-slate-600 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-bold px-5 py-2.5 rounded-2xl hover:bg-white/50 hover:shadow-glass inline-flex backdrop-blur-sm border border-transparent ${isLiquid ? 'hover:border-white/50' : 'hover:border-slate-200'}`}><div key="icon-bg" className="p-1 rounded-full bg-slate-200/50 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} key="icon" size=${16} /></div> Quay lại</button>
+               <button key="btn-back" onClick=${() => handleNavigate(currentNode.parentId)} className=${`group text-slate-600 hover:text-indigo-600 flex items-center gap-2 font-sans text-sm transition-colors font-bold px-5 py-2.5 rounded-2xl inline-flex border ${isLiquid ? 'hover:bg-white/50 hover:shadow-glass backdrop-blur-sm border-transparent hover:border-white/50' : 'bg-white shadow-sm border-slate-200 hover:bg-slate-50'}`}><div key="icon-bg" className="p-1 rounded-full bg-slate-200/50 group-hover:bg-indigo-100 transition-colors"><${ArrowLeft} key="icon" size=${16} /></div> Quay lại</button>
             </div>
         `;
     }
@@ -475,7 +475,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         </div>
         
         ${mode === 'edit' && !isAppMode && !nodeId && html`
-           <div key="edit-actions" className="flex items-center gap-2 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-glass">
+           <div key="edit-actions" className=${`flex items-center gap-2 p-1.5 rounded-2xl border ${isLiquid ? 'bg-white/40 backdrop-blur-md border-white/50 shadow-glass' : 'bg-white border-slate-200 shadow-sm'}`}>
              <button key="btn-pass" onClick=${() => setIsPasswordModalOpen(true)} className="px-4 py-2 text-slate-600 hover:text-indigo-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${KeyRound} size=${16} /> Đổi mật khẩu</button>
              <button key="btn-settings" onClick=${() => navigate('/edit/settings')} className="px-4 py-2 text-slate-600 hover:text-indigo-600 hover:bg-white/60 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><${Settings} size=${16} /> Cài đặt</button>
              <div key="sep" className="w-px h-6 bg-slate-300 mx-1"></div>
@@ -584,9 +584,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       <!-- Floating Zoom Controls -->
       ${canShowZoom && html`
         <div key="zoom-controls" className="fixed bottom-8 right-6 flex flex-col gap-2 z-40 animate-in slide-in-from-right-10">
-            <button key="btn-zoom-in" onClick=${increaseFontSize} className="p-3 bg-white/80 backdrop-blur-md border border-white/60 text-indigo-600 rounded-2xl shadow-glass hover:shadow-glass-hover hover:scale-110 active:scale-95 transition-all"><${Plus} size=${24} /></button>
-            <div key="zoom-level" className="bg-white/80 backdrop-blur-md border border-white/60 text-slate-600 font-bold text-xs py-1 px-2 rounded-lg text-center shadow-sm select-none">${viewFontSize}pt</div>
-            <button key="btn-zoom-out" onClick=${decreaseFontSize} className="p-3 bg-white/80 backdrop-blur-md border border-white/60 text-slate-600 rounded-2xl shadow-glass hover:shadow-glass-hover hover:scale-110 active:scale-95 transition-all"><${Minus} size=${24} /></button>
+            <button key="btn-zoom-in" onClick=${increaseFontSize} className=${`p-3 border text-indigo-600 rounded-2xl transition-all hover:scale-110 active:scale-95 ${isLiquid ? 'bg-white/80 backdrop-blur-md border-white/60 shadow-glass hover:shadow-glass-hover' : 'bg-white border-slate-200 shadow-md hover:bg-slate-50'}`}><${Plus} size=${24} /></button>
+            <div key="zoom-level" className=${`border text-slate-600 font-bold text-xs py-1 px-2 rounded-lg text-center shadow-sm select-none ${isLiquid ? 'bg-white/80 backdrop-blur-md border-white/60' : 'bg-white border-slate-200'}`}>${viewFontSize}pt</div>
+            <button key="btn-zoom-out" onClick=${decreaseFontSize} className=${`p-3 border text-slate-600 rounded-2xl transition-all hover:scale-110 active:scale-95 ${isLiquid ? 'bg-white/80 backdrop-blur-md border-white/60 shadow-glass hover:shadow-glass-hover' : 'bg-white border-slate-200 shadow-md hover:bg-slate-50'}`}><${Minus} size=${24} /></button>
         </div>
       `}
 
