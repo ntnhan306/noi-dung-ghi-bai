@@ -127,7 +127,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       <footer className=${`border-t py-8 mt-auto ${isLiquid ? 'bg-white/10 border-white/20 backdrop-blur-sm' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p key="footer-text" className="text-slate-500 text-sm font-sans font-medium">
-            <span key="copyright">&copy; ${new Date().getFullYear()} Nội dung ghi bài.</span>
+            <span key="copyright">© ${new Date().getFullYear()} Nội dung ghi bài.</span>
             ${!isAppMode && html`
               <${React.Fragment} key="footer-extra">
                 <span key="sep" className="text-slate-400 mx-2">|</span>
