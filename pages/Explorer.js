@@ -174,7 +174,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           toolbar_sticky: true,
           autosave_interval: '30s',
           height: '75vh', 
-          min_height: 600,
+          min_height: 700,
           content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; background-color: #ffffff; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
