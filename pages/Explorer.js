@@ -49,6 +49,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
 
+  const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
+  const children = useMemo(() => allNodes.filter(n => n.parentId === (nodeId || null)).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), [allNodes, nodeId]);
+
   const titleRef = useRef(null);
   const [isMultiLine, setIsMultiLine] = useState(false);
 
@@ -71,8 +74,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }
   }, [isAppMode, currentNode]);
 
-  const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
-  const children = useMemo(() => allNodes.filter(n => n.parentId === (nodeId || null)).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), [allNodes, nodeId]);
   const calculatedBreadcrumbs = useMemo(() => {
     const path = [];
     let curr = currentNode;
