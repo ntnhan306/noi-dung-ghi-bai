@@ -4,9 +4,11 @@ import { html } from '../utils/html.js';
 import { Link } from 'react-router-dom';
 import { Lock, ArrowRight } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
+import { useBreadcrumbs } from '../context/BreadcrumbContext.js';
 
 export const AuthGuard = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { setBreadcrumbsVisible } = useBreadcrumbs();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
@@ -17,6 +19,11 @@ export const AuthGuard = ({ children }) => {
       setIsAuthenticated(true);
     }
   }, []);
+
+  useEffect(() => {
+    setBreadcrumbsVisible(isAuthenticated);
+    return () => setBreadcrumbsVisible(true);
+  }, [isAuthenticated, setBreadcrumbsVisible]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

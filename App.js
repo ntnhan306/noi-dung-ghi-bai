@@ -58,7 +58,7 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
 const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { breadcrumbs } = useBreadcrumbs();
+  const { breadcrumbs, isVisible } = useBreadcrumbs();
   const isEditMode = location.pathname.startsWith('/edit');
   const [secretCount, setSecretCount] = useState(0);
 
@@ -135,9 +135,11 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       </header>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <!-- Persistent Breadcrumbs -->
-        <div className="sticky top-[4.5rem] md:top-24 z-20 mb-8 px-2">
-           <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} isLiquid=${isLiquid} />
-        </div>
+        ${isVisible && !['/view', '/edit', '/edit/settings', '/'].includes(location.pathname) && html`
+          <div className="sticky top-[4.5rem] md:top-24 z-20 mb-8 px-2">
+             <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} isLiquid=${isLiquid} />
+          </div>
+        `}
         
         ${children}
       </main>

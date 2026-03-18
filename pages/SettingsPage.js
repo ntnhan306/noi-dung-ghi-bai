@@ -4,6 +4,7 @@ import { html } from '../utils/html.js';
 import { ArrowLeft, Save, Plus, Trash2, Edit2, Image as ImageIcon, Check, Loader2, LayoutTemplate, ZoomIn, Smartphone, Monitor, Edit3, ChevronDown } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { useNavigate } from 'react-router-dom';
+import { useBreadcrumbs } from '../context/BreadcrumbContext.js';
 
 const BackgroundItem = ({ url, index, onChange, onDelete, disabled }) => {
   const [isEditing, setIsEditing] = useState(!url);
@@ -117,9 +118,15 @@ const Toggle = ({ label, subLabel, checked, onChange, icon: Icon }) => html`
 
 export const SettingsPage = () => {
   const navigate = useNavigate();
+  const { setBreadcrumbsVisible } = useBreadcrumbs();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setBreadcrumbsVisible(false);
+    return () => setBreadcrumbsVisible(true);
+  }, [setBreadcrumbsVisible]);
 
   useEffect(() => {
     loadSettings();

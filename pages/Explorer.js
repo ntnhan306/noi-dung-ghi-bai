@@ -44,7 +44,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const sortableListRef = useRef(null);
   const sortableInstance = useRef(null);
   const isFetchingRef = useRef(false);
-  const { updateBreadcrumbs } = useBreadcrumbs();
+  const { updateBreadcrumbs, setBreadcrumbsVisible } = useBreadcrumbs();
 
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
@@ -92,6 +92,11 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   ) : true);
 
   useEffect(() => { if (!loading) updateBreadcrumbs(calculatedBreadcrumbs); }, [loading, calculatedBreadcrumbs, updateBreadcrumbs]);
+
+  useEffect(() => {
+    setBreadcrumbsVisible(!isEditingContent);
+    return () => setBreadcrumbsVisible(true);
+  }, [isEditingContent, setBreadcrumbsVisible]);
 
   const fetchData = async (isBackground = false) => {
     if (isFetchingRef.current) return;

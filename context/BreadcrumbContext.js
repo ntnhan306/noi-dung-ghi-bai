@@ -6,13 +6,18 @@ const BreadcrumbContext = createContext();
 
 export const BreadcrumbProvider = ({ children }) => {
   const [breadcrumbs, setBreadcrumbs] = useState([]);
+  const [isVisible, setIsVisible] = useState(true);
   
   const updateBreadcrumbs = useCallback((newBreadcrumbs) => {
     setBreadcrumbs(newBreadcrumbs);
   }, []);
 
+  const setBreadcrumbsVisible = useCallback((visible) => {
+    setIsVisible(visible);
+  }, []);
+
   return html`
-    <${BreadcrumbContext.Provider} value=${{ breadcrumbs, updateBreadcrumbs }}>
+    <${BreadcrumbContext.Provider} value=${{ breadcrumbs, updateBreadcrumbs, isVisible, setBreadcrumbsVisible }}>
       ${children}
     </${BreadcrumbContext.Provider}>
   `;
