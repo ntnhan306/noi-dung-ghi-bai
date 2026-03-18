@@ -466,7 +466,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }
 
     return html`
-      <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `p-6 rounded-full border mx-4 mt-6 text-center items-center justify-center ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
+      <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `p-6 rounded-full border mt-6 text-center items-center justify-center ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
         <div key="header-title-container" className=${isAppMode ? 'w-full' : ''}>
           ${!isAppMode && html`<h2 key="node-label" className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div key="label-dot" className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
           <h1 key="main-title" className="text-3xl md:text-5xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
