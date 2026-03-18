@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { html } from '../utils/html.js';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Minus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2, Settings } from 'lucide-react';
@@ -48,6 +48,28 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
+
+  const titleRef = useRef(null);
+  const [isMultiLine, setIsMultiLine] = useState(false);
+
+  useLayoutEffect(() => {
+    if (isAppMode && titleRef.current) {
+      const checkMultiLine = () => {
+        const height = titleRef.current.offsetHeight;
+        // With text-xl/2xl, line height is around 28-32px.
+        // If height > 40px, it's likely multi-line.
+        setIsMultiLine(height > 40);
+      };
+      checkMultiLine();
+      // Use a small timeout to ensure rendering is complete
+      const timer = setTimeout(checkMultiLine, 100);
+      window.addEventListener('resize', checkMultiLine);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('resize', checkMultiLine);
+      };
+    }
+  }, [isAppMode, currentNode]);
 
   const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
   const children = useMemo(() => allNodes.filter(n => n.parentId === (nodeId || null)).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), [allNodes, nodeId]);
@@ -465,11 +487,15 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         `;
     }
 
+    const headerAppClasses = isMultiLine 
+      ? `p-6 border-l-[3px] border-l-indigo-500 rounded-tl-none rounded-bl-none rounded-tr-2xl rounded-br-2xl text-left items-start justify-start`
+      : `p-6 rounded-full text-center items-center justify-center`;
+
     return html`
-      <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `p-6 rounded-full border mt-6 text-center items-center justify-center ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
+      <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `mt-6 border ${headerAppClasses} ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
         <div key="header-title-container" className=${isAppMode ? 'w-full' : ''}>
           ${!isAppMode && html`<h2 key="node-label" className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div key="label-dot" className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
-          <h1 key="main-title" className="text-3xl md:text-5xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
+          <h1 key="main-title" ref=${titleRef} className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} font-serif font-bold text-slate-900 leading-tight drop-shadow-sm`}>
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
         </div>
