@@ -78,7 +78,11 @@ export const NodeItem = ({
   // Normal: bg-white, border-slate-200, shadow-sm, no opacity/blur
   
   const baseClasses = isAppMode 
-    ? 'border-b border-white/20 py-5 px-5 bg-white/75 backdrop-blur-sm active:bg-white/40 transition-all' 
+    ? `rounded-xl py-5 px-5 transition-all active:bg-white/40 border ${
+        isLiquid 
+          ? 'bg-white/40 backdrop-blur-sm border-white/20' 
+          : 'bg-white border-slate-200'
+      }`
     : `group relative rounded-3xl p-6 transition-all duration-300 ease-out border overflow-hidden
        ${isLiquid 
             ? 'backdrop-blur-md bg-white/40 border-white/60 shadow-glass hover:shadow-glass-hover hover:bg-white/60 hover:border-white/80' 
