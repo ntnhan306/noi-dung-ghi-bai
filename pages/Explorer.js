@@ -5,10 +5,10 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Minus, ArrowLeft, LayoutGrid, List as ListIcon, Loader2, Save, X, KeyRound, CornerDownRight, ClipboardList, ArrowUpDown, LogOut, Mic, MicOff, Globe, Wand2, Settings } from 'lucide-react';
 import { apiService } from '../services/apiService.js';
 import { NodeType, ALLOWED_CHILDREN, NODE_LABELS } from '../types.js';
-import { Breadcrumbs } from '../components/Breadcrumbs.js';
 import { NodeItem } from '../components/NodeItem.js';
 import { EditorModal } from '../components/EditorModal.js';
 import { ChangePasswordModal } from '../components/ChangePasswordModal.js';
+import { useBreadcrumbs } from '../context/BreadcrumbContext.js';
 import Sortable from 'sortablejs';
 
 export const Explorer = ({ mode, isAppMode, uiConfig }) => {
@@ -44,7 +44,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const sortableListRef = useRef(null);
   const sortableInstance = useRef(null);
   const isFetchingRef = useRef(false);
-  const [visibleBreadcrumbs, setVisibleBreadcrumbs] = useState([]);
+  const { updateBreadcrumbs } = useBreadcrumbs();
 
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
@@ -91,7 +91,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       (mode === 'view' && !isAppMode && uiConfig.zoom.view)
   ) : true);
 
-  useEffect(() => { if (!loading) setVisibleBreadcrumbs(calculatedBreadcrumbs); }, [loading, calculatedBreadcrumbs]);
+  useEffect(() => { if (!loading) updateBreadcrumbs(calculatedBreadcrumbs); }, [loading, calculatedBreadcrumbs, updateBreadcrumbs]);
 
   const fetchData = async (isBackground = false) => {
     if (isFetchingRef.current) return;
@@ -496,7 +496,11 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `mt-6 border ${headerAppClasses} ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
         <div key="header-title-container" className=${isAppMode ? 'w-full' : ''}>
           ${!isAppMode && html`<h2 key="node-label" className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div key="label-dot" className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
-          <h1 key="main-title" ref=${titleRef} className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} font-serif font-bold text-slate-900 leading-tight drop-shadow-sm`}>
+          <h1 
+            key="main-title" 
+            ref=${titleRef} 
+            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} font-serif font-bold text-slate-900 leading-tight drop-shadow-sm`}
+          >
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
         </div>
@@ -598,11 +602,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   return html`
     <div className="w-full mx-auto relative min-h-screen">
-      <!-- Fixed Breadcrumbs -->
-      <div className="sticky top-[4.5rem] md:top-24 z-20 mb-8 px-2">
-         <${Breadcrumbs} items=${visibleBreadcrumbs} onNavigate=${handleNavigate} isLiquid=${isLiquid} />
-      </div>
-
       <!-- Content -->
       <div className="px-2 pb-20">
          ${renderMainContent()}

@@ -7,6 +7,8 @@ import { AuthGuard } from './pages/AuthGuard.js';
 import { SettingsPage } from './pages/SettingsPage.js';
 import { BookOpen, Lock, ShieldAlert } from 'lucide-react';
 import { apiService } from './services/apiService.js';
+import { BreadcrumbProvider, useBreadcrumbs } from './context/BreadcrumbContext.js';
+import { Breadcrumbs } from './components/Breadcrumbs.js';
 
 const getBasename = () => {
   const path = window.location.pathname;
@@ -56,6 +58,7 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
 const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { breadcrumbs } = useBreadcrumbs();
   const isEditMode = location.pathname.startsWith('/edit');
   const [secretCount, setSecretCount] = useState(0);
 
@@ -66,7 +69,10 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   }, [secretCount]);
 
   const handleSecretEntry = () => {
-    if (isAppMode) return; 
+    if (isAppMode) {
+      handleNavigate(null);
+      return;
+    }
     if (isEditMode) return;
     const newCount = secretCount + 1;
     setSecretCount(newCount);
@@ -74,6 +80,12 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       setSecretCount(0);
       navigate('/edit');
     }
+  };
+
+  const handleNavigate = (id) => {
+    const basePath = isEditMode ? '/edit' : '/view';
+    if (!id) navigate(basePath);
+    else navigate(`${basePath}/${id}`);
   };
 
   const isLiquid = uiConfig.style === 'liquid';
@@ -122,6 +134,11 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
         </div>
       </header>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <!-- Persistent Breadcrumbs -->
+        <div className="sticky top-[4.5rem] md:top-24 z-20 mb-8 px-2">
+           <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} isLiquid=${isLiquid} />
+        </div>
+        
         ${children}
       </main>
       <footer className=${`border-t py-8 mt-auto ${isLiquid ? 'bg-white/30 border-white/20 backdrop-blur-sm' : 'bg-white border-gray-200'}`}>
@@ -197,9 +214,11 @@ const App = () => {
 
   return html`
     <${BrowserRouter} basename=${getBasename()}>
-      <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg}>
-         <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
-      </${Layout}>
+      <${BreadcrumbProvider}>
+        <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg}>
+           <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
+        </${Layout}>
+      </${BreadcrumbProvider}>
     </${BrowserRouter}>
   `;
 };

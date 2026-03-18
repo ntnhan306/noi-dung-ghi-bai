@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { ChevronRight, Home } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const Breadcrumbs = ({ items, onNavigate, isLiquid }) => {
   const navRef = useRef(null);
@@ -35,8 +36,8 @@ export const Breadcrumbs = ({ items, onNavigate, isLiquid }) => {
         }
     };
 
-    // Đợi 300ms để giao diện ổn định rồi mới cuộn
-    const timer = setTimeout(attemptScroll, 300);
+    // Đợi 100ms để animation bắt đầu rồi mới cuộn
+    const timer = setTimeout(attemptScroll, 100);
 
     return () => clearTimeout(timer);
   }, [currentItemsId]);
@@ -101,18 +102,28 @@ export const Breadcrumbs = ({ items, onNavigate, isLiquid }) => {
         <${Home} className="w-4 h-4" />
       </button>
       
-      ${items.map((item, index) => html`
-        <${React.Fragment} key=${`bc-${item.id || index}`}>
-          <${ChevronRight} key=${`sep-${item.id || index}`} className="w-3 h-3 text-slate-400 flex-shrink-0 mx-1" />
-          <button
-            key=${`btn-${item.id || index}`}
-            onClick=${() => onNavigate(item.id)}
-            className=${`flex-shrink-0 hover:text-indigo-700 font-bold transition-colors px-3 py-1.5 rounded-full border border-transparent text-slate-600 ${isLiquid ? 'hover:bg-white/60 hover:shadow-sm hover:border-white/50' : 'hover:bg-slate-50 hover:border-slate-100'}`}
+      <${AnimatePresence} mode="popLayout">
+        ${items.map((item, index) => html`
+          <${motion.div} 
+            key=${`bc-group-${item.id || index}`}
+            layout
+            initial=${{ opacity: 0, x: 10 }}
+            animate=${{ opacity: 1, x: 0 }}
+            exit=${{ opacity: 0, x: -10 }}
+            transition=${{ duration: 0.2 }}
+            className="flex items-center"
           >
-            ${item.title}
-          </button>
-        </${React.Fragment}>
-      `)}
+            <${ChevronRight} key=${`sep-${item.id || index}`} className="w-3 h-3 text-slate-400 flex-shrink-0 mx-1" />
+            <button
+              key=${`btn-${item.id || index}`}
+              onClick=${() => onNavigate(item.id)}
+              className=${`flex-shrink-0 hover:text-indigo-700 font-bold transition-colors px-3 py-1.5 rounded-full border border-transparent text-slate-600 ${isLiquid ? 'hover:bg-white/60 hover:shadow-sm hover:border-white/50' : 'hover:bg-slate-50 hover:border-slate-100'}`}
+            >
+              ${item.title}
+            </button>
+          </${motion.div}>
+        `)}
+      </${AnimatePresence}>
     </nav>
   `;
 };
