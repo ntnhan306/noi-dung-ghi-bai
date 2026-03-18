@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { html } from '../utils/html.js';
 import { ChevronRight, Home } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Breadcrumbs = ({ items, onNavigate, isLiquid }) => {
   const navRef = useRef(null);
