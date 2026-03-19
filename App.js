@@ -135,7 +135,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       </header>
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <!-- Persistent Breadcrumbs -->
-        ${isVisible && !['/view', '/edit', '/edit/settings', '/'].includes(location.pathname) && html`
+        ${isVisible && breadcrumbs.length > 0 && html`
           <div className="sticky top-[4.5rem] md:top-24 z-20 mb-8 px-2">
              <${Breadcrumbs} items=${breadcrumbs} onNavigate=${handleNavigate} isLiquid=${isLiquid} />
           </div>
