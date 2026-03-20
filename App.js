@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { html } from './utils/html.js';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { Explorer } from './pages/Explorer.js';
@@ -68,7 +68,13 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
     return () => clearTimeout(timer);
   }, [secretCount]);
 
-  const handleSecretEntry = () => {
+  const handleNavigate = useCallback((id) => {
+    const basePath = isEditMode ? '/edit' : '/view';
+    if (!id) navigate(basePath);
+    else navigate(`${basePath}/${id}`);
+  }, [isEditMode, navigate]);
+
+  const handleSecretEntry = useCallback(() => {
     if (isAppMode) {
       handleNavigate(null);
       return;
@@ -80,13 +86,23 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
       setSecretCount(0);
       navigate('/edit');
     }
-  };
+  }, [isAppMode, isEditMode, secretCount, handleNavigate, navigate]);
 
-  const handleNavigate = (id) => {
-    const basePath = isEditMode ? '/edit' : '/view';
-    if (!id) navigate(basePath);
-    else navigate(`${basePath}/${id}`);
-  };
+  useEffect(() => {
+    if (isAppMode) {
+      window.returnPage = () => {
+        if (breadcrumbs.length > 0) {
+          // Parent node is the second-to-last item in breadcrumbs
+          // If only 1 item, parent is null (home)
+          const parent = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2] : null;
+          handleNavigate(parent?.id || null);
+        }
+      };
+    }
+    return () => {
+      delete window.returnPage;
+    };
+  }, [isAppMode, breadcrumbs, handleNavigate]);
 
   const isLiquid = uiConfig.style === 'liquid';
 
