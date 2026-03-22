@@ -76,7 +76,7 @@ export const EditorModal = ({
           <!-- Class Selection -->
           ${targetType === NodeType.SUBJECT && html`
             <div>
-              <label className="block text-sm font-bold text-slate-600 mb-3 ml-1">Thuộc lớp (Tùy chọn)</label>
+              <label className="block text-sm font-bold text-slate-600 mb-3 ml-1">Khối lớp (Tùy chọn)</label>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <select
