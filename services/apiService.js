@@ -29,7 +29,8 @@ export const apiService = {
         title: node.title,
         content: node.content || '',
         createdAt: node.createdAt || Date.now(),
-        orderIndex: node.orderIndex !== undefined ? node.orderIndex : 0
+        orderIndex: node.orderIndex !== undefined ? node.orderIndex : 0,
+        classId: node.classId || null
       };
       const response = await fetch(`${API_URL}/api/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!response.ok) throw new Error('Save failed');

@@ -9,6 +9,7 @@ import { NodeItem } from '../components/NodeItem.js';
 import { EditorModal } from '../components/EditorModal.js';
 import { ChangePasswordModal } from '../components/ChangePasswordModal.js';
 import { useBreadcrumbs } from '../context/BreadcrumbContext.js';
+import { useClasses } from '../context/ClassContext.js';
 import Sortable from 'sortablejs';
 
 export const Explorer = ({ mode, isAppMode, uiConfig }) => {
@@ -45,12 +46,22 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const sortableInstance = useRef(null);
   const isFetchingRef = useRef(false);
   const { updateBreadcrumbs, setBreadcrumbsVisible } = useBreadcrumbs();
+  const { selectedClassId } = useClasses();
 
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
 
   const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
-  const children = useMemo(() => allNodes.filter(n => n.parentId === (nodeId || null)).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)), [allNodes, nodeId]);
+  const children = useMemo(() => {
+    let filtered = allNodes.filter(n => n.parentId === (nodeId || null));
+    
+    // Only filter by class at the root level (subjects)
+    if (!nodeId) {
+      filtered = filtered.filter(n => !n.classId || n.classId === selectedClassId);
+    }
+    
+    return filtered.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+  }, [allNodes, nodeId, selectedClassId]);
 
   const titleRef = useRef(null);
   const [isMultiLine, setIsMultiLine] = useState(false);
