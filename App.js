@@ -80,7 +80,8 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   }, []);
 
   const selectedClass = classes.find(c => c.id === selectedClassId);
-  const isHome = location.pathname === '/view' || location.pathname === '/edit' || location.pathname === '/';
+  const homePaths = ['/view', '/view/', '/edit', '/edit/', '/'];
+  const isHome = homePaths.includes(location.pathname);
   const showClassSelector = isHome && !isAppMode;
 
   useEffect(() => {
