@@ -82,7 +82,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   const selectedClass = classes.find(c => c.id === selectedClassId);
   const homePaths = ['/view', '/view/', '/edit', '/edit/', '/'];
   const isHome = homePaths.includes(location.pathname);
-  const showClassSelector = isHome && !isAppMode;
+  const showClassSelector = isHome;
 
   useEffect(() => {
     let timer;
