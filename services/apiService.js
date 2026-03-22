@@ -71,10 +71,10 @@ export const apiService = {
   getFullConfig: async () => {
     try {
         const response = await fetch(`${API_URL}/api/config/full`);
-        if (!response.ok) return { background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
+        if (!response.ok) return { classes: [], background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
         return await response.json();
     } catch (e) {
-        return { background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
+        return { classes: [], background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
     }
   },
 

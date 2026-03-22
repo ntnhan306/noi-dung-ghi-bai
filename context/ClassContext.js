@@ -12,20 +12,21 @@ export const ClassProvider = ({ children }) => {
 
   const fetchClasses = async () => {
     setLoading(true);
-    const config = await apiService.getFullConfig();
-    const classList = config.classes || [];
-    setClasses(classList);
-    
-    // Set default class if none selected
-    if (classList.length > 0) {
-      const defaultClass = classList.find(c => c.isDefault);
-      if (defaultClass) {
+    try {
+      const config = await apiService.getFullConfig();
+      const classList = config.classes || [];
+      setClasses(classList);
+      
+      // Set default class
+      if (classList.length > 0) {
+        const defaultClass = classList.find(c => c.isDefault) || classList[0];
         setSelectedClassId(defaultClass.id);
-      } else if (classList.length === 1) {
-        setSelectedClassId(classList[0].id);
       }
+    } catch (error) {
+      console.error("Failed to fetch classes:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -34,9 +35,13 @@ export const ClassProvider = ({ children }) => {
 
   const updateClasses = async (newClasses) => {
     setClasses(newClasses);
-    const config = await apiService.getFullConfig();
-    config.classes = newClasses;
-    await apiService.saveFullConfig(config);
+    try {
+      const config = await apiService.getFullConfig();
+      config.classes = newClasses;
+      await apiService.saveFullConfig(config);
+    } catch (error) {
+      console.error("Failed to save classes:", error);
+    }
   };
 
   return html`

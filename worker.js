@@ -36,7 +36,7 @@ export default {
         }
         try {
             await env.DB.batch([
-                env.DB.prepare(`CREATE TABLE IF NOT EXISTS nodes (id TEXT PRIMARY KEY, parentId TEXT, type TEXT, title TEXT, content TEXT, createdAt INTEGER, orderIndex INTEGER DEFAULT 0)`),
+                env.DB.prepare(`CREATE TABLE IF NOT EXISTS nodes (id TEXT PRIMARY KEY, parentId TEXT, type TEXT, title TEXT, content TEXT, createdAt INTEGER, orderIndex INTEGER DEFAULT 0, classId TEXT)`),
                 env.DB.prepare(`CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT)`)
             ]);
         } catch (e) {}
@@ -55,7 +55,7 @@ export default {
                 } catch (e) { orderIndex = 0; }
             } else { orderIndex = 0; }
         }
-        await env.DB.prepare(`INSERT OR REPLACE INTO nodes (id, parentId, type, title, content, createdAt, orderIndex) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(data.id, data.parentId || null, data.type, data.title, data.content || null, data.createdAt || Date.now(), orderIndex).run();
+        await env.DB.prepare(`INSERT OR REPLACE INTO nodes (id, parentId, type, title, content, createdAt, orderIndex, classId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).bind(data.id, data.parentId || null, data.type, data.title, data.content || null, data.createdAt || Date.now(), orderIndex, data.classId || null).run();
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 
@@ -98,12 +98,13 @@ export default {
       // --- API: FULL CONFIG (GET/POST) ---
       if (url.pathname === "/api/config/full" && request.method === "GET") {
         try {
-            const keys = ['background_images', 'background_active', 'ui_style', 'zoom_settings'];
+            const keys = ['background_images', 'background_active', 'ui_style', 'zoom_settings', 'classes'];
             const results = await Promise.all(keys.map(k => env.DB.prepare("SELECT value FROM config WHERE key = ?").bind(k).first()));
             
-            const [bgImages, bgActive, uiStyle, zoomSettings] = results;
+            const [bgImages, bgActive, uiStyle, zoomSettings, classes] = results;
 
             const config = {
+                classes: classes && classes.value ? JSON.parse(classes.value) : [],
                 background: {
                     images: bgImages && bgImages.value ? JSON.parse(bgImages.value) : [],
                     active: bgActive ? bgActive.value === 'true' : false
@@ -115,17 +116,18 @@ export default {
             };
             return new Response(JSON.stringify(config), { headers: corsHeaders });
         } catch (e) {
-            return new Response(JSON.stringify({ background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } }), { headers: corsHeaders });
+            return new Response(JSON.stringify({ classes: [], background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } }), { headers: corsHeaders });
         }
       }
 
       if (url.pathname === "/api/config/full" && request.method === "POST") {
-        const { background, ui } = await request.json();
+        const { background, ui, classes } = await request.json();
         await env.DB.batch([
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_images', ?)`).bind(JSON.stringify(background.images)),
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_active', ?)`).bind(String(background.active)),
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('ui_style', ?)`).bind(ui.style),
-            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('zoom_settings', ?)`).bind(JSON.stringify(ui.zoom))
+            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('zoom_settings', ?)`).bind(JSON.stringify(ui.zoom)),
+            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('classes', ?)`).bind(JSON.stringify(classes || []))
         ]);
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
