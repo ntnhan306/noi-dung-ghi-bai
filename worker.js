@@ -122,13 +122,26 @@ export default {
 
       if (url.pathname === "/api/config/full" && request.method === "POST") {
         const { background, ui, classes } = await request.json();
-        await env.DB.batch([
+        const newClasses = classes || [];
+        const newIds = newClasses.map(c => c.id);
+        
+        const batch = [
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_images', ?)`).bind(JSON.stringify(background.images)),
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('background_active', ?)`).bind(String(background.active)),
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('ui_style', ?)`).bind(ui.style),
             env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('zoom_settings', ?)`).bind(JSON.stringify(ui.zoom)),
-            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('classes', ?)`).bind(JSON.stringify(classes || []))
-        ]);
+            env.DB.prepare(`INSERT OR REPLACE INTO config (key, value) VALUES ('classes', ?)`).bind(JSON.stringify(newClasses))
+        ];
+
+        // Tự động chuyển các môn thuộc lớp đã xóa về "Tất cả các lớp"
+        if (newIds.length === 0) {
+            batch.push(env.DB.prepare(`UPDATE nodes SET classId = NULL WHERE classId IS NOT NULL`));
+        } else {
+            const placeholders = newIds.map(() => '?').join(',');
+            batch.push(env.DB.prepare(`UPDATE nodes SET classId = NULL WHERE classId IS NOT NULL AND classId NOT IN (${placeholders})`).bind(...newIds));
+        }
+
+        await env.DB.batch(batch);
         return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
       }
 

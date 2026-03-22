@@ -80,6 +80,8 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   }, []);
 
   const selectedClass = classes.find(c => c.id === selectedClassId);
+  const isHome = location.pathname === '/view' || location.pathname === '/edit' || location.pathname === '/';
+  const showClassSelector = isHome && !isAppMode;
 
   useEffect(() => {
     let timer;
@@ -160,47 +162,49 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
           </div>
           <div className="flex items-center gap-4">
             <!-- Class Selection Dropdown -->
-            <div className="relative" ref=${dropdownRef}>
-              <button 
-                onClick=${() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-                className=${`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${isLiquid ? 'bg-white/30 border-white/40 hover:bg-white/50 text-indigo-900' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'}`}
-              >
-                ${selectedClass ? selectedClass.title : 'Chọn lớp'}
-                <${ChevronDown} size=${16} className=${`transition-transform ${isClassDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
+            ${showClassSelector && html`
+              <div className="relative" ref=${dropdownRef}>
+                <button 
+                  onClick=${() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+                  className=${`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border ${isLiquid ? 'bg-white/30 border-white/40 hover:bg-white/50 text-indigo-900' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'}`}
+                >
+                  ${selectedClass ? selectedClass.title : 'Chọn lớp'}
+                  <${ChevronDown} size=${16} className=${`transition-transform ${isClassDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-              ${isClassDropdownOpen && html`
-                <div className=${`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl border z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${isLiquid ? 'bg-white/80 backdrop-blur-xl border-white/60' : 'bg-white border-slate-200'}`}>
-                  <div className="max-h-64 overflow-y-auto py-2">
-                    ${classes.length === 0 ? html`
-                      <div className="px-4 py-3 text-xs text-slate-400 text-center italic">Chưa có lớp nào</div>
-                    ` : classes.map(cls => html`
-                      <button
-                        key=${cls.id}
-                        onClick=${() => { setSelectedClassId(cls.id); setIsClassDropdownOpen(false); }}
-                        className=${`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between ${selectedClassId === cls.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                      >
-                        ${cls.title}
-                        ${selectedClassId === cls.id && html`<div className="w-2 h-2 rounded-full bg-indigo-500"></div>`}
-                      </button>
-                    `)}
-                  </div>
-                  
-                  ${isEditMode && html`
-                    <div className="border-t border-slate-100 p-2">
-                      <${Link} 
-                        to="/edit/classes" 
-                        onClick=${() => setIsClassDropdownOpen(false)}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                      >
-                        <${SettingsIcon} size=${14} />
-                        Quản lý lớp
-                      </${Link}>
+                ${isClassDropdownOpen && html`
+                  <div className=${`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl border z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${isLiquid ? 'bg-white/80 backdrop-blur-xl border-white/60' : 'bg-white border-slate-200'}`}>
+                    <div className="max-h-64 overflow-y-auto py-2">
+                      ${classes.length === 0 ? html`
+                        <div className="px-4 py-3 text-xs text-slate-400 text-center italic">Chưa có lớp nào</div>
+                      ` : classes.map(cls => html`
+                        <button
+                          key=${cls.id}
+                          onClick=${() => { setSelectedClassId(cls.id); setIsClassDropdownOpen(false); }}
+                          className=${`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between ${selectedClassId === cls.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                          ${cls.title}
+                          ${selectedClassId === cls.id && html`<div className="w-2 h-2 rounded-full bg-indigo-500"></div>`}
+                        </button>
+                      `)}
                     </div>
-                  `}
-                </div>
-              `}
-            </div>
+                    
+                    ${isEditMode && html`
+                      <div className="border-t border-slate-100 p-2">
+                        <${Link} 
+                          to="/edit/classes" 
+                          onClick=${() => setIsClassDropdownOpen(false)}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        >
+                          <${SettingsIcon} size=${14} />
+                          Quản lý lớp
+                        </${Link}>
+                      </div>
+                    `}
+                  </div>
+                `}
+              </div>
+            `}
 
             <nav className="flex items-center gap-3">
               ${isEditMode && !isAppMode && html`
