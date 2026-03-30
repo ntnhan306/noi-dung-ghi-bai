@@ -144,6 +144,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   useEffect(() => { fetchData(); }, [nodeId]);
 
   useEffect(() => {
+    if (window.MathJax && !isEditingContent) {
+      window.MathJax.typesetPromise();
+    }
+  }, [currentNode, isEditingContent, viewFontSize]);
+
+  useEffect(() => {
     if (currentNode?.type === NodeType.LESSON) {
         if (lastInitializedLessonId.current !== currentNode.id) {
             if (currentNode.content) {
@@ -209,7 +215,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           selector: '#editor-container',
           plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons textpattern',
           menubar: 'file edit view insert format tools table help',
-          toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
+          toolbar: 'undo redo | bold italic underline strikethrough | math | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
           toolbar_sticky: true,
           autosave_interval: '30s',
           height: '75vh', 
@@ -217,6 +223,17 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; background-color: #ffffff; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
+          color_map: [
+            'e03e2d', 'Đỏ mặc định',
+            '000000', 'Đen',
+            '2dc26b', 'Xanh lá',
+            'f1c40f', 'Vàng',
+            'e67e22', 'Cam',
+            '3498db', 'Xanh dương',
+            '9b59b6', 'Tím',
+            '7e8c8d', 'Xám',
+            'ffffff', 'Trắng'
+          ],
           textpattern_patterns: autoFormat ? [
             {start: '*', end: '*', format: 'italic'},
             {start: '**', end: '**', format: 'bold'},
@@ -227,6 +244,51 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             {start: '- ', cmd: 'InsertUnorderedList'}
           ] : [],
           setup: (editor) => {
+            editor.ui.registry.addIcon('math', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7H6l6 5-6 5h12"/></svg>');
+            
+            editor.ui.registry.addButton('math', {
+              icon: 'math',
+              tooltip: 'Nhập công thức toán học',
+              onAction: () => {
+                editor.windowManager.open({
+                  title: 'Nhập công thức Toán học (LaTeX)',
+                  body: {
+                    type: 'panel',
+                    items: [
+                      {
+                        type: 'textarea',
+                        name: 'latex',
+                        label: 'Nhập mã LaTeX (ví dụ: E=mc^2)'
+                      },
+                      {
+                        type: 'htmlpanel',
+                        html: '<p style="font-size: 12px; color: #666;">Gợi ý: \\frac{a}{b} cho phân số, \\sqrt{x} cho căn bậc hai, x^{2} cho số mũ. <a href="https://latex.codecogs.com/eqneditor/editor.php" target="_blank" style="color: #4f46e5; text-decoration: underline;">Mở trình soạn thảo trực quan</a></p>'
+                      }
+                    ]
+                  },
+                  buttons: [
+                    {
+                      type: 'cancel',
+                      text: 'Hủy'
+                    },
+                    {
+                      type: 'submit',
+                      text: 'Chèn',
+                      primary: true
+                    }
+                  ],
+                  onSubmit: (api) => {
+                    const data = api.getData();
+                    if (data.latex) {
+                      editor.insertContent(`\\(${data.latex}\\)`);
+                      // Trigger MathJax in the editor if possible, but for now just insert LaTeX
+                    }
+                    api.close();
+                  }
+                });
+              }
+            });
+
             editor.on('init', () => {
               const contentToLoad = tempContentRef.current !== null ? tempContentRef.current : (currentNode && currentNode.content);
               if (contentToLoad) editor.setContent(contentToLoad);
