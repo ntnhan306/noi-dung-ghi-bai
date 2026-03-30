@@ -144,10 +144,52 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   useEffect(() => { fetchData(); }, [nodeId]);
 
   useEffect(() => {
-    if (window.MathJax && !isEditingContent) {
-      window.MathJax.typesetPromise();
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    const renderMath = () => {
+      if (window.MathJax && !isEditingContent) {
+        const timer = setTimeout(() => {
+          try {
+            const contentElement = document.querySelector('.lesson-content');
+            if (contentElement) {
+              window.MathJax.typesetPromise([contentElement]).catch((err) => {
+                console.log('MathJax error:', err);
+                if (retryCount < maxRetries) {
+                  retryCount++;
+                  renderMath();
+                }
+              });
+            } else if (retryCount < maxRetries) {
+              retryCount++;
+              renderMath();
+            }
+          } catch (e) {
+            console.log('MathJax execution error:', e);
+          }
+        }, 600 + (retryCount * 500));
+        return timer;
+      }
+      return null;
+    };
+
+    const timer = renderMath();
+    
+    // Listen for MathJax script load if it's not ready yet
+    const script = document.getElementById('MathJax-script');
+    if (script && !window.MathJax) {
+      script.addEventListener('load', renderMath);
     }
-  }, [currentNode, isEditingContent, viewFontSize]);
+
+    // Also trigger on window load just in case
+    window.addEventListener('load', renderMath);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (script) script.removeEventListener('load', renderMath);
+      window.removeEventListener('load', renderMath);
+    };
+  }, [currentNode?.content, isEditingContent, viewFontSize]);
 
   useEffect(() => {
     if (currentNode?.type === NodeType.LESSON) {
