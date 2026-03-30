@@ -213,7 +213,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         }
         window.tinymce.init({
           selector: '#editor-container',
-          plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons textpattern',
+          plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
           menubar: 'file edit view insert format tools table help',
           toolbar: 'undo redo | bold italic underline strikethrough | math | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
           toolbar_sticky: true,
@@ -234,7 +234,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             '7e8c8d', 'Xám',
             'ffffff', 'Trắng'
           ],
-          textpattern_patterns: autoFormat ? [
+          text_patterns: autoFormat ? [
             {start: '*', end: '*', format: 'italic'},
             {start: '**', end: '**', format: 'bold'},
             {start: '#', format: 'h1'},
@@ -251,18 +251,18 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
               tooltip: 'Nhập công thức toán học',
               onAction: () => {
                 editor.windowManager.open({
-                  title: 'Nhập công thức Toán học (LaTeX)',
+                  title: 'Nhập công thức Toán học',
                   body: {
                     type: 'panel',
                     items: [
                       {
                         type: 'textarea',
                         name: 'latex',
-                        label: 'Nhập mã LaTeX (ví dụ: E=mc^2)'
+                        label: 'Nhập mã LaTeX'
                       },
                       {
                         type: 'htmlpanel',
-                        html: '<p style="font-size: 12px; color: #666;">Gợi ý: \\frac{a}{b} cho phân số, \\sqrt{x} cho căn bậc hai, x^{2} cho số mũ. <a href="https://latex.codecogs.com/eqneditor/editor.php" target="_blank" style="color: #4f46e5; text-decoration: underline;">Mở trình soạn thảo trực quan</a></p>'
+                        html: '<p style="font-size: 12px; color: #666;">Gợi ý: \\frac{a}{b} cho phân số, \\sqrt{x} cho căn bậc hai, x^{2} cho số mũ. </br><a href="https://latex.codecogs.com/eqneditor/editor.php" target="_blank" style="color: #4f46e5; text-decoration: underline;">Mở trình soạn thảo trực quan</a></p>'
                       }
                     ]
                   },
