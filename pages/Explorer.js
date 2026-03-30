@@ -289,6 +289,49 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
               }
             });
 
+            // Auto-convert $...$ and $$...$$ to \(...\) and \[...\] with styling
+            editor.on('keyup', (e) => {
+              if (e.key === '$') {
+                const range = editor.selection.getRng();
+                const node = range.startContainer;
+                if (node.nodeType === 3) {
+                  const text = node.textContent;
+                  const offset = range.startOffset;
+                  
+                  // Check for $$...$$ (Display Math)
+                  if (text.substring(offset - 2, offset) === '$$') {
+                    const prevText = text.substring(0, offset - 2);
+                    const firstDoubleDollar = prevText.lastIndexOf('$$');
+                    if (firstDoubleDollar !== -1) {
+                      const formula = text.substring(firstDoubleDollar + 2, offset - 2);
+                      if (formula.length > 0) {
+                        const newRange = document.createRange();
+                        newRange.setStart(node, firstDoubleDollar);
+                        newRange.setEnd(node, offset);
+                        editor.selection.setRng(newRange);
+                        editor.insertContent(`<div class="math-tex" style="text-align: center; background: #f8fafc; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px dashed #cbd5e1; color: #4f46e5;">\\[${formula}\\]</div><p>&nbsp;</p>`);
+                        return;
+                      }
+                    }
+                  }
+                  
+                  // Check for $...$ (Inline Math)
+                  const prevText = text.substring(0, offset - 1);
+                  const lastDollar = prevText.lastIndexOf('$');
+                  if (lastDollar !== -1 && prevText[lastDollar - 1] !== '$' && prevText[lastDollar - 1] !== '\\') {
+                    const formula = text.substring(lastDollar + 1, offset - 1);
+                    if (formula.length > 0 && !formula.includes('$')) {
+                      const newRange = document.createRange();
+                      newRange.setStart(node, lastDollar);
+                      newRange.setEnd(node, offset);
+                      editor.selection.setRng(newRange);
+                      editor.insertContent(`<span class="math-tex" style="color: #4f46e5; background-color: #f1f5f9; padding: 0 4px; border-radius: 4px; font-family: monospace; border: 1px solid #e2e8f0;">\\(${formula}\\)</span>&nbsp;`);
+                    }
+                  }
+                }
+              }
+            });
+
             editor.on('init', () => {
               const contentToLoad = tempContentRef.current !== null ? tempContentRef.current : (currentNode && currentNode.content);
               if (contentToLoad) editor.setContent(contentToLoad);
