@@ -13,32 +13,24 @@
 
     <!-- TinyMCE Community Edition -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
-
-    <!-- MathJax for rendering math formulas -->
-    <script>
-      window.MathJax = {
-        tex: {
-          inlineMath: [['$', '$'], ['\\(', '\\)']],
-          displayMath: [['$$', '$$'], ['\\[', '\\]']],
-          processEscapes: true,
-          processEnvironments: true
-        },
-        options: {
-          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-          ignoreHtmlClass: 'tex2jax_ignore',
-          processHtmlClass: 'tex2jax_process'
-        },
-        startup: {
-          pageReady: () => {
-            return MathJax.startup.defaultPageReady().then(() => {
-              console.log('MathJax is ready');
-            });
-          }
-        }
-      };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
-
+    <link rel="stylesheet" href="/index.css">
+    <style>
+      .math-tex { 
+        display: inline-block; 
+        min-width: 1em; 
+        background: transparent !important; 
+        border: none !important; 
+        padding: 0 !important; 
+        box-shadow: none !important;
+      }
+      /* Inherit color from parent to match editor styling */
+      .lesson-content .math-tex { color: inherit; }
+      /* Prevent MathJax from being hidden by other styles */
+      mjx-container { outline: none !important; }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900 tex2jax_process">
+    <div id="root"></div>
     <script type="importmap">
 {
   "imports": {
@@ -52,10 +44,33 @@
   }
 }
 </script>
-  <link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900">
-    <div id="root"></div>
     <script type="module" src="/index.jsx"></script>
+    
+    <!-- MathJax for rendering math formulas -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']],
+          processEscapes: true,
+          processEnvironments: true,
+          processRefs: true
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea'],
+          ignoreHtmlClass: 'tex2jax_ignore',
+          processHtmlClass: 'tex2jax_process'
+        },
+        startup: {
+          pageReady: () => {
+            console.log('MathJax is initializing...');
+            return MathJax.startup.defaultPageReady().then(() => {
+              console.log('MathJax is ready');
+            });
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
   </body>
 </html>

@@ -145,7 +145,8 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   useEffect(() => {
     let retryCount = 0;
-    const maxRetries = 3;
+    const maxRetries = 5;
+    let timeoutIds = [];
 
     const renderMath = () => {
       if (window.MathJax && !isEditingContent) {
@@ -153,7 +154,15 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           try {
             const contentElement = document.querySelector('.lesson-content');
             if (contentElement) {
-              window.MathJax.typesetPromise([contentElement]).catch((err) => {
+              window.MathJax.typesetClear([contentElement]);
+              window.MathJax.typesetPromise([contentElement]).then(() => {
+                // Check if there are still unrendered formulas (e.g. starting with $)
+                const text = contentElement.innerText;
+                if ((text.includes('$') || text.includes('\\(')) && retryCount < maxRetries) {
+                   retryCount++;
+                   renderMath();
+                }
+              }).catch((err) => {
                 console.log('MathJax error:', err);
                 if (retryCount < maxRetries) {
                   retryCount++;
@@ -167,25 +176,24 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           } catch (e) {
             console.log('MathJax execution error:', e);
           }
-        }, 600 + (retryCount * 500));
+        }, 400 + (retryCount * 300));
+        timeoutIds.push(timer);
         return timer;
       }
       return null;
     };
 
-    const timer = renderMath();
+    renderMath();
     
-    // Listen for MathJax script load if it's not ready yet
     const script = document.getElementById('MathJax-script');
     if (script && !window.MathJax) {
       script.addEventListener('load', renderMath);
     }
 
-    // Also trigger on window load just in case
     window.addEventListener('load', renderMath);
 
     return () => {
-      if (timer) clearTimeout(timer);
+      timeoutIds.forEach(id => clearTimeout(id));
       if (script) script.removeEventListener('load', renderMath);
       window.removeEventListener('load', renderMath);
     };
@@ -322,8 +330,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                   onSubmit: (api) => {
                     const data = api.getData();
                     if (data.latex) {
-                      editor.insertContent(`\\(${data.latex}\\)`);
-                      // Trigger MathJax in the editor if possible, but for now just insert LaTeX
+                      editor.insertContent(`$${data.latex}$`);
                     }
                     api.close();
                   }
@@ -331,48 +338,8 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
               }
             });
 
-            // Auto-convert $...$ and $$...$$ to \(...\) and \[...\] with styling
-            editor.on('keyup', (e) => {
-              if (e.key === '$') {
-                const range = editor.selection.getRng();
-                const node = range.startContainer;
-                if (node.nodeType === 3) {
-                  const text = node.textContent;
-                  const offset = range.startOffset;
-                  
-                  // Check for $$...$$ (Display Math)
-                  if (text.substring(offset - 2, offset) === '$$') {
-                    const prevText = text.substring(0, offset - 2);
-                    const firstDoubleDollar = prevText.lastIndexOf('$$');
-                    if (firstDoubleDollar !== -1) {
-                      const formula = text.substring(firstDoubleDollar + 2, offset - 2);
-                      if (formula.length > 0) {
-                        const newRange = document.createRange();
-                        newRange.setStart(node, firstDoubleDollar);
-                        newRange.setEnd(node, offset);
-                        editor.selection.setRng(newRange);
-                        editor.insertContent(`<div class="math-tex" style="text-align: center; background: #f8fafc; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px dashed #cbd5e1; color: #4f46e5;">\\[${formula}\\]</div><p>&nbsp;</p>`);
-                        return;
-                      }
-                    }
-                  }
-                  
-                  // Check for $...$ (Inline Math)
-                  const prevText = text.substring(0, offset - 1);
-                  const lastDollar = prevText.lastIndexOf('$');
-                  if (lastDollar !== -1 && prevText[lastDollar - 1] !== '$' && prevText[lastDollar - 1] !== '\\') {
-                    const formula = text.substring(lastDollar + 1, offset - 1);
-                    if (formula.length > 0 && !formula.includes('$')) {
-                      const newRange = document.createRange();
-                      newRange.setStart(node, lastDollar);
-                      newRange.setEnd(node, offset);
-                      editor.selection.setRng(newRange);
-                      editor.insertContent(`<span class="math-tex" style="color: #4f46e5; background-color: #f1f5f9; padding: 0 4px; border-radius: 4px; font-family: monospace; border: 1px solid #e2e8f0;">\\(${formula}\\)</span>&nbsp;`);
-                    }
-                  }
-                }
-              }
-            });
+            // Removed auto-convert $...$ and $$...$$ to \(...\) and \[...\]
+            // to keep raw LaTeX in the editor as requested.
 
             editor.on('init', () => {
               const contentToLoad = tempContentRef.current !== null ? tempContentRef.current : (currentNode && currentNode.content);
@@ -602,12 +569,14 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                     ${currentNode.title}
                   </h1>
                 </div>
-                ${mode === 'edit' && !isEditingContent && html`
-                   <div key="edit-actions" className="flex gap-3">
-                    <button key="btn-edit-title" onClick=${() => handleEditTitle(currentNode)} className=${`px-4 py-2 text-slate-600 rounded-xl font-sans text-sm font-bold transition-all border ${isLiquid ? 'hover:bg-white/60 hover:text-indigo-600 border-transparent hover:border-white/50 hover:shadow-sm' : 'hover:bg-slate-50 border-slate-200'}`}>Sửa tên</button>
-                    <button key="btn-open-editor" onClick=${toggleContentEditor} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-white/20"><${LayoutGrid} size=${18} /> Soạn thảo</button>
-                  </div>
-                `}
+                <div className="flex items-center gap-2">
+                  ${mode === 'edit' && !isEditingContent && html`
+                     <div key="edit-actions" className="flex gap-3">
+                      <button key="btn-edit-title" onClick=${() => handleEditTitle(currentNode)} className=${`px-4 py-2 text-slate-600 rounded-xl font-sans text-sm font-bold transition-all border ${isLiquid ? 'hover:bg-white/60 hover:text-indigo-600 border-transparent hover:border-white/50 hover:shadow-sm' : 'hover:bg-slate-50 border-slate-200'}`}>Sửa tên</button>
+                      <button key="btn-open-editor" onClick=${toggleContentEditor} className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-white/20"><${LayoutGrid} size=${18} /> Soạn thảo</button>
+                    </div>
+                  `}
+                </div>
                 ${mode === 'edit' && isEditingContent && html`
                   <div className="flex flex-wrap items-center justify-end gap-3">
                     <div key="voice-controls" className=${`flex items-center rounded-xl p-1 mr-2 border shadow-sm ${isLiquid ? 'bg-white/50 backdrop-blur border-white/50' : 'bg-white border-slate-200'}`}>
@@ -640,7 +609,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                         .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
                         .lesson-content ul, .lesson-content ol { padding-left: 2em; } .lesson-content li { margin-bottom: 0.25em; }
                       </style>
-                      <div className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}></div>
+                      <div className="lesson-content tex2jax_process p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}></div>
                   </div>
                 `}
               </div>
