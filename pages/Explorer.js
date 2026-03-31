@@ -149,16 +149,24 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     let timeoutIds = [];
 
     const renderMath = () => {
-      if (window.MathJax && !isEditingContent) {
-        const timer = setTimeout(() => {
+      if (isEditingContent) return null;
+
+      const timer = setTimeout(() => {
+        if (window.MathJax) {
           try {
             const contentElement = document.querySelector('.lesson-content');
             if (contentElement) {
+              console.log('MathJax: Attempting to render content...');
               window.MathJax.typesetClear([contentElement]);
               window.MathJax.typesetPromise([contentElement]).then(() => {
-                // Check if there are still unrendered formulas (e.g. starting with $)
+                console.log('MathJax: Render complete');
+                // Check if there are still unrendered formulas
                 const text = contentElement.innerText;
-                if ((text.includes('$') || text.includes('\\(')) && retryCount < maxRetries) {
+                const hasUnrendered = (text.includes('$') || text.includes('\\(') || text.includes('\\[')) && 
+                                     !contentElement.querySelector('mjx-container');
+                
+                if (hasUnrendered && retryCount < maxRetries) {
+                   console.log(`MathJax: Unrendered content detected, retrying (${retryCount + 1}/${maxRetries})...`);
                    retryCount++;
                    renderMath();
                 }
@@ -170,17 +178,25 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                 }
               });
             } else if (retryCount < maxRetries) {
+              console.log('MathJax: Content element not found, retrying...');
               retryCount++;
               renderMath();
             }
           } catch (e) {
             console.log('MathJax execution error:', e);
           }
-        }, 400 + (retryCount * 300));
-        timeoutIds.push(timer);
-        return timer;
-      }
-      return null;
+        } else {
+          // MathJax not loaded yet, retry
+          if (retryCount < maxRetries) {
+            console.log('MathJax: SDK not loaded yet, retrying...');
+            retryCount++;
+            renderMath();
+          }
+        }
+      }, 400 + (retryCount * 300));
+      
+      timeoutIds.push(timer);
+      return timer;
     };
 
     renderMath();
@@ -330,7 +346,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                   onSubmit: (api) => {
                     const data = api.getData();
                     if (data.latex) {
-                      editor.insertContent(`$${data.latex}$`);
+                      editor.insertContent(`<span class="math-tex">$${data.latex}$</span>`);
                     }
                     api.close();
                   }
