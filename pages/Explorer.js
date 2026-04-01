@@ -153,9 +153,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
       const timer = setTimeout(() => {
         // Check if MathJax is loaded and ready
-        const isMathJaxReady = (window.MathJax && window.MathJax.typesetPromise) || window.MathJaxReady;
+        const isMathJaxReady = window.MathJax && typeof window.MathJax.typesetPromise === 'function';
         
-        if (isMathJaxReady && window.MathJax && window.MathJax.typesetPromise) {
+        if (isMathJaxReady) {
           try {
             const contentElement = document.querySelector('.lesson-content');
             if (contentElement) {
@@ -189,6 +189,18 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             console.log('MathJax execution error:', e);
           }
         } else {
+          // If it's the 5th attempt and still not ready, try to re-inject the script
+          if (retryCount === 5) {
+            console.log('MathJax: Attempting to re-inject script...');
+            const oldScript = document.getElementById('MathJax-script');
+            if (oldScript) oldScript.remove();
+            const newScript = document.createElement('script');
+            newScript.id = 'MathJax-script';
+            newScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js';
+            newScript.async = true;
+            document.head.appendChild(newScript);
+          }
+
           // MathJax not loaded yet, retry
           if (retryCount < maxRetries) {
             console.log(`MathJax: SDK not ready yet (attempt ${retryCount + 1}/${maxRetries}), retrying...`);
@@ -196,7 +208,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             renderMath();
           }
         }
-      }, 600 + (retryCount * 400));
+      }, 800 + (retryCount * 500));
       
       timeoutIds.push(timer);
       return timer;
