@@ -154,9 +154,11 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         return;
       }
 
-      const renderFunc = window.renderMathInElement || (typeof renderMathInElement !== 'undefined' ? renderMathInElement : null);
+      const hasKatex = typeof katex !== 'undefined' || !!window.katex;
+      const hasRender = typeof renderMathInElement !== 'undefined' || !!window.renderMathInElement;
 
-      if (renderFunc) {
+      if (hasKatex && hasRender) {
+        const renderFunc = window.renderMathInElement || renderMathInElement;
         console.log('KaTeX: Rendering content in element:', contentElement);
         try {
           renderFunc(contentElement, {
@@ -174,7 +176,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           console.error('KaTeX: Render error:', err);
         }
       } else {
-        console.warn('KaTeX: renderMathInElement not found on window or global scope.');
+        console.warn('KaTeX: SDK components missing. hasKatex:', hasKatex, 'hasRender:', hasRender);
       }
     };
 
@@ -200,9 +202,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     // Also retry a few times in case KaTeX script loads late or content is slow
     let retryCount = 0;
     const retryInterval = setInterval(() => {
-      const renderFunc = window.renderMathInElement || (typeof renderMathInElement !== 'undefined' ? renderMathInElement : null);
+      const hasKatex = typeof katex !== 'undefined' || !!window.katex;
+      const hasRender = typeof renderMathInElement !== 'undefined' || !!window.renderMathInElement;
       
-      if (renderFunc) {
+      if (hasKatex && hasRender) {
         renderMath();
         // If we found it and rendered, we can stop the interval if content is already there
         const el = lessonContentRef.current || document.querySelector('.lesson-content');
@@ -211,14 +214,21 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           clearInterval(retryInterval);
         }
       } else if (retryCount === 5) {
-        // Re-inject if missing after 5 attempts
-        console.log('KaTeX: Attempting to re-inject script from unpkg...');
+        // Sequential re-injection
+        console.log('KaTeX: Attempting sequential re-injection from jsDelivr...');
         const s1 = document.createElement('script');
-        s1.src = 'https://unpkg.com/katex@0.16.9/dist/katex.min.js';
+        s1.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+        s1.onload = () => {
+          console.log('KaTeX: Core loaded, now loading auto-render...');
+          const s2 = document.createElement('script');
+          s2.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js';
+          s2.onload = () => {
+            console.log('KaTeX: All scripts re-injected successfully.');
+            renderMath();
+          };
+          document.head.appendChild(s2);
+        };
         document.head.appendChild(s1);
-        const s2 = document.createElement('script');
-        s2.src = 'https://unpkg.com/katex@0.16.9/dist/contrib/auto-render.min.js';
-        document.head.appendChild(s2);
       }
       
       if (retryCount > 20) { // Try for 10 seconds

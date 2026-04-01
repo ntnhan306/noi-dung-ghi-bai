@@ -44,22 +44,17 @@
         display: inline-block;
       }
     </style>
-    <!-- KaTeX for fast math rendering -->
-    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
-    <script src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="https://unpkg.com/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <!-- KaTeX for fast math rendering (Combined for reliability) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/combine/npm/katex@0.16.9/dist/katex.min.js,npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <script>
-      // Kiểm tra xem KaTeX có tải thành công không
-      window.addEventListener('DOMContentLoaded', () => {
-        if (typeof katex === 'undefined') {
-          console.error('KaTeX core failed to load!');
-        }
-        if (typeof renderMathInElement === 'undefined') {
-          console.error('KaTeX auto-render extension failed to load!');
-        } else {
-          console.log('KaTeX scripts loaded successfully from unpkg.');
-        }
-      });
+      // Kiểm tra trạng thái KaTeX
+      window.checkKaTeX = function() {
+        const hasKatex = typeof katex !== 'undefined';
+        const hasRender = typeof renderMathInElement !== 'undefined';
+        console.log('KaTeX Status Check:', { hasKatex, hasRender });
+        return hasKatex && hasRender;
+      };
     </script>
   </head>
   <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900">
