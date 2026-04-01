@@ -147,7 +147,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   useEffect(() => {
     if (isEditingContent) return;
     
+    // Rendering lock to prevent concurrent calls
+    let isRendering = false;
+
     const renderMath = () => {
+      if (isRendering) return;
+      
       const contentElement = lessonContentRef.current || document.querySelector('.lesson-content');
       if (!contentElement) {
         console.log('KaTeX: Content element not found yet.');
@@ -158,6 +163,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       const hasRender = typeof renderMathInElement !== 'undefined' || !!window.renderMathInElement;
 
       if (hasKatex && hasRender) {
+        isRendering = true;
         const renderFunc = window.renderMathInElement || renderMathInElement;
         console.log('KaTeX: Rendering content in element:', contentElement);
         try {
@@ -174,6 +180,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           console.log('KaTeX: Render successful.');
         } catch (err) {
           console.error('KaTeX: Render error:', err);
+        } finally {
+          // Release lock after a short delay to ensure DOM is stable
+          setTimeout(() => { isRendering = false; }, 100);
         }
       } else {
         console.warn('KaTeX: SDK components missing. hasKatex:', hasKatex, 'hasRender:', hasRender);
@@ -200,6 +209,15 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       observer = new MutationObserver((mutations) => {
         // Check if any mutation is NOT from KaTeX
         const isExternalMutation = mutations.some(mutation => {
+          // If nodes were added, check if they are KaTeX
+          if (mutation.addedNodes.length > 0) {
+            const allAddedAreKatex = Array.from(mutation.addedNodes).every(node => 
+              (node.classList && (node.classList.contains('katex') || node.classList.contains('katex-html'))) ||
+              (node.querySelector && node.querySelector('.katex'))
+            );
+            if (allAddedAreKatex) return false;
+          }
+
           // Ignore if the change is inside a KaTeX element
           let target = mutation.target;
           while (target && target !== contentElement) {

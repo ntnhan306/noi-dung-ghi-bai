@@ -22,9 +22,16 @@
         color: inherit;
       }
       
-      /* KaTeX specific overrides to ensure visibility and fix double-rendering */
+      /* KaTeX: Hide MathML properly using official 'sr-only' technique */
       .katex-mathml {
-        display: none !important; /* Ẩn phần MathML gây ra lỗi lặp chữ */
+        position: absolute !important;
+        clip: rect(1px, 1px, 1px, 1px) !important;
+        padding: 0 !important;
+        border: 0 !important;
+        height: 1px !important;
+        width: 1px !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
       }
       
       .katex-html {
@@ -32,24 +39,24 @@
       }
 
       .katex-display {
-        margin: 1.2em 0 !important;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 0.5em 0;
+        display: block !important;
+        margin: 1.5em 0 !important;
+        width: 100% !important;
+        text-align: center !important;
       }
       
       .katex {
         font-size: 1.15em !important;
-        text-rendering: auto !important;
         line-height: 1.2 !important;
+        text-indent: 0 !important;
       }
 
-      /* Fix for Tailwind Typography (prose) interfering with math */
+      /* Fix for Tailwind Typography (prose) */
       .prose :where(span.math-tex):not(:where([class~="not-prose"] *)) {
         font-style: normal !important;
+        display: inline-block;
       }
       
-      /* Đảm bảo các ký hiệu toán học không bị vỡ font */
       .lesson-content .katex {
         font-family: KaTeX_Main, 'Times New Roman', serif !important;
       }
