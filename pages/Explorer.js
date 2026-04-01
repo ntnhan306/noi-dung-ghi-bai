@@ -154,10 +154,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         return;
       }
 
-      if (window.renderMathInElement) {
+      const renderFunc = window.renderMathInElement || (typeof renderMathInElement !== 'undefined' ? renderMathInElement : null);
+
+      if (renderFunc) {
         console.log('KaTeX: Rendering content in element:', contentElement);
         try {
-          window.renderMathInElement(contentElement, {
+          renderFunc(contentElement, {
             delimiters: [
               {left: '$$', right: '$$', display: true},
               {left: '$', right: '$', display: false},
@@ -172,7 +174,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           console.error('KaTeX: Render error:', err);
         }
       } else {
-        console.warn('KaTeX: renderMathInElement not found on window.');
+        console.warn('KaTeX: renderMathInElement not found on window or global scope.');
       }
     };
 
@@ -198,7 +200,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     // Also retry a few times in case KaTeX script loads late or content is slow
     let retryCount = 0;
     const retryInterval = setInterval(() => {
-      if (window.renderMathInElement) {
+      const renderFunc = window.renderMathInElement || (typeof renderMathInElement !== 'undefined' ? renderMathInElement : null);
+      
+      if (renderFunc) {
         renderMath();
         // If we found it and rendered, we can stop the interval if content is already there
         const el = lessonContentRef.current || document.querySelector('.lesson-content');
@@ -206,6 +210,15 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           console.log('KaTeX: Found rendered content, stopping interval.');
           clearInterval(retryInterval);
         }
+      } else if (retryCount === 5) {
+        // Re-inject if missing after 5 attempts
+        console.log('KaTeX: Attempting to re-inject script from unpkg...');
+        const s1 = document.createElement('script');
+        s1.src = 'https://unpkg.com/katex@0.16.9/dist/katex.min.js';
+        document.head.appendChild(s1);
+        const s2 = document.createElement('script');
+        s2.src = 'https://unpkg.com/katex@0.16.9/dist/contrib/auto-render.min.js';
+        document.head.appendChild(s2);
       }
       
       if (retryCount > 20) { // Try for 10 seconds

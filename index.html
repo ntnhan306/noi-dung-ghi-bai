@@ -45,9 +45,22 @@
       }
     </style>
     <!-- KaTeX for fast math rendering -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/katex@0.16.9/dist/katex.min.css">
+    <script src="https://unpkg.com/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://unpkg.com/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script>
+      // Kiểm tra xem KaTeX có tải thành công không
+      window.addEventListener('DOMContentLoaded', () => {
+        if (typeof katex === 'undefined') {
+          console.error('KaTeX core failed to load!');
+        }
+        if (typeof renderMathInElement === 'undefined') {
+          console.error('KaTeX auto-render extension failed to load!');
+        } else {
+          console.log('KaTeX scripts loaded successfully from unpkg.');
+        }
+      });
+    </script>
   </head>
   <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900">
     <div id="root"></div>
