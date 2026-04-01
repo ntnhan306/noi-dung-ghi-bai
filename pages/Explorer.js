@@ -145,70 +145,49 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   useEffect(() => {
     let retryCount = 0;
-    const maxRetries = 10;
+    const maxRetries = 5;
     let timeoutIds = [];
 
     const renderMath = () => {
       if (isEditingContent) return null;
 
       const timer = setTimeout(() => {
-        // Check if MathJax is loaded and ready
-        const isMathJaxReady = window.MathJax && typeof window.MathJax.typesetPromise === 'function';
+        // Check if KaTeX is loaded
+        const isKaTeXReady = window.renderMathInElement;
         
-        if (isMathJaxReady) {
+        if (isKaTeXReady) {
           try {
             const contentElement = document.querySelector('.lesson-content');
             if (contentElement) {
-              console.log('MathJax: Attempting to render content...');
-              window.MathJax.typesetClear([contentElement]);
-              window.MathJax.typesetPromise([contentElement]).then(() => {
-                console.log('MathJax: Render complete');
-                // Check if there are still unrendered formulas
-                const text = contentElement.innerText;
-                const hasUnrendered = (text.includes('$') || text.includes('\\(') || text.includes('\\[')) && 
-                                     !contentElement.querySelector('mjx-container');
-                
-                if (hasUnrendered && retryCount < maxRetries) {
-                   console.log(`MathJax: Unrendered content detected, retrying (${retryCount + 1}/${maxRetries})...`);
-                   retryCount++;
-                   renderMath();
-                }
-              }).catch((err) => {
-                console.log('MathJax error:', err);
-                if (retryCount < maxRetries) {
-                  retryCount++;
-                  renderMath();
-                }
+              console.log('KaTeX: Attempting to render content...');
+              window.renderMathInElement(contentElement, {
+                delimiters: [
+                  {left: '$$', right: '$$', display: true},
+                  {left: '$', right: '$', display: false},
+                  {left: '\\(', right: '\\)', display: false},
+                  {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false,
+                trust: true
               });
+              console.log('KaTeX: Render complete');
             } else if (retryCount < maxRetries) {
-              console.log('MathJax: Content element not found, retrying...');
+              console.log('KaTeX: Content element not found, retrying...');
               retryCount++;
               renderMath();
             }
           } catch (e) {
-            console.log('MathJax execution error:', e);
+            console.log('KaTeX execution error:', e);
           }
         } else {
-          // If it's the 5th attempt and still not ready, try to re-inject the script
-          if (retryCount === 5) {
-            console.log('MathJax: Attempting to re-inject script...');
-            const oldScript = document.getElementById('MathJax-script');
-            if (oldScript) oldScript.remove();
-            const newScript = document.createElement('script');
-            newScript.id = 'MathJax-script';
-            newScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js';
-            newScript.async = true;
-            document.head.appendChild(newScript);
-          }
-
-          // MathJax not loaded yet, retry
+          // KaTeX not loaded yet, retry
           if (retryCount < maxRetries) {
-            console.log(`MathJax: SDK not ready yet (attempt ${retryCount + 1}/${maxRetries}), retrying...`);
+            console.log(`KaTeX: SDK not ready yet (attempt ${retryCount + 1}/${maxRetries}), retrying...`);
             retryCount++;
             renderMath();
           }
         }
-      }, 800 + (retryCount * 500));
+      }, 300 + (retryCount * 200));
       
       timeoutIds.push(timer);
       return timer;
@@ -216,16 +195,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
     renderMath();
     
-    const script = document.getElementById('MathJax-script');
-    if (script && !window.MathJax) {
-      script.addEventListener('load', renderMath);
-    }
-
     window.addEventListener('load', renderMath);
 
     return () => {
       timeoutIds.forEach(id => clearTimeout(id));
-      if (script) script.removeEventListener('load', renderMath);
       window.removeEventListener('load', renderMath);
     };
   }, [currentNode?.content, isEditingContent, viewFontSize]);
@@ -387,18 +360,16 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                   const lastDollarIndex = textBefore.lastIndexOf('$', offset - 2);
                   
                   if (lastDollarIndex !== -1) {
-                    // Check if it's already wrapped
+                    // Check if the content between dollars is already wrapped
+                    // We check the parent of the text node
                     let parent = container.parentNode;
-                    let isWrapped = false;
-                    while (parent && parent !== editor.getBody()) {
-                      if (parent.classList && parent.classList.contains('math-tex')) {
-                        isWrapped = true;
-                        break;
-                      }
-                      parent = parent.parentNode;
+                    let isAlreadyWrapped = false;
+                    
+                    if (parent && parent.classList && parent.classList.contains('math-tex')) {
+                      isAlreadyWrapped = true;
                     }
                     
-                    if (!isWrapped) {
+                    if (!isAlreadyWrapped) {
                       const newRange = editor.getDoc().createRange();
                       newRange.setStart(container, lastDollarIndex);
                       newRange.setEnd(container, offset);
