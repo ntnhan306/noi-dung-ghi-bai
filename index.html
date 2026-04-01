@@ -63,6 +63,56 @@
     <!-- KaTeX for fast math rendering (Combined for reliability) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/combine/npm/katex@0.16.9/dist/katex.min.js,npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+      /* KaTeX: Hide HTML and show MathML (Aggressive override) */
+      .katex-html, 
+      .katex > .katex-html,
+      span.katex-html {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+        position: absolute !important;
+      }
+      
+      .katex-mathml,
+      .katex > .katex-mathml {
+        display: inline-block !important;
+        position: static !important;
+        clip: auto !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      .katex-display {
+        display: block !important;
+        margin: 1.5em 0 !important;
+        width: 100% !important;
+        text-align: center !important;
+      }
+      
+      .katex {
+        font-size: 1.15em !important;
+        line-height: 1.2 !important;
+        text-indent: 0 !important;
+      }
+
+      /* Fix for Tailwind Typography (prose) */
+      .prose :where(span.math-tex):not(:where([class~="not-prose"] *)) {
+        font-style: normal !important;
+        display: inline-block;
+      }
+      
+      .lesson-content .katex {
+        font-family: KaTeX_Main, 'Times New Roman', serif !important;
+      }
+    </style>
     <script>
       // Kiểm tra trạng thái KaTeX
       window.checkKaTeX = function() {
