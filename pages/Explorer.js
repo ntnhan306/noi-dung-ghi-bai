@@ -144,62 +144,55 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   useEffect(() => { fetchData(); }, [nodeId]);
 
   useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 5;
-    let timeoutIds = [];
+    const contentElement = document.querySelector('.lesson-content');
+    if (!contentElement || isEditingContent) return;
 
     const renderMath = () => {
-      if (isEditingContent) return null;
-
-      const timer = setTimeout(() => {
-        // Check if KaTeX is loaded
-        const isKaTeXReady = window.renderMathInElement;
-        
-        if (isKaTeXReady) {
-          try {
-            const contentElement = document.querySelector('.lesson-content');
-            if (contentElement) {
-              console.log('KaTeX: Attempting to render content...');
-              window.renderMathInElement(contentElement, {
-                delimiters: [
-                  {left: '$$', right: '$$', display: true},
-                  {left: '$', right: '$', display: false},
-                  {left: '\\(', right: '\\)', display: false},
-                  {left: '\\[', right: '\\]', display: true}
-                ],
-                throwOnError: false,
-                trust: true
-              });
-              console.log('KaTeX: Render complete');
-            } else if (retryCount < maxRetries) {
-              console.log('KaTeX: Content element not found, retrying...');
-              retryCount++;
-              renderMath();
-            }
-          } catch (e) {
-            console.log('KaTeX execution error:', e);
-          }
-        } else {
-          // KaTeX not loaded yet, retry
-          if (retryCount < maxRetries) {
-            console.log(`KaTeX: SDK not ready yet (attempt ${retryCount + 1}/${maxRetries}), retrying...`);
-            retryCount++;
-            renderMath();
-          }
-        }
-      }, 300 + (retryCount * 200));
-      
-      timeoutIds.push(timer);
-      return timer;
+      if (window.renderMathInElement) {
+        console.log('KaTeX: Rendering content...');
+        window.renderMathInElement(contentElement, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false,
+          trust: true
+        });
+      }
     };
 
+    // Initial render
     renderMath();
-    
-    window.addEventListener('load', renderMath);
+
+    // Observe changes to the content element
+    const observer = new MutationObserver(() => {
+      console.log('KaTeX: Content changed, re-rendering...');
+      renderMath();
+    });
+
+    observer.observe(contentElement, { 
+      childList: true, 
+      subtree: true, 
+      characterData: true 
+    });
+
+    // Also retry a few times in case KaTeX script loads late
+    let retryCount = 0;
+    const retryInterval = setInterval(() => {
+      if (window.renderMathInElement) {
+        renderMath();
+        clearInterval(retryInterval);
+      } else if (retryCount > 10) {
+        clearInterval(retryInterval);
+      }
+      retryCount++;
+    }, 500);
 
     return () => {
-      timeoutIds.forEach(id => clearTimeout(id));
-      window.removeEventListener('load', renderMath);
+      observer.disconnect();
+      clearInterval(retryInterval);
     };
   }, [currentNode?.content, isEditingContent, viewFontSize]);
 
@@ -278,7 +271,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           branding: false,
           promotion: false,
           formats: {
-            math_tex: { inline: 'span', classes: 'math-tex' }
+            math_tex: { inline: 'span', classes: ['math-tex', 'not-prose'] }
           },
           color_map: [
             'e03e2d', 'Đỏ mặc định',
@@ -337,7 +330,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                   onSubmit: (api) => {
                     const data = api.getData();
                     if (data.latex) {
-                      editor.insertContent(`<span class="math-tex">$${data.latex}$</span>`);
+                      editor.insertContent(`<span class="math-tex not-prose">$${data.latex}$</span>`);
                     }
                     api.close();
                   }
@@ -655,7 +648,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                         .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
                         .lesson-content ul, .lesson-content ol { padding-left: 2em; } .lesson-content li { margin-bottom: 0.25em; }
                       </style>
-                      <div className="lesson-content tex2jax_process p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}></div>
+                      <div className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}></div>
                   </div>
                 `}
               </div>

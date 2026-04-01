@@ -15,26 +15,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
     <link rel="stylesheet" href="/index.css">
     <style>
+      /* Base math-tex styling */
       .math-tex { 
         display: inline-block; 
-        min-width: 1em; 
-        background: transparent !important; 
-        border: none !important; 
-        padding: 0 !important; 
-        box-shadow: none !important;
+        min-width: 0.5em;
+        color: inherit;
       }
-      /* Ensure MathJax output inherits color from parent */
-      .lesson-content mjx-container { color: inherit !important; }
-      .lesson-content .math-tex { color: inherit; }
-      /* Prevent MathJax from being hidden by other styles */
-      mjx-container { outline: none !important; }
+      
+      /* KaTeX specific overrides to ensure visibility */
+      .katex-display {
+        margin: 1em 0 !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      
+      .katex {
+        font-size: 1.1em !important;
+        text-rendering: auto !important;
+      }
+
+      /* Fix for Tailwind Typography (prose) interfering with math */
+      .prose :where(span.math-tex):not(:where([class~="not-prose"] *)) {
+        font-style: normal !important;
+      }
+      
+      /* Ensure KaTeX fonts are loaded correctly */
+      .lesson-content .katex-html {
+        display: inline-block;
+      }
     </style>
     <!-- KaTeX for fast math rendering -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900 tex2jax_process">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased select-none selection:bg-indigo-200 selection:text-indigo-900">
     <div id="root"></div>
     <script type="importmap">
 {
