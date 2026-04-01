@@ -186,10 +186,35 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     // Observe changes to the content element
     let observer = null;
     const contentElement = lessonContentRef.current || document.querySelector('.lesson-content');
+    
+    // Debounce function to prevent rapid re-renders
+    let renderTimeout = null;
+    const debouncedRender = () => {
+      if (renderTimeout) clearTimeout(renderTimeout);
+      renderTimeout = setTimeout(() => {
+        renderMath();
+      }, 300);
+    };
+
     if (contentElement) {
       observer = new MutationObserver((mutations) => {
-        console.log('KaTeX: Content changed (mutations), re-rendering...');
-        renderMath();
+        // Check if any mutation is NOT from KaTeX
+        const isExternalMutation = mutations.some(mutation => {
+          // Ignore if the change is inside a KaTeX element
+          let target = mutation.target;
+          while (target && target !== contentElement) {
+            if (target.classList && (target.classList.contains('katex') || target.classList.contains('katex-html'))) {
+              return false;
+            }
+            target = target.parentElement;
+          }
+          return true;
+        });
+
+        if (isExternalMutation) {
+          console.log('KaTeX: External content change detected, debouncing render...');
+          debouncedRender();
+        }
       });
 
       observer.observe(contentElement, { 
