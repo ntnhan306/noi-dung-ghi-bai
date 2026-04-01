@@ -145,14 +145,17 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   useEffect(() => {
     let retryCount = 0;
-    const maxRetries = 5;
+    const maxRetries = 10;
     let timeoutIds = [];
 
     const renderMath = () => {
       if (isEditingContent) return null;
 
       const timer = setTimeout(() => {
-        if (window.MathJax) {
+        // Check if MathJax is loaded and ready
+        const isMathJaxReady = (window.MathJax && window.MathJax.typesetPromise) || window.MathJaxReady;
+        
+        if (isMathJaxReady && window.MathJax && window.MathJax.typesetPromise) {
           try {
             const contentElement = document.querySelector('.lesson-content');
             if (contentElement) {
@@ -188,12 +191,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         } else {
           // MathJax not loaded yet, retry
           if (retryCount < maxRetries) {
-            console.log('MathJax: SDK not loaded yet, retrying...');
+            console.log(`MathJax: SDK not ready yet (attempt ${retryCount + 1}/${maxRetries}), retrying...`);
             retryCount++;
             renderMath();
           }
         }
-      }, 400 + (retryCount * 300));
+      }, 600 + (retryCount * 400));
       
       timeoutIds.push(timer);
       return timer;
