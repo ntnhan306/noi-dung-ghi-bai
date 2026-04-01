@@ -292,6 +292,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; background-color: #ffffff; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
+          formats: {
+            math_tex: { inline: 'span', classes: 'math-tex' }
+          },
           color_map: [
             'e03e2d', 'Đỏ mặc định',
             '000000', 'Đen',
@@ -313,7 +316,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             {start: '- ', cmd: 'InsertUnorderedList'}
           ] : [],
           setup: (editor) => {
-            editor.ui.registry.addIcon('math', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 172 172"><g fill="none" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><path d="M0,172v-172h172v172z" fill="none"></path><g fill="#1fb141"><path d="M21.5,21.5v129h64.5v-32.25v-64.5v-32.25zM86,53.75c0,17.7805 14.4695,32.25 32.25,32.25c17.7805,0 32.25,-14.4695 32.25,-32.25c0,-17.7805 -14.4695,-32.25 -32.25,-32.25c-17.7805,0 -32.25,14.4695 -32.25,32.25zM118.25,86c-17.7805,0 -32.25,14.4695 -32.25,32.25c0,17.7805 14.4695,32.25 32.25,32.25c17.7805,0 32.25,-14.4695 32.25,-32.25c0,-17.7805 -14.4695,-32.25 -32.25,-32.25z"></path></g></g></svg>');
+            editor.ui.registry.addIcon('math', '<svg width="24" height="24" viewBox="0 0 24 24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-weight="bold" font-size="18" fill="currentColor">Σ</text></svg>');
             
             editor.ui.registry.addButton('math', {
               icon: 'math',
@@ -354,6 +357,47 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                     api.close();
                   }
                 });
+              }
+            });
+
+            // Auto-wrap $...$ in span.math-tex
+            editor.on('keyup', (e) => {
+              if (e.key === '$') {
+                const range = editor.selection.getRng();
+                const container = range.startContainer;
+                
+                if (container.nodeType === 3) { // Text node
+                  const text = container.data;
+                  const offset = range.startOffset;
+                  const textBefore = text.substring(0, offset);
+                  
+                  // Find the last '$' before the one just typed
+                  const lastDollarIndex = textBefore.lastIndexOf('$', offset - 2);
+                  
+                  if (lastDollarIndex !== -1) {
+                    // Check if it's already wrapped
+                    let parent = container.parentNode;
+                    let isWrapped = false;
+                    while (parent && parent !== editor.getBody()) {
+                      if (parent.classList && parent.classList.contains('math-tex')) {
+                        isWrapped = true;
+                        break;
+                      }
+                      parent = parent.parentNode;
+                    }
+                    
+                    if (!isWrapped) {
+                      const newRange = editor.getDoc().createRange();
+                      newRange.setStart(container, lastDollarIndex);
+                      newRange.setEnd(container, offset);
+                      editor.selection.setRng(newRange);
+                      editor.formatter.apply('math_tex');
+                      
+                      // Move cursor to after the wrapped span
+                      editor.selection.collapse(false);
+                    }
+                  }
+                }
               }
             });
 
