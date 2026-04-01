@@ -64,6 +64,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   }, [allNodes, nodeId, selectedClassId]);
 
   const titleRef = useRef(null);
+  const lessonContentRef = useRef(null);
   const [isMultiLine, setIsMultiLine] = useState(false);
 
   useLayoutEffect(() => {
@@ -144,22 +145,34 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   useEffect(() => { fetchData(); }, [nodeId]);
 
   useEffect(() => {
-    const contentElement = document.querySelector('.lesson-content');
-    if (!contentElement || isEditingContent) return;
-
+    if (isEditingContent) return;
+    
     const renderMath = () => {
+      const contentElement = lessonContentRef.current || document.querySelector('.lesson-content');
+      if (!contentElement) {
+        console.log('KaTeX: Content element not found yet.');
+        return;
+      }
+
       if (window.renderMathInElement) {
-        console.log('KaTeX: Rendering content...');
-        window.renderMathInElement(contentElement, {
-          delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false},
-            {left: '\\(', right: '\\)', display: false},
-            {left: '\\[', right: '\\]', display: true}
-          ],
-          throwOnError: false,
-          trust: true
-        });
+        console.log('KaTeX: Rendering content in element:', contentElement);
+        try {
+          window.renderMathInElement(contentElement, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false,
+            trust: true
+          });
+          console.log('KaTeX: Render successful.');
+        } catch (err) {
+          console.error('KaTeX: Render error:', err);
+        }
+      } else {
+        console.warn('KaTeX: renderMathInElement not found on window.');
       }
     };
 
@@ -167,34 +180,46 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     renderMath();
 
     // Observe changes to the content element
-    const observer = new MutationObserver(() => {
-      console.log('KaTeX: Content changed, re-rendering...');
-      renderMath();
-    });
+    let observer = null;
+    const contentElement = lessonContentRef.current || document.querySelector('.lesson-content');
+    if (contentElement) {
+      observer = new MutationObserver((mutations) => {
+        console.log('KaTeX: Content changed (mutations), re-rendering...');
+        renderMath();
+      });
 
-    observer.observe(contentElement, { 
-      childList: true, 
-      subtree: true, 
-      characterData: true 
-    });
+      observer.observe(contentElement, { 
+        childList: true, 
+        subtree: true, 
+        characterData: true 
+      });
+    }
 
-    // Also retry a few times in case KaTeX script loads late
+    // Also retry a few times in case KaTeX script loads late or content is slow
     let retryCount = 0;
     const retryInterval = setInterval(() => {
       if (window.renderMathInElement) {
         renderMath();
-        clearInterval(retryInterval);
-      } else if (retryCount > 10) {
+        // If we found it and rendered, we can stop the interval if content is already there
+        const el = lessonContentRef.current || document.querySelector('.lesson-content');
+        if (el && el.querySelector('.katex')) {
+          console.log('KaTeX: Found rendered content, stopping interval.');
+          clearInterval(retryInterval);
+        }
+      }
+      
+      if (retryCount > 20) { // Try for 10 seconds
+        console.log('KaTeX: Max retries reached.');
         clearInterval(retryInterval);
       }
       retryCount++;
     }, 500);
 
     return () => {
-      observer.disconnect();
+      if (observer) observer.disconnect();
       clearInterval(retryInterval);
     };
-  }, [currentNode?.content, isEditingContent, viewFontSize]);
+  }, [currentNode?.content, isEditingContent, viewFontSize, nodeId]);
 
   useEffect(() => {
     if (currentNode?.type === NodeType.LESSON) {
@@ -648,7 +673,11 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                         .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
                         .lesson-content ul, .lesson-content ol { padding-left: 2em; } .lesson-content li { margin-bottom: 0.25em; }
                       </style>
-                      <div className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}></div>
+                      <div 
+                        ref=${lessonContentRef}
+                        className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" 
+                        dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}
+                      ></div>
                   </div>
                 `}
               </div>
