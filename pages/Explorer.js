@@ -358,7 +358,28 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           autosave_interval: '30s',
           height: '75vh', 
           min_height: 700,
-          content_style: 'body { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; margin: 1.5rem; background-color: #ffffff; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
+          content_css: [
+            'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&family=Roboto+Mono&display=swap'
+          ],
+          font_family_formats: 
+            'Andale Mono=andale mono,times; ' +
+            'Arial=arial,helvetica,sans-serif; ' +
+            'Arial Black=arial black,avant garde; ' +
+            'Book Antiqua=book antiqua,palatino; ' +
+            'Comic Sans MS=comic sans ms,sans-serif; ' +
+            'Courier New=courier new,courier; ' +
+            'Georgia=georgia,palatino; ' +
+            'Helvetica=helvetica; ' +
+            'Impact=impact,chicago; ' +
+            'Symbol=symbol; ' +
+            'Tahoma=tahoma,arial,helvetica,sans-serif; ' +
+            'Terminal=terminal,monaco; ' +
+            'Times New Roman=times new roman,times; ' +
+            'Trebuchet MS=trebuchet ms,geneva; ' +
+            'Verdana=verdana,geneva; ' +
+            'Webdings=webdings; ' +
+            'Wingdings=wingdings,zapf dingbats',
+          content_style: 'body { font-family: "times new roman", times, serif; font-size: 18pt; text-align: justify; line-height: 1.5; margin: 1.5rem; background-color: #ffffff; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
           formats: {

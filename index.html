@@ -9,7 +9,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&family=Roboto+Mono&display=swap" rel="stylesheet">
 
     <!-- TinyMCE Community Edition -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
@@ -22,20 +22,19 @@
         color: inherit;
       }
       
-      /* KaTeX: Hide MathML properly using official 'sr-only' technique */
-      .katex-mathml {
-        position: absolute !important;
-        clip: rect(1px, 1px, 1px, 1px) !important;
-        padding: 0 !important;
-        border: 0 !important;
-        height: 1px !important;
-        width: 1px !important;
-        overflow: hidden !important;
-        white-space: nowrap !important;
+      /* KaTeX: Hide HTML and show MathML as requested */
+      .katex-html {
+        display: none !important;
       }
       
-      .katex-html {
+      .katex-mathml {
         display: inline-block !important;
+        position: static !important;
+        clip: auto !important;
+        width: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+        white-space: normal !important;
       }
 
       .katex-display {
