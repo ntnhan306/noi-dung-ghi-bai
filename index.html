@@ -15,14 +15,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
     <link rel="stylesheet" href="/index.css">
     <style>
-      /* Base math-tex styling - Hidden by default until rendered */
-      .math-tex { 
-        display: inline-flex; 
+      /* Aggressive hiding for .math-tex until rendered */
+      .math-tex:not(.is-rendered) { 
+        display: none !important;
+      }
+      
+      .math-tex.is-rendered {
+        display: inline-flex !important;
         align-items: center;
-        min-width: 0.5em;
-        color: inherit;
-        opacity: 0;
-        visibility: hidden;
+        opacity: 1 !important;
+        visibility: visible !important;
         transition: opacity 0.2s ease-in-out;
       }
       
@@ -70,17 +72,26 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/auto-render.min.js"></script>
     
     <script>
-      // Nuclear Option: Use MutationObserver to hide .katex-html globally
+      // Nuclear Option: Use MutationObserver to hide .katex-html and unrendered .math-tex globally
       (function() {
-        const hideKatexHTML = (root) => {
-          const elements = root.querySelectorAll('.katex-html');
-          elements.forEach(el => {
+        const hideUnrenderedMath = (root) => {
+          // Hide .katex-html (always)
+          const katexHTML = root.querySelectorAll('.katex-html');
+          katexHTML.forEach(el => {
             if (el.style.display !== 'none') {
               el.style.setProperty('display', 'none', 'important');
               el.setAttribute('aria-hidden', 'true');
             }
           });
           
+          // Hide .math-tex that are NOT rendered yet
+          const mathTex = root.querySelectorAll('.math-tex:not(.is-rendered)');
+          mathTex.forEach(el => {
+            if (el.style.display !== 'none') {
+              el.style.setProperty('display', 'none', 'important');
+            }
+          });
+
           const mathml = root.querySelectorAll('.katex-mathml');
           mathml.forEach(el => {
             if (el.style.display !== 'inline-block') {
@@ -95,7 +106,7 @@
         };
 
         // Initial check
-        hideKatexHTML(document);
+        hideUnrenderedMath(document);
 
         // Observer for dynamic content
         const observer = new MutationObserver((mutations) => {
@@ -105,8 +116,10 @@
                 if (node.nodeType === 1) { // Element node
                   if (node.classList && node.classList.contains('katex-html')) {
                     node.style.setProperty('display', 'none', 'important');
+                  } else if (node.classList && node.classList.contains('math-tex') && !node.classList.contains('is-rendered')) {
+                    node.style.setProperty('display', 'none', 'important');
                   } else {
-                    hideKatexHTML(node);
+                    hideUnrenderedMath(node);
                   }
                 }
               });

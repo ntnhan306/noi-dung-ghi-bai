@@ -39,13 +39,13 @@ input, textarea, .select-text {
 }
 
 /* Global KaTeX Hiding Fallback */
-.math-tex {
-  opacity: 0 !important;
-  visibility: hidden !important;
+.math-tex:not(.is-rendered) {
+  display: none !important;
 }
 
 .math-tex.is-rendered,
 .is-rendered .math-tex {
+  display: inline-flex !important;
   opacity: 1 !important;
   visibility: visible !important;
   transition: opacity 0.3s ease-in-out;
