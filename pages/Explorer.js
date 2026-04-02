@@ -703,13 +703,83 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   };
   const handleEditTitle = (node) => { setModalMode('UPDATE'); setTargetType(node.type); setEditingNode(node); setIsModalOpen(true); };
   const toggleContentEditor = () => setIsEditingContent(true);
+
+  const normalizeMathSpans = (html) => {
+    if (!html) return '';
+    
+    // 1. Create a temporary element to safely unwrap existing math-tex spans
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const mathSpans = Array.from(div.querySelectorAll('span.math-tex'));
+    mathSpans.forEach(span => {
+      const parent = span.parentNode;
+      if (parent) {
+        while (span.firstChild) {
+          parent.insertBefore(span.firstChild, span);
+        }
+        parent.removeChild(span);
+      }
+    });
+    
+    let content = div.innerHTML;
+    
+    // 2. Extract all HTML tags to protect them from being split by regex
+    const tags = [];
+    content = content.replace(/<[^>]+>/g, (match) => {
+      const id = `___TAG_${tags.length}___`;
+      tags.push({ id, content: match });
+      return id;
+    });
+    
+    // 3. Protect escaped dollars (\$ should not be treated as math delimiter)
+    content = content.replace(/\\(\$)/g, '___ESC_DOL___');
+    
+    // 4. Identify Math Formulas and wrap them in placeholders
+    const mathPlaceholders = [];
+    
+    // Handle Display Math ($$ ... $$) - Match non-greedily
+    content = content.replace(/\$\$([\s\S]+?)\$\$/g, (match, p1) => {
+      const id = `___MATH_DISP_${mathPlaceholders.length}___`;
+      mathPlaceholders.push({ id, content: `<span class="math-tex">$$${p1}$$</span>` });
+      return id;
+    });
+    
+    // Handle Inline Math ($ ... $)
+    // We match $...$ where the content doesn't contain another $
+    content = content.replace(/\$([^\$]+?)\$/g, (match, p1) => {
+      const id = `___MATH_INL_${mathPlaceholders.length}___`;
+      mathPlaceholders.push({ id, content: `<span class="math-tex">$${p1}$</span>` });
+      return id;
+    });
+    
+    // 5. Restore escaped dollars
+    content = content.replace(/___ESC_DOL___/g, '\\$');
+    
+    // 6. Restore Math Placeholders
+    mathPlaceholders.forEach(({ id, content: mathHtml }) => {
+      content = content.replace(id, mathHtml);
+    });
+    
+    // 7. Restore HTML Tags
+    // We use a loop to ensure all tags are restored even if they were nested in placeholders
+    tags.forEach(({ id, content: tagHtml }) => {
+      content = content.replace(id, tagHtml);
+    });
+    
+    return content;
+  };
+
   const handleSaveContent = async () => {
     const editor = window.tinymce.get('editor-container');
     if (editor) {
       setSaving(true);
       const existingInterim = editor.dom.select('span#voice-interim')[0];
       if (existingInterim) editor.dom.remove(existingInterim);
-      const newContent = editor.getContent();
+      
+      // Get raw content and normalize math spans
+      let newContent = editor.getContent();
+      newContent = normalizeMathSpans(newContent);
+      
       try {
         const updatedNode = { ...currentNode, content: newContent };
         setAllNodes(prev => prev.map(n => n.id === updatedNode.id ? updatedNode : n));
