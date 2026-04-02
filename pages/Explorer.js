@@ -177,7 +177,23 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             throwOnError: false,
             trust: true
           });
-          console.log('KaTeX: Render successful.');
+          
+          // JavaScript Hiding Logic: Force hide HTML and show MathML
+          const htmlParts = contentElement.querySelectorAll('.katex-html');
+          htmlParts.forEach(el => {
+            el.style.setProperty('display', 'none', 'important');
+          });
+          const mathMLParts = contentElement.querySelectorAll('.katex-mathml');
+          mathMLParts.forEach(el => {
+            el.style.setProperty('display', 'inline-block', 'important');
+            el.style.setProperty('position', 'static', 'important');
+            el.style.setProperty('clip', 'auto', 'important');
+            el.style.setProperty('width', 'auto', 'important');
+            el.style.setProperty('height', 'auto', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+          });
+
+          console.log('KaTeX: Render successful and HTML hidden via JS.');
         } catch (err) {
           console.error('KaTeX: Render error:', err);
         } finally {
@@ -406,6 +422,27 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             {start: '- ', cmd: 'InsertUnorderedList'}
           ] : [],
           setup: (editor) => {
+            // Function to hide KaTeX HTML inside editor
+            const hideEditorKatexHTML = () => {
+              const body = editor.getBody();
+              if (!body) return;
+              body.querySelectorAll('.katex-html').forEach(el => {
+                el.style.setProperty('display', 'none', 'important');
+              });
+              body.querySelectorAll('.katex-mathml').forEach(el => {
+                el.style.setProperty('display', 'inline-block', 'important');
+                el.style.setProperty('position', 'static', 'important');
+                el.style.setProperty('clip', 'auto', 'important');
+                el.style.setProperty('width', 'auto', 'important');
+                el.style.setProperty('height', 'auto', 'important');
+                el.style.setProperty('overflow', 'visible', 'important');
+              });
+            };
+
+            editor.on('NodeChange SetContent keyup', () => {
+              hideEditorKatexHTML();
+            });
+
             editor.ui.registry.addIcon('math', '<svg width="24" height="24" viewBox="0 0 24 24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-weight="bold" font-size="18" fill="currentColor">Σ</text></svg>');
             
             editor.ui.registry.addButton('math', {
