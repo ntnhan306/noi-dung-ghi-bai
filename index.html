@@ -15,16 +15,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
     <link rel="stylesheet" href="/index.css">
     <style>
-      /* Aggressive hiding for .math-tex until rendered */
+      /* Ultimate aggressive hiding for .math-tex until rendered */
       .math-tex:not(.is-rendered) { 
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        position: fixed !important;
+        top: -9999px !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+        transition: none !important; /* No transition when hiding */
       }
       
       .math-tex.is-rendered {
         display: inline-flex !important;
         align-items: center;
-        opacity: 1 !important;
+        position: static !important;
         visibility: visible !important;
+        opacity: 1 !important;
+        width: auto !important;
+        height: auto !important;
         transition: opacity 0.2s ease-in-out;
       }
       
@@ -84,12 +96,14 @@
             }
           });
           
-          // Hide .math-tex that are NOT rendered yet
+          // Hide .math-tex that are NOT rendered yet with extreme prejudice
           const mathTex = root.querySelectorAll('.math-tex:not(.is-rendered)');
           mathTex.forEach(el => {
-            if (el.style.display !== 'none') {
-              el.style.setProperty('display', 'none', 'important');
-            }
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+            el.style.setProperty('opacity', '0', 'important');
+            el.style.setProperty('position', 'fixed', 'important');
+            el.style.setProperty('top', '-9999px', 'important');
           });
 
           const mathml = root.querySelectorAll('.katex-mathml');

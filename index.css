@@ -38,16 +38,27 @@ input, textarea, .select-text {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1) !important;
 }
 
-/* Global KaTeX Hiding Fallback */
+/* Global KaTeX Hiding Fallback - Ultimate Aggressive */
 .math-tex:not(.is-rendered) {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: fixed !important;
+  top: -9999px !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  transition: none !important;
 }
 
 .math-tex.is-rendered,
 .is-rendered .math-tex {
   display: inline-flex !important;
+  position: static !important;
   opacity: 1 !important;
   visibility: visible !important;
+  width: auto !important;
+  height: auto !important;
   transition: opacity 0.3s ease-in-out;
 }
 
