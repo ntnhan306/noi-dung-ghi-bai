@@ -15,11 +15,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
     <link rel="stylesheet" href="/index.css">
     <style>
-      /* Base math-tex styling */
+      /* Base math-tex styling - Hidden by default until rendered */
       .math-tex { 
-        display: inline-block; 
+        display: inline-flex; 
+        align-items: center;
         min-width: 0.5em;
         color: inherit;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease-in-out;
       }
       
       /* KaTeX: Hide HTML and show MathML as requested */

@@ -193,6 +193,13 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             el.style.setProperty('overflow', 'visible', 'important');
           });
 
+          // Show rendered math-tex elements
+          const mathTexElements = contentElement.querySelectorAll('.math-tex');
+          mathTexElements.forEach(el => {
+            el.style.setProperty('opacity', '1', 'important');
+            el.style.setProperty('visibility', 'visible', 'important');
+          });
+
           console.log('KaTeX: Render successful and HTML hidden via JS.');
         } catch (err) {
           console.error('KaTeX: Render error:', err);
@@ -395,7 +402,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             'Verdana=verdana,geneva; ' +
             'Webdings=webdings; ' +
             'Wingdings=wingdings,zapf dingbats',
-          content_style: 'body { font-family: "times new roman", times, serif; font-size: 18pt; text-align: justify; line-height: 1.5; margin: 1.5rem; background-color: #ffffff; } .katex-html { display: none !important; } .katex-mathml { display: inline-block !important; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
+          content_style: 'body { font-family: "times new roman", times, serif; font-size: 18pt; text-align: justify; line-height: 1.5; margin: 1.5rem; background-color: #ffffff; } .math-tex { opacity: 0; visibility: hidden; } .katex-html { display: none !important; } .katex-mathml { display: inline-block !important; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
           formats: {
@@ -436,6 +443,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                 el.style.setProperty('width', 'auto', 'important');
                 el.style.setProperty('height', 'auto', 'important');
                 el.style.setProperty('overflow', 'visible', 'important');
+              });
+              
+              // Show rendered math-tex elements in editor
+              body.querySelectorAll('.math-tex').forEach(el => {
+                el.style.setProperty('opacity', '1', 'important');
+                el.style.setProperty('visibility', 'visible', 'important');
               });
             };
 
