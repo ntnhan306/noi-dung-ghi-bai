@@ -21,6 +21,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [viewFontSize, setViewFontSize] = useState(16);
+  const [isMathRendered, setIsMathRendered] = useState(false);
   const lastInitializedLessonId = useRef(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -142,7 +143,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }
   };
 
-  useEffect(() => { fetchData(); }, [nodeId]);
+  useEffect(() => { 
+    fetchData(); 
+    setIsMathRendered(false); // Reset math rendered state on node change
+  }, [nodeId]);
 
   useEffect(() => {
     if (isEditingContent) return;
@@ -196,19 +200,26 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           // Show rendered math-tex elements
           const mathTexElements = contentElement.querySelectorAll('.math-tex');
           mathTexElements.forEach(el => {
+            el.classList.add('is-rendered');
             el.style.setProperty('opacity', '1', 'important');
             el.style.setProperty('visibility', 'visible', 'important');
           });
 
+          setIsMathRendered(true);
           console.log('KaTeX: Render successful and HTML hidden via JS.');
         } catch (err) {
           console.error('KaTeX: Render error:', err);
+          setIsMathRendered(true); // Show content even on error
         } finally {
           // Release lock after a short delay to ensure DOM is stable
           setTimeout(() => { isRendering = false; }, 100);
         }
       } else {
         console.warn('KaTeX: SDK components missing. hasKatex:', hasKatex, 'hasRender:', hasRender);
+        // Retry after a short delay if components are missing
+        setTimeout(() => {
+          renderMath();
+        }, 500);
       }
     };
 
@@ -447,12 +458,13 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
               
               // Show rendered math-tex elements in editor
               body.querySelectorAll('.math-tex').forEach(el => {
+                el.classList.add('is-rendered');
                 el.style.setProperty('opacity', '1', 'important');
                 el.style.setProperty('visibility', 'visible', 'important');
               });
             };
 
-            editor.on('NodeChange SetContent keyup', () => {
+            editor.on('init NodeChange SetContent keyup', () => {
               hideEditorKatexHTML();
             });
 
@@ -812,7 +824,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                       </style>
                       <div 
                         ref=${lessonContentRef}
-                        className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text" 
+                        className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-sans leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text"
                         dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}
                       ></div>
                   </div>
