@@ -100,16 +100,16 @@
             },
             keyframes: {
               marquee: {
-                '0%': { transform: 'translateX(100%)' },
+                '0%, 20%': { transform: 'translateX(0)' },
                 '100%': { transform: 'translateX(-100%)' },
-                'slideInRight': {
-                    '0%': { transform: 'translateX(100%)', opacity: '0' },
-                    '100%': { transform: 'translateX(0)', opacity: '1' },
-                },
-                'slideInLeft': {
-                    '0%': { transform: 'translateX(-100%)', opacity: '0' },
-                    '100%': { transform: 'translateX(0)', opacity: '1' },
-                }
+              },
+              slideInRight: {
+                  '0%': { transform: 'translateX(100%)', opacity: '0' },
+                  '100%': { transform: 'translateX(0)', opacity: '1' },
+              },
+              slideInLeft: {
+                  '0%': { transform: 'translateX(-100%)', opacity: '0' },
+                  '100%': { transform: 'translateX(0)', opacity: '1' },
               },
               blob: {
                 "0%": { transform: "translate(0px, 0px) scale(1)" },

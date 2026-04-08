@@ -22,6 +22,32 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const [saving, setSaving] = useState(false);
   const [viewFontSize, setViewFontSize] = useState(16);
   const [isMathRendered, setIsMathRendered] = useState(false);
+  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
+  const marqueeTitleRef = useRef(null);
+  const marqueeTitleContainerRef = useRef(null);
+
+  const selectNoneStyle = {
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
+    msUserSelect: 'none',
+    WebkitTouchCallout: 'none'
+  };
+
+  const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
+
+  useLayoutEffect(() => {
+    if (isAppMode) return;
+    const checkOverflow = () => {
+      if (marqueeTitleRef.current && marqueeTitleContainerRef.current) {
+        const isOver = marqueeTitleRef.current.scrollWidth > marqueeTitleContainerRef.current.clientWidth;
+        setIsTitleOverflowing(isOver);
+      }
+    };
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [currentNode?.title, isAppMode]);
   const lastInitializedLessonId = useRef(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,7 +78,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
 
-  const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
   const children = useMemo(() => {
     let filtered = allNodes.filter(n => n.parentId === (nodeId || null));
     
@@ -848,9 +873,36 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                         ${NODE_LABELS[NodeType.LESSON]}
                       </span>
                   `}
-                  <h1 key="lesson-title" className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm">
-                    ${currentNode.title}
-                  </h1>
+                  <div ref=${marqueeTitleContainerRef} className=${`overflow-hidden relative flex items-center ${isAppMode ? '' : 'h-10 md:h-14'}`}>
+                    ${isAppMode ? html`
+                      <h1 
+                        key="app-h1"
+                        className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm whitespace-normal"
+                        style=${selectNoneStyle}
+                      >
+                        ${currentNode.title}
+                      </h1>
+                    ` : isTitleOverflowing ? html`
+                      <div key="marquee-h1" className="whitespace-nowrap animate-marquee inline-block">
+                        <h1 
+                          ref=${marqueeTitleRef}
+                          className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm"
+                          style=${selectNoneStyle}
+                        >
+                          ${currentNode.title}
+                        </h1>
+                      </div>
+                    ` : html`
+                      <h1 
+                        key="static-h1"
+                        ref=${marqueeTitleRef}
+                        className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm truncate w-full"
+                        style=${selectNoneStyle}
+                      >
+                        ${currentNode.title}
+                      </h1>
+                    `}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   ${mode === 'edit' && !isEditingContent && html`

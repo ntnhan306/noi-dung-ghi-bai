@@ -3,6 +3,12 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Outfit", ui-serif, Georgia, serif;
+
+  @keyframes marquee {
+    0%, 20% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  --animate-marquee: marquee 15s linear infinite;
 }
 
 .prose {

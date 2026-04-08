@@ -8,6 +8,7 @@ export const NodeItem = ({
   node, 
   isEditMode, 
   isSorting, 
+  isAppMode: isAppModeProp,
   onClick, 
   onEdit, 
   onDelete, 
@@ -20,7 +21,7 @@ export const NodeItem = ({
   const titleRef = useRef(null);
   const containerRef = useRef(null);
   
-  const isAppMode = window.location.pathname.includes('/special-application/');
+  const isAppMode = isAppModeProp ?? window.location.pathname.includes('/special-application/');
   const isLesson = node.type === NodeType.LESSON;
   const isLiquid = uiStyle === 'liquid';
 
