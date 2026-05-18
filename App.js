@@ -43,10 +43,12 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
         <div className=${`w-full ${animationClass}`}>
             <${Routes}>
                 <${Route} key="route-home" path="/" element=${html`<${Navigate} to="/view" replace />`} />
+                <${Route} key="route-view-slash" path="/view/" element=${html`<${Navigate} to="/view" replace />`} />
                 <${Route} key="route-view" path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 <${Route} key="route-view-node" path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 ${!isAppMode && html`
                     <${React.Fragment} key="edit-routes">
+                        <${Route} key="route-edit-slash" path="/edit/" element=${html`<${Navigate} to="/edit" replace />`} />
                         <${Route} key="route-edit" path="/edit" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
                         <${Route} key="route-settings" path="/edit/settings" element=${html`<${AuthGuard}><${SettingsPage} /></${AuthGuard}>`} />
                         <${Route} key="route-classes" path="/edit/classes" element=${html`<${AuthGuard}><${ClassManagementPage} /></${AuthGuard}>`} />

@@ -37,17 +37,17 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const currentNode = useMemo(() => allNodes.find(n => n.id === nodeId), [allNodes, nodeId]);
 
   useLayoutEffect(() => {
-    if (isAppMode) return;
-    const checkOverflow = () => {
-      if (marqueeTitleRef.current && marqueeTitleContainerRef.current) {
-        const isOver = marqueeTitleRef.current.scrollWidth > marqueeTitleContainerRef.current.clientWidth;
-        setIsTitleOverflowing(isOver);
+    const checkTitle = () => {
+      if (marqueeTitleRef.current) {
+        const height = marqueeTitleRef.current.offsetHeight;
+        // Line height is ~32px-40px. If height > 50, it's multi-line.
+        setIsMultiLine(height > 50);
       }
     };
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, [currentNode?.title, isAppMode]);
+    checkTitle();
+    window.addEventListener('resize', checkTitle);
+    return () => window.removeEventListener('resize', checkTitle);
+  }, [currentNode?.title]);
   const lastInitializedLessonId = useRef(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,28 +89,8 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     return filtered.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
   }, [allNodes, nodeId, selectedClassId]);
 
-  const titleRef = useRef(null);
   const lessonContentRef = useRef(null);
   const [isMultiLine, setIsMultiLine] = useState(false);
-
-  useLayoutEffect(() => {
-    if (isAppMode && titleRef.current) {
-      const checkMultiLine = () => {
-        const height = titleRef.current.offsetHeight;
-        // With text-xl/2xl, line height is around 28-32px.
-        // If height > 40px, it's likely multi-line.
-        setIsMultiLine(height > 40);
-      };
-      checkMultiLine();
-      // Use a small timeout to ensure rendering is complete
-      const timer = setTimeout(checkMultiLine, 100);
-      window.addEventListener('resize', checkMultiLine);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('resize', checkMultiLine);
-      };
-    }
-  }, [isAppMode, currentNode]);
 
   const calculatedBreadcrumbs = useMemo(() => {
     const path = [];
@@ -867,44 +847,23 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         return html`
             <div key="lesson-container" className=${`${containerStyle} overflow-hidden min-h-[700px] flex flex-col relative`}>
               <div className=${`px-6 md:px-12 py-6 md:py-8 flex justify-between items-start z-20 ${headerStyle}`}>
-                <div key="lesson-header-info">
+                <div key="lesson-header-info" className="flex-1 min-w-0">
                   ${!isAppMode && html`
                       <span key="lesson-type-badge" className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-indigo-500 to-violet-500 text-white uppercase tracking-widest mb-3 shadow-md shadow-indigo-500/20">
                         ${NODE_LABELS[NodeType.LESSON]}
                       </span>
                   `}
-                  <div ref=${marqueeTitleContainerRef} className=${`overflow-hidden relative flex items-center ${isAppMode ? '' : 'h-10 md:h-14'}`}>
-                    ${isAppMode ? html`
-                      <h1 
-                        key="app-h1"
-                        className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm whitespace-normal"
-                        style=${selectNoneStyle}
-                      >
-                        ${currentNode.title}
-                      </h1>
-                    ` : isTitleOverflowing ? html`
-                      <div key="marquee-h1" className="whitespace-nowrap animate-marquee inline-block">
-                        <h1 
-                          ref=${marqueeTitleRef}
-                          className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm"
-                          style=${selectNoneStyle}
-                        >
-                          ${currentNode.title}
-                        </h1>
-                      </div>
-                    ` : html`
-                      <h1 
-                        key="static-h1"
-                        ref=${marqueeTitleRef}
-                        className="text-2xl md:text-4xl font-serif font-bold text-slate-900 leading-tight drop-shadow-sm truncate w-full"
-                        style=${selectNoneStyle}
-                      >
-                        ${currentNode.title}
-                      </h1>
-                    `}
+                  <div key="title-box" className="relative flex items-center">
+                    <h1 
+                      ref=${marqueeTitleRef}
+                      className=${`font-serif font-bold text-slate-900 leading-tight drop-shadow-sm whitespace-normal ${isAppMode ? 'text-2xl md:text-3xl' : (isMultiLine ? 'text-xl md:text-3xl' : 'text-2xl md:text-4xl')}`}
+                      style=${selectNoneStyle}
+                    >
+                      ${currentNode.title}
+                    </h1>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                   ${mode === 'edit' && !isEditingContent && html`
                      <div key="edit-actions" className="flex gap-3">
                       <button key="btn-edit-title" onClick=${() => handleEditTitle(currentNode)} className=${`px-4 py-2 text-slate-600 rounded-xl font-sans text-sm font-bold transition-all border ${isLiquid ? 'hover:bg-white/60 hover:text-indigo-600 border-transparent hover:border-white/50 hover:shadow-sm' : 'hover:bg-slate-50 border-slate-200'}`}>Sửa tên</button>
