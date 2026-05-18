@@ -16,6 +16,8 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const { nodeId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { updateBreadcrumbs, setBreadcrumbsVisible } = useBreadcrumbs();
+  const { selectedClassId } = useClasses();
   
   const [allNodes, setAllNodes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +25,32 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const [viewFontSize, setViewFontSize] = useState(16);
   const [isMathRendered, setIsMathRendered] = useState(false);
   const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
+  const [isMultiLine, setIsMultiLine] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState('CREATE');
+  const [editingNode, setEditingNode] = useState(undefined);
+  const [targetType, setTargetType] = useState(NodeType.SUBJECT);
+  const [isEditingContent, setIsEditingContent] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
+  const [autoFormat, setAutoFormat] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState('vi-VN');
+  const [movingNode, setMovingNode] = useState(null);
+  const [isSorting, setIsSorting] = useState(false);
+
   const marqueeTitleRef = useRef(null);
   const marqueeTitleContainerRef = useRef(null);
+  const lastInitializedLessonId = useRef(null);
+  const tempContentRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const shouldListenRef = useRef(false);
+  const sortableListRef = useRef(null);
+  const sortableInstance = useRef(null);
+  const isFetchingRef = useRef(false);
+  const lessonContentRef = useRef(null);
+  const titleRef = useRef(null);
 
   const selectNoneStyle = {
     userSelect: 'none',
@@ -45,37 +71,14 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       }
     };
     checkTitle();
+    // Small timeout to ensure rendering is stable
+    const timer = setTimeout(checkTitle, 100);
     window.addEventListener('resize', checkTitle);
-    return () => window.removeEventListener('resize', checkTitle);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkTitle);
+    };
   }, [currentNode?.title]);
-  const lastInitializedLessonId = useRef(null);
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState('CREATE');
-  const [editingNode, setEditingNode] = useState(undefined);
-  const [targetType, setTargetType] = useState(NodeType.SUBJECT);
-
-  const [isEditingContent, setIsEditingContent] = useState(false);
-  const [editorReady, setEditorReady] = useState(false);
-  const [autoFormat, setAutoFormat] = useState(true);
-  const tempContentRef = useRef(null);
-
-  const [isListening, setIsListening] = useState(false);
-  const [voiceLang, setVoiceLang] = useState('vi-VN'); 
-  const recognitionRef = useRef(null);
-  const silenceTimerRef = useRef(null);
-  const shouldListenRef = useRef(false);
-
-  const [movingNode, setMovingNode] = useState(null);
-  const [isSorting, setIsSorting] = useState(false);
-  const sortableListRef = useRef(null);
-  const sortableInstance = useRef(null);
-  const isFetchingRef = useRef(false);
-  const { updateBreadcrumbs, setBreadcrumbsVisible } = useBreadcrumbs();
-  const { selectedClassId } = useClasses();
-
-  // Check if Liquid UI is enabled
   const isLiquid = uiConfig?.style === 'liquid';
 
   const children = useMemo(() => {
@@ -88,9 +91,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     
     return filtered.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
   }, [allNodes, nodeId, selectedClassId]);
-
-  const lessonContentRef = useRef(null);
-  const [isMultiLine, setIsMultiLine] = useState(false);
 
   const calculatedBreadcrumbs = useMemo(() => {
     const path = [];
