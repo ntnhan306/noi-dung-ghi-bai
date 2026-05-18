@@ -19,11 +19,19 @@ const getBasename = () => {
   const isGithub = hostname.includes('github.io');
   const githubPrefix = isGithub ? '/noi-dung-ghi-bai' : '';
 
-  if (path.includes('/app/application/phone/special-application/view')) {
-      return githubPrefix + '/app/application/phone/special-application';
+  // Improved detection for special app mode
+  if (path.includes('/special-application/')) {
+      const parts = path.split('/special-application/');
+      const base = parts[0] + '/special-application';
+      console.log('App Mode Basename:', base);
+      return base;
+  }
+  
+  if (isGithub && path.includes('/noi-dung-ghi-bai')) {
+      return '/noi-dung-ghi-bai';
   }
 
-  return isGithub ? '/noi-dung-ghi-bai' : '/';
+  return '/';
 };
 
 const AnimatedRoutes = ({ isAppMode, uiConfig }) => {

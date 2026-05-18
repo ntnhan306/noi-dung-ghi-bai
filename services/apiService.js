@@ -12,11 +12,15 @@ export const apiService = {
       if (response.status === 401) throw new Error('UNAUTHORIZED');
       if (!response.ok) throw new Error('Network response was not ok');
       const text = await response.text();
-      if (text.trim().startsWith('<')) return null;
-      try { return JSON.parse(text); } catch (e) { return null; }
+      if (!text || !text.trim() || text.trim().startsWith('<')) return [];
+      try { return JSON.parse(text); } catch (e) { 
+        console.error("JSON parse error:", e, "Text:", text.substring(0, 50));
+        return []; 
+      }
     } catch (error) {
       if (error.message === 'UNAUTHORIZED') throw error;
-      return null;
+      console.error("API Error in getAllNodes:", error);
+      return [];
     }
   },
 

@@ -82,10 +82,14 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const isLiquid = uiConfig?.style === 'liquid';
 
   const children = useMemo(() => {
-    let filtered = allNodes.filter(n => n.parentId === (nodeId || null));
+    let filtered = allNodes.filter(n => {
+      const pId = (n.parentId === undefined || n.parentId === '') ? null : n.parentId;
+      const targetId = nodeId || null;
+      return pId === targetId;
+    });
     
     // Only filter by class at the root level (subjects)
-    if (!nodeId) {
+    if (!nodeId && selectedClassId) {
       filtered = filtered.filter(n => !n.classId || n.classId === selectedClassId);
     }
     
