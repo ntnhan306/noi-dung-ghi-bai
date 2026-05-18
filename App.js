@@ -15,12 +15,15 @@ import { ChevronDown, Settings as SettingsIcon, Trash2, Edit2, GripVertical } fr
 
 const getBasename = () => {
   const path = window.location.pathname;
-  if (path.includes('/app/application/phone/special-application/view')) {
-      return '/noi-dung-ghi-bai/app/application/phone/special-application';
-  }
   const hostname = window.location.hostname;
-  if (hostname.includes('github.io')) return '/noi-dung-ghi-bai';
-  return '/';
+  const isGithub = hostname.includes('github.io');
+  const githubPrefix = isGithub ? '/noi-dung-ghi-bai' : '';
+
+  if (path.includes('/app/application/phone/special-application/view')) {
+      return githubPrefix + '/app/application/phone/special-application';
+  }
+
+  return isGithub ? '/noi-dung-ghi-bai' : '/';
 };
 
 const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
@@ -42,20 +45,20 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
     return html`
         <div className=${`w-full ${animationClass}`}>
             <${Routes}>
-                <${Route} key="route-home" path="/" element=${html`<${Navigate} to="/view" replace />`} />
-                <${Route} key="route-view-slash" path="/view/" element=${html`<${Navigate} to="/view" replace />`} />
+                <${Route} key="route-home" path="/" element=${html`<${Navigate} to=${`/view${location.search}`} replace />`} />
+                <${Route} key="route-view-slash" path="/view/" element=${html`<${Navigate} to=${`/view${location.search}`} replace />`} />
                 <${Route} key="route-view" path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 <${Route} key="route-view-node" path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 ${!isAppMode && html`
                     <${React.Fragment} key="edit-routes">
-                        <${Route} key="route-edit-slash" path="/edit/" element=${html`<${Navigate} to="/edit" replace />`} />
+                        <${Route} key="route-edit-slash" path="/edit/" element=${html`<${Navigate} to=${`/edit${location.search}`} replace />`} />
                         <${Route} key="route-edit" path="/edit" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
                         <${Route} key="route-settings" path="/edit/settings" element=${html`<${AuthGuard}><${SettingsPage} /></${AuthGuard}>`} />
                         <${Route} key="route-classes" path="/edit/classes" element=${html`<${AuthGuard}><${ClassManagementPage} /></${AuthGuard}>`} />
                         <${Route} key="route-edit-node" path="/edit/:nodeId" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
                     </${React.Fragment}>
                 `}
-                <${Route} key="route-catch-all" path="*" element=${html`<${Navigate} to="/view" replace />`} />
+                <${Route} key="route-catch-all" path="*" element=${html`<${Navigate} to=${`/view${location.search}`} replace />`} />
             </${Routes}>
         </div>
     `;
