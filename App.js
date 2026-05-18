@@ -17,21 +17,17 @@ const getBasename = () => {
   const path = window.location.pathname;
   const hostname = window.location.hostname;
   const isGithub = hostname.includes('github.io');
-  const githubPrefix = isGithub ? '/noi-dung-ghi-bai' : '';
 
-  // Improved detection for special app mode
-  if (path.includes('/special-application/')) {
-      const parts = path.split('/special-application/');
-      const base = parts[0] + '/special-application';
-      console.log('App Mode Basename:', base);
-      return base;
+  if (path.includes('/special-application')) {
+      const index = path.indexOf('/special-application');
+      return path.substring(0, index + '/special-application'.length);
   }
   
   if (isGithub && path.includes('/noi-dung-ghi-bai')) {
       return '/noi-dung-ghi-bai';
   }
 
-  return '/';
+  return '';
 };
 
 const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
@@ -53,20 +49,18 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
     return html`
         <div className=${`w-full ${animationClass}`}>
             <${Routes}>
-                <${Route} key="route-home" path="/" element=${html`<${Navigate} to=${`/view${location.search}`} replace />`} />
-                <${Route} key="route-view-slash" path="/view/" element=${html`<${Navigate} to=${`/view${location.search}`} replace />`} />
+                <${Route} key="route-home" path="/" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 <${Route} key="route-view" path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 <${Route} key="route-view-node" path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 ${!isAppMode && html`
-                    <${React.Fragment} key="edit-routes">
-                        <${Route} key="route-edit-slash" path="/edit/" element=${html`<${Navigate} to=${`/edit${location.search}`} replace />`} />
+                    <${React.Fragment}>
                         <${Route} key="route-edit" path="/edit" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
                         <${Route} key="route-settings" path="/edit/settings" element=${html`<${AuthGuard}><${SettingsPage} /></${AuthGuard}>`} />
                         <${Route} key="route-classes" path="/edit/classes" element=${html`<${AuthGuard}><${ClassManagementPage} /></${AuthGuard}>`} />
                         <${Route} key="route-edit-node" path="/edit/:nodeId" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
                     </${React.Fragment}>
                 `}
-                <${Route} key="route-catch-all" path="*" element=${html`<${Navigate} to=${`/view${location.search}`} replace />`} />
+                <${Route} key="route-catch-all" path="*" element=${html`<${Navigate} to=${isAppMode ? `/view${location.search}` : `/view`} replace />`} />
             </${Routes}>
         </div>
     `;
@@ -272,7 +266,7 @@ const App = () => {
   const [isAuthorized, setIsAuthorized] = useState(true);
   const [uiConfig, setUiConfig] = useState({ style: 'liquid', zoom: { view: true, edit: true, app: false }, backgroundActive: false, backgrounds: [] });
   const [currentBg, setCurrentBg] = useState(null);
-  const isAppMode = window.location.pathname.includes('/special-application/');
+  const isAppMode = window.location.pathname.includes('/special-application');
 
   useEffect(() => {
     if (isAppMode) {
