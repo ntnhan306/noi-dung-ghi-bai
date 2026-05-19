@@ -422,7 +422,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             'Verdana=verdana,geneva; ' +
             'Webdings=webdings; ' +
             'Wingdings=wingdings,zapf dingbats',
-          content_style: 'body { font-family: "times new roman", times, serif; font-size: 18pt; text-align: justify; line-height: 1.5; margin: 1.5rem; background-color: #ffffff; } .math-tex { opacity: 0; visibility: hidden; } .katex-html { display: none !important; } .katex-mathml { display: inline-block !important; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
+          content_style: 'body { font-family: "times new roman", times, serif; font-size: 18pt; text-align: justify; line-height: 1.5; margin: 1.5rem; background-color: #ffffff; } .math-tex { opacity: 0; visibility: hidden; max-width: 100%; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; } .math-tex::-webkit-scrollbar { display: none !important; } .katex-html { display: none !important; } .katex-mathml { display: inline-block !important; } .katex-display { display: block !important; width: 100% !important; overflow-x: auto !important; scrollbar-width: none !important; -ms-overflow-style: none !important; } .katex-display::-webkit-scrollbar { display: none !important; } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
           formats: {
