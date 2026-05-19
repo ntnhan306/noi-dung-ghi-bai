@@ -72,18 +72,18 @@ const BackgroundItem = ({ url, index, onChange, onDelete, disabled }) => {
   `;
 };
 
-const Section = ({ title, icon: Icon, children }) => {
+const Section = ({ title, icon: Icon, children, isLiquid }) => {
   const [isOpen, setIsOpen] = useState(true);
 
   return html`
-    <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-glass border border-white/60 p-6 md:p-8 mb-6 relative overflow-hidden">
+    <div className=${`rounded-[2rem] p-6 md:p-8 mb-6 relative overflow-hidden ring-1 transition-all duration-500 ${isLiquid ? 'bg-white/60 backdrop-blur-xl shadow-glass ring-white/60' : 'bg-white shadow-sm ring-slate-200'}`}>
         <div 
             className="flex items-center justify-between cursor-pointer group"
             onClick=${() => setIsOpen(!isOpen)}
         >
             <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600 shadow-sm"><${Icon} size=${24} strokeWidth=${2} /></div>
-                <h2 className="text-xl font-serif font-bold text-slate-800">${title}</h2>
+                <div className=${`p-2.5 rounded-xl text-indigo-600 transition-all ${isLiquid ? 'bg-white/50 shadow-glass border border-white/60' : 'bg-indigo-50 shadow-sm border border-indigo-100'}`}><${Icon} size=${24} strokeWidth=${2} /></div>
+                <h2 className="text-xl font-sans font-bold text-slate-800">${title}</h2>
             </div>
             <div className=${`p-2 rounded-full text-slate-400 hover:bg-white transition-all duration-300 ${isOpen ? 'rotate-180 bg-white shadow-sm text-indigo-600' : ''}`}>
                 <${ChevronDown} size=${20} />
@@ -99,10 +99,10 @@ const Section = ({ title, icon: Icon, children }) => {
   `;
 };
 
-const Toggle = ({ label, subLabel, checked, onChange, icon: Icon }) => html`
-  <div className=${`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${checked ? 'bg-indigo-50/80 border-indigo-200' : 'bg-slate-50/80 border-slate-200 hover:border-slate-300'}`} onClick=${() => onChange(!checked)}>
+const Toggle = ({ label, subLabel, checked, onChange, icon: Icon, isLiquid }) => html`
+  <div className=${`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${checked ? (isLiquid ? 'bg-white/40 border-indigo-300/50' : 'bg-indigo-50/80 border-indigo-200') : (isLiquid ? 'bg-white/20 border-white/40 hover:bg-white/40' : 'bg-slate-50/80 border-slate-200 hover:border-slate-300')}`} onClick=${() => onChange(!checked)}>
     <div className="flex items-center gap-4">
-        <div className=${`p-2.5 rounded-xl transition-colors ${checked ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-slate-200 text-slate-500'}`}>
+        <div className=${`p-2.5 rounded-xl transition-colors ${checked ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : (isLiquid ? 'bg-white/40 text-slate-500' : 'bg-slate-200 text-slate-500')}`}>
             <${Icon} size=${20} />
         </div>
         <div>
@@ -110,7 +110,7 @@ const Toggle = ({ label, subLabel, checked, onChange, icon: Icon }) => html`
             ${subLabel && html`<p className="text-xs text-slate-500 font-medium mt-0.5">${subLabel}</p>`}
         </div>
     </div>
-    <div className=${`w-12 h-7 rounded-full transition-colors relative ${checked ? 'bg-indigo-500' : 'bg-slate-300'}`}>
+    <div className=${`w-12 h-7 rounded-full transition-colors relative ${checked ? 'bg-indigo-500' : (isLiquid ? 'bg-white/50 border border-white/60' : 'bg-slate-300')}`}>
         <div className=${`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}></div>
     </div>
   </div>
@@ -186,14 +186,16 @@ export const SettingsPage = () => {
     updateConfig('background', 'images', config.background.images.filter((_, i) => i !== index));
   };
 
+  const isLiquid = config?.ui?.style === 'liquid';
+
   if (loading) return html`<div className="flex justify-center items-center h-screen"><${Loader2} className="animate-spin text-indigo-600" size=${48} /></div>`;
 
   return html`
     <div className="max-w-3xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-8">
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-            <button onClick=${() => navigate('/edit')} className="p-3 bg-white/50 hover:bg-white rounded-xl shadow-glass border border-white/50 text-slate-600 hover:text-indigo-600 transition-all"><${ArrowLeft} size=${24} /></button>
-            <h1 className="text-3xl font-serif font-bold text-slate-900">Cài đặt hệ thống</h1>
+            <button onClick=${() => navigate('/edit')} className=${`p-3 rounded-xl transition-all border ${isLiquid ? 'bg-white/50 hover:bg-white shadow-glass border-white/50 text-slate-600 hover:text-indigo-600' : 'bg-white hover:bg-slate-50 shadow-sm border-slate-200 text-slate-500 hover:text-indigo-600'}`}><${ArrowLeft} size=${24} /></button>
+            <h1 className="text-3xl font-sans font-bold text-slate-900">Cài đặt hệ thống</h1>
         </div>
         <button 
             onClick=${handleSave} 
@@ -205,7 +207,7 @@ export const SettingsPage = () => {
       </header>
 
       <!-- GIAO DIỆN -->
-      <${Section} title="Giao diện & Hiển thị" icon=${LayoutTemplate}>
+      <${Section} title="Giao diện & Hiển thị" icon=${LayoutTemplate} isLiquid=${isLiquid}>
          <div className="space-y-4">
             <${Toggle} 
                 label="Chế độ Liquid Glass" 
@@ -213,18 +215,20 @@ export const SettingsPage = () => {
                 checked=${config.ui.style === 'liquid'}
                 onChange=${(val) => updateConfig('ui', 'style', val ? 'liquid' : 'normal')}
                 icon=${LayoutTemplate}
+                isLiquid=${isLiquid}
             />
          </div>
       </${Section}>
 
       <!-- ẢNH NỀN -->
-      <${Section} title="Ảnh nền tùy chỉnh" icon=${ImageIcon}>
+      <${Section} title="Ảnh nền tùy chỉnh" icon=${ImageIcon} isLiquid=${isLiquid}>
          <${Toggle} 
             label="Bật ảnh nền tự chọn" 
             subLabel="Sử dụng ảnh nền thay vì hiệu ứng Liquid mặc định. (Tự động đổi mỗi 60s nếu có nhiều ảnh)"
             checked=${config.background.active}
             onChange=${(val) => updateConfig('background', 'active', val)}
             icon=${ImageIcon}
+            isLiquid=${isLiquid}
          />
          
          <div className=${`mt-6 transition-all ${!config.background.active ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -234,12 +238,12 @@ export const SettingsPage = () => {
                     <${BackgroundItem} index=${idx} url=${url} onChange=${(v) => handleBgChange(idx, v)} onDelete=${() => handleBgDelete(idx)} disabled=${!config.background.active} />
                 `)}
              </div>
-             <button onClick=${handleAddBg} disabled=${!config.background.active} className="w-full py-3 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all font-bold flex items-center justify-center gap-2 mt-3"><${Plus} size=${18} /> Thêm ảnh mới</button>
+             <button onClick=${handleAddBg} disabled=${!config.background.active} className=${`w-full py-3 border-2 border-dashed rounded-xl transition-all font-bold flex items-center justify-center gap-2 mt-3 ${isLiquid ? 'border-white/60 bg-white/30 text-indigo-700 hover:bg-white/50' : 'border-indigo-200 text-indigo-600 hover:bg-indigo-50'}`}><${Plus} size=${18} /> Thêm ảnh mới</button>
          </div>
       </${Section}>
 
       <!-- TIỆN ÍCH ZOOM -->
-      <${Section} title="Nút Zoom (Tăng giảm cỡ chữ)" icon=${ZoomIn}>
+      <${Section} title="Nút Zoom (Tăng giảm cỡ chữ)" icon=${ZoomIn} isLiquid=${isLiquid}>
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <${Toggle} 
                 label="Trang Xem (View Mode)" 
@@ -247,6 +251,7 @@ export const SettingsPage = () => {
                 checked=${config.ui.zoom.view}
                 onChange=${(val) => updateConfig('zoom', 'view', val)}
                 icon=${Monitor}
+                isLiquid=${isLiquid}
             />
             <${Toggle} 
                 label="Trang Sửa (Edit Mode)" 
@@ -254,6 +259,7 @@ export const SettingsPage = () => {
                 checked=${config.ui.zoom.edit}
                 onChange=${(val) => updateConfig('zoom', 'edit', val)}
                 icon=${Edit3}
+                isLiquid=${isLiquid}
             />
             <${Toggle} 
                 label="Chế độ App (Mobile)" 
@@ -261,6 +267,7 @@ export const SettingsPage = () => {
                 checked=${config.ui.zoom.app}
                 onChange=${(val) => updateConfig('zoom', 'app', val)}
                 icon=${Smartphone}
+                isLiquid=${isLiquid}
             />
          </div>
       </${Section}>

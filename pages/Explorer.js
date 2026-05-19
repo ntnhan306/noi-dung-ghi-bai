@@ -402,9 +402,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           height: '75vh', 
           min_height: 700,
           content_css: [
-            'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600&family=Lora:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700&family=Roboto+Mono&display=swap'
+            'https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,700;1,400&family=Tinos:wght@400;700&family=Arimo:wght@400;700&display=swap'
           ],
           font_family_formats: 
+            'Be Vietnam Pro=Be Vietnam Pro, sans-serif; ' +
+            'Arimo (Arial)=Arimo, Arial, helvetica, sans-serif; ' +
+            'Tinos (Times New Roman)=Tinos, "Times New Roman", times, serif; ' +
             'Andale Mono=andale mono,times; ' +
             'Arial=arial,helvetica,sans-serif; ' +
             'Arial Black=arial black,avant garde; ' +
@@ -935,7 +938,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           <h1 
             key="main-title" 
             ref=${titleRef} 
-            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} font-sans font-bold text-slate-900 leading-tight drop-shadow-sm`}
+            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} ${currentNode?.type === 'lesson' ? 'font-serif' : 'font-sans'} font-bold text-slate-900 leading-tight drop-shadow-sm`}
           >
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
