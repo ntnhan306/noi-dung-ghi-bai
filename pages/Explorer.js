@@ -924,8 +924,8 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
     const headerAppClasses = isAppMode 
       ? (!currentNode 
-          ? `p-6 rounded-2xl text-center items-center justify-center` 
-          : `p-6 border-l-[4px] border-l-indigo-500 rounded-tl-none rounded-tr-2xl rounded-br-2xl rounded-bl-2xl text-left items-start justify-start`)
+          ? `p-3 rounded-full text-center items-center justify-center` 
+          : `p-6 border-l-[4px] border-l-indigo-500 rounded-tl-none rounded-bl-none rounded-tr-[35px] rounded-br-[35px] text-left items-start justify-start`)
       : '';
 
     return html`
