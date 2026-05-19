@@ -60,7 +60,7 @@ export const AuthGuard = ({ children }) => {
           <div className="relative w-20 h-20 bg-white/20 backdrop-blur-md border border-white/40 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg rotate-3 group-hover:rotate-6 transition-transform">
             <${Lock} className="text-white w-10 h-10 drop-shadow-md" strokeWidth=${2.5} />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-white tracking-tight drop-shadow-sm">Khu vực Quản trị</h2>
+          <h2 className="text-3xl font-sans font-bold text-white tracking-tight drop-shadow-sm">Khu vực Quản trị</h2>
           <p className="text-indigo-100 mt-3 text-sm font-medium tracking-wide opacity-90">Hệ thống bảo mật Cloud Learning</p>
         </div>
 
