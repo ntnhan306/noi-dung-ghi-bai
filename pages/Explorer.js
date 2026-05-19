@@ -922,9 +922,11 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         `;
     }
 
-    const headerAppClasses = isMultiLine 
-      ? `p-6 border-l-[3px] border-l-indigo-500 rounded-tl-none rounded-bl-none rounded-tr-2xl rounded-br-2xl text-left items-start justify-start`
-      : `p-6 rounded-full text-center items-center justify-center`;
+    const headerAppClasses = isAppMode 
+      ? (!currentNode 
+          ? `p-6 rounded-2xl text-center items-center justify-center` 
+          : `p-6 border-l-[4px] border-l-indigo-500 rounded-tl-none rounded-tr-2xl rounded-br-2xl rounded-bl-2xl text-left items-start justify-start`)
+      : '';
 
     return html`
       <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `mt-6 border ${headerAppClasses} ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
