@@ -137,7 +137,7 @@ export const NodeItem = ({
           
           <!-- Title -->
           ${isAppMode ? html`
-             <h3 key="app-title" className="font-serif font-semibold text-slate-800 text-lg leading-snug whitespace-normal" style=${selectNoneStyle}>
+             <h3 key="app-title" className="font-sans font-semibold text-slate-800 text-lg leading-snug whitespace-normal" style=${selectNoneStyle}>
                 ${node.title}
              </h3>
           ` : html`
@@ -146,7 +146,7 @@ export const NodeItem = ({
                     <div key="marquee" className="whitespace-nowrap animate-marquee inline-block">
                         <h3 
                             ref=${titleRef}
-                            className="font-serif font-bold text-slate-800 group-hover:text-indigo-900 transition-colors leading-snug text-xl"
+                            className="font-sans font-bold text-slate-800 group-hover:text-indigo-900 transition-colors leading-snug text-xl"
                             style=${selectNoneStyle}
                         >
                             ${node.title}
@@ -156,7 +156,7 @@ export const NodeItem = ({
                     <h3 
                         key="static-title"
                         ref=${titleRef}
-                        className="font-serif font-bold text-slate-800 group-hover:text-indigo-900 truncate transition-colors leading-snug text-xl"
+                        className="font-sans font-bold text-slate-800 group-hover:text-indigo-900 truncate transition-colors leading-snug text-xl"
                         style=${selectNoneStyle}
                     >
                         ${node.title}

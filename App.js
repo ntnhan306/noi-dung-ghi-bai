@@ -164,7 +164,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
               <${BookOpen} key="logo-icon" className=${`relative z-10 text-indigo-600 drop-shadow-sm ${isAppMode ? "w-5 h-5" : "w-7 h-7"}`} strokeWidth=${2.5} />
             </div>
             <div key="logo-text" className="flex flex-col">
-                <span key="main-label" className=${`font-serif font-bold tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'} ${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-violet-900' : 'text-slate-800'}`}>Nội dung ghi bài</span>
+                <span key="main-label" className=${`font-sans font-bold tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'} ${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-violet-900' : 'text-slate-800'}`}>Nội dung ghi bài</span>
                 ${!isAppMode && html`<span key="sub-label" className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase opacity-0 group-hover:opacity-100 transition-opacity -mt-1">Cloud Learning</span>`}
             </div>
           </div>
@@ -256,7 +256,7 @@ const AccessDenied = () => {
     return html`
         <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50">
             <div className="w-32 h-32 bg-red-100/50 backdrop-blur-xl border border-white/50 text-red-500 rounded-full flex items-center justify-center mb-8 animate-float shadow-glass"><${ShieldAlert} size=${56} /></div>
-            <h1 className="text-4xl font-serif font-bold text-slate-800 mb-4">Truy cập bị từ chối</h1>
+            <h1 className="text-4xl font-sans font-bold text-slate-800 mb-4">Truy cập bị từ chối</h1>
             <p className="text-slate-500 max-w-md mx-auto font-medium text-lg">Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này.</p>
         </div>
     `;

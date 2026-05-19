@@ -832,7 +832,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                <div className="relative">
                  <div className="w-14 h-14 rounded-full border-[5px] border-slate-200 animate-spin border-t-indigo-500 shadow-lg"></div>
                </div>
-               <span className="font-serif text-base font-bold text-indigo-800 tracking-wider">Đang tải dữ liệu...</span>
+               <span className="font-sans text-base font-bold text-indigo-800 tracking-wider">Đang tải dữ liệu...</span>
             </div>
           </div>
         `;
@@ -935,7 +935,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           <h1 
             key="main-title" 
             ref=${titleRef} 
-            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} font-serif font-bold text-slate-900 leading-tight drop-shadow-sm`}
+            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} font-sans font-bold text-slate-900 leading-tight drop-shadow-sm`}
           >
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
