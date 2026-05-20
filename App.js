@@ -60,7 +60,7 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
                         <${Route} key="route-edit-node" path="/edit/:nodeId" element=${html`<${AuthGuard}><${Explorer} mode="edit" uiConfig=${uiConfig} /></${AuthGuard}>`} />
                     </${React.Fragment}>
                 `}
-                <${Route} key="route-catch-all" path="*" element=${html`<${Navigate} to=${isAppMode ? `/view${location.search}` : `/view`} replace />`} />
+                <${Route} key="route-catch-all" path="*" element=${html`<${StatusPage} type="not-found" />`} />
             </${Routes}>
         </div>
     `;
@@ -252,21 +252,31 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   `;
 };
 
+import { StatusPage } from './components/StatusPage.js';
+
 const AccessDenied = () => {
-    return html`
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-            <div className="w-32 h-32 bg-red-100/50 backdrop-blur-xl border border-white/50 text-red-500 rounded-full flex items-center justify-center mb-8 animate-float shadow-glass"><${ShieldAlert} size=${56} /></div>
-            <h1 className="text-4xl font-sans font-bold text-slate-800 mb-4">Truy cập bị từ chối</h1>
-            <p className="text-slate-500 max-w-md mx-auto font-medium text-lg">Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này.</p>
-        </div>
-    `;
+    return html`<${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />`;
 };
+
+import { ErrorBoundary } from './components/ErrorBoundary.js';
 
 const App = () => {
   const [isAuthorized, setIsAuthorized] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [uiConfig, setUiConfig] = useState({ style: 'liquid', zoom: { view: true, edit: true, app: false }, backgroundActive: false, backgrounds: [] });
   const [currentBg, setCurrentBg] = useState(null);
   const isAppMode = window.location.pathname.includes('/special-application');
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     if (isAppMode) {
@@ -304,14 +314,17 @@ const App = () => {
     return () => clearInterval(interval);
   }, [uiConfig, currentBg]);
 
-  if (!isAuthorized) return html`<${AccessDenied} />`;
+  if (!isAuthorized) return html`<${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />`;
+  if (!isOnline) return html`<${StatusPage} type="no-internet" subMessage="Ứng dụng hiện đang ngoại tuyến. Vui lòng kiểm tra kết nối Internet để tiếp tục đồng bộ dữ liệu." />`;
 
   return html`
     <${BrowserRouter} basename=${getBasename()}>
       <${ClassProvider}>
         <${BreadcrumbProvider}>
           <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg}>
-             <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
+             <${ErrorBoundary}>
+               <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
+             </${ErrorBoundary}>
           </${Layout}>
         </${BreadcrumbProvider}>
       </${ClassProvider}>

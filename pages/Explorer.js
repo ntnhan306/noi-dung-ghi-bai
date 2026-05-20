@@ -10,6 +10,7 @@ import { EditorModal } from '../components/EditorModal.js';
 import { ChangePasswordModal } from '../components/ChangePasswordModal.js';
 import { useBreadcrumbs } from '../context/BreadcrumbContext.js';
 import { useClasses } from '../context/ClassContext.js';
+import { StatusPage } from '../components/StatusPage.js';
 import Sortable from 'sortablejs';
 
 export const Explorer = ({ mode, isAppMode, uiConfig }) => {
@@ -38,6 +39,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const [voiceLang, setVoiceLang] = useState('vi-VN');
   const [movingNode, setMovingNode] = useState(null);
   const [isSorting, setIsSorting] = useState(false);
+  const [error, setError] = useState(null);
 
   const marqueeTitleRef = useRef(null);
   const marqueeTitleContainerRef = useRef(null);
@@ -131,6 +133,9 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       const data = await apiService.getAllNodes(currentPass);
       if (Array.isArray(data)) {
         if (!isSorting && !isEditingContent) setAllNodes(data);
+        setError(null);
+      } else {
+        throw new Error('LOAD_FAILED');
       }
     } catch (err) {
       if (err.message === 'UNAUTHORIZED') {
@@ -138,6 +143,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         window.location.reload(); 
         return;
       }
+      setError(err.message === 'LOAD_FAILED' ? 'load-failed' : 'source-error');
       console.error("Failed to load data", err);
     } finally {
       isFetchingRef.current = false;
@@ -151,6 +157,14 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       }
     }
   };
+
+  useEffect(() => { 
+    if (!loading && nodeId && !currentNode) {
+      setError('not-found');
+    } else if (!loading) {
+      setError(null);
+    }
+  }, [loading, nodeId, currentNode]);
 
   useEffect(() => { 
     fetchData(); 
@@ -827,6 +841,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const allowedChildTypes = ALLOWED_CHILDREN[currentNode ? currentNode.type : NodeType.ROOT] || [];
 
   const renderMainContent = () => {
+    if (error) {
+      return html`<${StatusPage} type=${error} />`;
+    }
+
     if (loading && !allNodes.length) {
         if (isAppMode && nodeId) return html`<div className="flex items-center justify-center h-[60vh]"><div className="loader"></div></div>`;
         return html`
