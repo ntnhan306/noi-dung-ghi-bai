@@ -3,7 +3,8 @@
 @theme {
   --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Lora", ui-serif, Georgia, serif;
-  --font-times: "Tinos", "Times New Roman", Times, serif;
+  --font-times: "Times New Roman", "Tinos", Times, serif;
+  --font-tinos: "Tinos", serif;
   --font-arial: "Arimo", Arial, Helvetica, sans-serif;
 
   @keyframes marquee {
