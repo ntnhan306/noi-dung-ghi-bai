@@ -407,7 +407,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           font_family_formats: 
             'Be Vietnam Pro=Be Vietnam Pro, sans-serif; ' +
             'Arimo (Arial)=Arimo, Arial, helvetica, sans-serif; ' +
-            'Times New Roman=times new roman, times, pnb-times, serif; ' +
+            'Times New Roman=times new roman, times, serif; ' +
             'Tinos=Tinos, serif; ' +
             'Andale Mono=andale mono,times; ' +
             'Arial=arial,helvetica,sans-serif; ' +
@@ -421,15 +421,11 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             'Symbol=symbol; ' +
             'Tahoma=tahoma,arial,helvetica,sans-serif; ' +
             'Terminal=terminal,monaco; ' +
-            'Times New Roman (Old)=times new roman,times; ' +
             'Trebuchet MS=trebuchet ms,geneva; ' +
             'Verdana=verdana,geneva; ' +
             'Webdings=webdings; ' +
             'Wingdings=wingdings,zapf dingbats',
-          font_family_default: '"Times New Roman", Times, "Tinos", serif',
-          font_size_default: '18pt',
-          content_style: 'body { font-family: "Times New Roman", Times, "Tinos", serif; font-size: 18pt; color: black; text-align: justify; line-height: 1.5; margin: 1.5rem; background-color: #ffffff; } .math-tex { opacity: 0; visibility: hidden; max-width: 100%; } .math-tex.is-rendered { opacity: 1; visibility: visible; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; } .math-tex.is-rendered::-webkit-scrollbar { width: 0; height: 0; background-color: rgba(0,0,0,0); } .katex-html { display: none !important; } .katex-mathml { display: inline-block !important; } .katex-display { display: block !important; width: 100% !important; overflow-x: auto !important; scrollbar-width: none !important; -ms-overflow-style: none !important; } .katex-display::-webkit-scrollbar { width: 0; height: 0; background-color: rgba(0,0,0,0); } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
-          forced_root_block_attrs: { "style": "font-family: 'Times New Roman', Times, Tinos, serif; font-size: 18pt; line-height: 1.5; color: black; text-align: justify;" },
+          content_style: 'body { margin: 1.5rem; background-color: #ffffff; } .math-tex { opacity: 0; visibility: hidden; max-width: 100%; } .math-tex.is-rendered { opacity: 1; visibility: visible; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; } .math-tex.is-rendered::-webkit-scrollbar { width: 0; height: 0; background-color: rgba(0,0,0,0); } .katex-html { display: none !important; } .katex-mathml { display: inline-block !important; } .katex-display { display: block !important; width: 100% !important; overflow-x: auto !important; scrollbar-width: none !important; -ms-overflow-style: none !important; } .katex-display::-webkit-scrollbar { width: 0; height: 0; background-color: rgba(0,0,0,0); } #voice-interim { color: #94a3b8; background-color: #f1f5f9; padding: 0 2px; border-radius: 2px; }',
           branding: false,
           promotion: false,
           formats: {
@@ -867,7 +863,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                   <div key="title-box" className="relative flex items-center">
                     <h1 
                       ref=${marqueeTitleRef}
-                      className=${`font-tinos font-bold text-slate-900 leading-tight drop-shadow-sm whitespace-normal ${isAppMode ? 'text-2xl md:text-3xl' : (isMultiLine ? 'text-xl md:text-3xl' : 'text-2xl md:text-4xl')}`}
+                      className=${`font-serif font-bold text-slate-900 leading-tight drop-shadow-sm whitespace-normal ${isAppMode ? 'text-2xl md:text-3xl' : (isMultiLine ? 'text-xl md:text-3xl' : 'text-2xl md:text-4xl')}`}
                       style=${selectNoneStyle}
                     >
                       ${currentNode.title}
@@ -904,20 +900,10 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                   </div>
                 ` : html`
                   <div className=${`relative flex flex-col min-h-[500px] ${isLiquid ? 'bg-white/30' : 'bg-white'}`}>
-                      <style>
-                        .lesson-content p, .lesson-content ul, .lesson-content ol, .lesson-content li, .lesson-content span, .lesson-content div, .lesson-content td, .lesson-content th, .lesson-content pre, .lesson-content code { font-family: "Times New Roman", Times, "Tinos", serif !important; font-size: ${viewFontSize}pt !important; line-height: 1.5; color: black; }
-                        .lesson-content h1 { font-family: "Tinos", serif !important; font-size: ${Math.round(viewFontSize * 2.2)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                        .lesson-content h2 { font-size: ${Math.round(viewFontSize * 1.8)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                        .lesson-content h3 { font-size: ${Math.round(viewFontSize * 1.5)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                        .lesson-content h4 { font-size: ${Math.round(viewFontSize * 1.25)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                        .lesson-content h5 { font-size: ${Math.round(viewFontSize * 1.1)}pt !important; margin-bottom: 0.5em; font-weight: bold; }
-                        .lesson-content h6 { font-size: ${viewFontSize}pt !important; margin-bottom: 0.5em; font-weight: bold; text-transform: uppercase; }
-                        .lesson-content ul, .lesson-content ol { padding-left: 2em; } .lesson-content li { margin-bottom: 0.25em; }
-                      </style>
                       <div 
                         ref=${lessonContentRef}
-                        className="lesson-content p-6 md:p-14 prose prose-slate max-w-none font-times leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text"
-                        dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-tinos italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}
+                        className="lesson-content p-6 md:p-14 prose prose-slate max-w-none leading-loose prose-a:text-indigo-600 prose-img:rounded-2xl prose-img:shadow-xl select-text"
+                        dangerouslySetInnerHTML=${{ __html: currentNode.content || '<div class="flex flex-col items-center justify-center py-32 opacity-40"><div class="w-16 h-16 bg-white/50 rounded-full mb-4 shadow-sm"></div><p class="font-serif italic text-xl text-slate-600">Chưa có nội dung bài học.</p></div>' }}
                       ></div>
                   </div>
                 `}
@@ -942,7 +928,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
           <h1 
             key="main-title" 
             ref=${titleRef} 
-            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} ${currentNode?.type === 'lesson' ? 'font-tinos' : 'font-sans'} font-bold text-slate-900 leading-tight drop-shadow-sm`}
+            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} ${currentNode?.type === 'lesson' ? 'font-serif' : 'font-sans'} font-bold text-slate-900 leading-tight drop-shadow-sm`}
           >
             ${currentNode ? currentNode.title : 'Danh sách môn học'}
           </h1>
