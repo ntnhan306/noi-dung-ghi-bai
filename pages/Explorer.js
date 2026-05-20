@@ -133,7 +133,12 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       const data = await apiService.getAllNodes(currentPass);
       if (Array.isArray(data)) {
         if (!isSorting && !isEditingContent) setAllNodes(data);
-        setError(null);
+        const nodeExists = !nodeId || data.some(n => n.id === nodeId);
+        if (!nodeExists) {
+          setError('not-found');
+        } else {
+          setError(null);
+        }
       } else {
         throw new Error('LOAD_FAILED');
       }
