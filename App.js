@@ -261,29 +261,60 @@ const AccessDenied = () => {
 
 const App = () => {
   const [isAuthorized, setIsAuthorized] = useState(true);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isAppMode = window.location.pathname.includes('/special-application');
+  const [isOnline, setIsOnline] = useState(isAppMode ? navigator.onLine : true);
   const [uiConfig, setUiConfig] = useState({ style: 'liquid', zoom: { view: true, edit: true, app: false }, backgroundActive: false, backgrounds: [] });
   const [currentBg, setCurrentBg] = useState(null);
-  const isAppMode = window.location.pathname.includes('/special-application');
 
   useEffect(() => {
+    // Đăng ký các hàm toàn cục để ứng dụng điện thoại tự chạy và cập nhật trạng thái kết nối mạng
+    // Truyền vào TRUE để báo mất mạng (offline), FALSE để báo online trở lại
+    window.setOffline = (isOffline) => {
+      setIsOnline(!isOffline);
+    };
+    window.setOfflineMode = (isOffline) => {
+      setIsOnline(!isOffline);
+    };
+    window.setOfflineStatus = (isOffline) => {
+      setIsOnline(!isOffline);
+    };
+    window.setOfflineState = (isOffline) => {
+      setIsOnline(!isOffline);
+    };
+    window.updateNetworkStatus = (isConnected) => {
+      setIsOnline(isConnected);
+    };
+
+    return () => {
+      delete window.setOffline;
+      delete window.setOfflineMode;
+      delete window.setOfflineStatus;
+      delete window.setOfflineState;
+      delete window.updateNetworkStatus;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Chỉ chạy kiểm nghiệm ping mạng định kỳ đối với chế độ app
+    if (!isAppMode) {
+      setIsOnline(true);
+      return;
+    }
+
     let active = true;
     let consecutiveFails = 0;
 
     const pingOnce = async () => {
       try {
         const controller = new AbortController();
-        // Nâng timeout lên 5000ms để tránh các khoảng trễ DNS/bắt tay TCP lúc mới kết nối card mạng
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
-        // Ping chính trang chủ '/' luôn luôn tồn tại đối với ứng dụng SPA, sử dụng phương thức HEAD để siêu nhẹ
         const testRes = await fetch(`/?_t=${Date.now()}`, { 
           method: 'HEAD', 
           cache: 'no-store', 
           signal: controller.signal 
         });
         clearTimeout(timeoutId);
-        // Chấp nhận mọi phản hồi thành công < 400 (kể cả 200, 301, 302,...)
         return testRes.ok || testRes.status < 400;
       } catch (err) {
         return false;
@@ -305,11 +336,9 @@ const App = () => {
         setIsOnline(true);
       } else {
         consecutiveFails++;
-        // Chỉ khi thất bại liên tiếp 3 lần trở lên thì mới thực sự báo offline dứt điểm
         if (consecutiveFails >= 3) {
           setIsOnline(false);
         } else {
-          // Gặp lỗi chập chờn hoặc bắt đầu bật mạng, đợi thêm 1.5 giây để ping kiểm tra lại lần 2 và 3 trước khi hấp tấp báo mất mạng
           setTimeout(async () => {
             if (!active) return;
             const secondTry = await pingOnce();
@@ -328,10 +357,8 @@ const App = () => {
     };
 
     const handleOnline = () => {
-      // Khi trình duyệt phát sự kiện online, tin tưởng ngay lập tức để nâng trải nghiệm người dùng không bị kẹt màn hình lỗi
       setIsOnline(true);
       consecutiveFails = 0;
-      // Trì hoãn việc kiểm nghiệm ping lại 1 giây để mạng của thiết bị ổn định IP hoàn toàn
       setTimeout(() => {
         if (active) fastPingCheck();
       }, 1000);
@@ -345,10 +372,8 @@ const App = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Kiểm tra chạy lần đầu ngay khi app load
     fastPingCheck();
 
-    // Giãn cách thời gian ping định kỳ lên 15 giây một lần để tiết kiệm băng thông và tài nguyên máy, tránh xung đột dập dồn
     const interval = setInterval(fastPingCheck, 15000);
 
     return () => {
@@ -357,7 +382,7 @@ const App = () => {
       window.removeEventListener('offline', handleOffline);
       clearInterval(interval);
     };
-  }, []);
+  }, [isAppMode]);
 
   useEffect(() => {
     if (isAppMode) {
@@ -429,7 +454,7 @@ const App = () => {
       <${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />
     </${LayoutErrorProvider}>
   `;
-  if (!isOnline) return html`
+  if (!isOnline && isAppMode) return html`
     <${LayoutErrorProvider}>
       <${StatusPage} type="no-internet" subMessage="Ứng dụng hiện đang ngoại tuyến. Vui lòng kiểm tra kết nối Internet để tiếp tục đồng bộ dữ liệu." />
     </${LayoutErrorProvider}>
