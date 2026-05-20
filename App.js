@@ -14,6 +14,7 @@ import { ClassManagementPage } from './pages/ClassManagementPage.js';
 import { ChevronDown, Settings as SettingsIcon, Trash2, Edit2, GripVertical } from 'lucide-react';
 import { StatusPage } from './components/StatusPage.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { LayoutErrorProvider, useLayoutError } from './context/LayoutErrorContext.js';
 
 const getBasename = () => {
   const path = window.location.pathname;
@@ -51,7 +52,7 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
     return html`
         <div className=${`w-full ${animationClass}`}>
             <${Routes}>
-                <${Route} key="route-home" path="/" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
+                <${Route} key="route-home" path="/" element=${html`<${Navigate} to="/view" replace />`} />
                 <${Route} key="route-view" path="/view" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 <${Route} key="route-view-node" path="/view/:nodeId" element=${html`<${Explorer} mode="view" isAppMode=${isAppMode} uiConfig=${uiConfig} />`} />
                 ${!isAppMode && html`
@@ -69,6 +70,7 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
 }
 
 const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
+  const { layoutError } = useLayoutError();
   const location = useLocation();
   const navigate = useNavigate();
   const { breadcrumbs, isVisible } = useBreadcrumbs();
@@ -91,7 +93,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   const selectedClass = classes.find(c => c.id === selectedClassId);
   const homePaths = ['/view', '/view/', '/edit', '/edit/', '/'];
   const isHome = homePaths.includes(location.pathname);
-  const showClassSelector = isHome;
+  const showClassSelector = isHome && !layoutError;
 
   useEffect(() => {
     let timer;
@@ -166,8 +168,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
               <${BookOpen} key="logo-icon" className=${`relative z-10 text-indigo-600 drop-shadow-sm ${isAppMode ? "w-5 h-5" : "w-7 h-7"}`} strokeWidth=${2.5} />
             </div>
             <div key="logo-text" className="flex flex-col">
-                <span key="main-label" className=${`font-sans font-bold tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'} ${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-violet-900' : 'text-slate-800'}`}>Nội dung ghi bài</span>
-                ${!isAppMode && html`<span key="sub-label" className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase opacity-0 group-hover:opacity-100 transition-opacity -mt-1">Cloud Learning</span>`}
+                <span key="main-label" className=${`font-sans font-bold tracking-tight drop-shadow-sm ${isAppMode ? 'text-xl' : 'text-2xl'} ${isLiquid ? 'bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-violet-900' : 'text-slate-800'}`}>${layoutError ? 'Nội dung bài học' : 'Nội dung ghi bài'}</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -217,7 +218,7 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
             `}
 
             <nav className="flex items-center gap-3">
-              ${isEditMode && !isAppMode && html`
+              ${isEditMode && !isAppMode && !layoutError && html`
                 <${Link} key="view-mode-link" to="/view" className=${`relative overflow-hidden flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-full transition-all group ${isLiquid ? 'text-indigo-900 bg-white/30 hover:bg-white/60 border border-white/60 shadow-glass hover:shadow-lg backdrop-blur-md' : 'text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-indigo-600'}`}>
                   ${isLiquid && html`<div key="liquid-overlay" className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>`}
                   <${BookOpen} key="view-icon" size=${16} /> Chế độ xem
@@ -312,21 +313,31 @@ const App = () => {
     return () => clearInterval(interval);
   }, [uiConfig, currentBg]);
 
-  if (!isAuthorized) return html`<${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />`;
-  if (!isOnline) return html`<${StatusPage} type="no-internet" subMessage="Ứng dụng hiện đang ngoại tuyến. Vui lòng kiểm tra kết nối Internet để tiếp tục đồng bộ dữ liệu." />`;
+  if (!isAuthorized) return html`
+    <${LayoutErrorProvider}>
+      <${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />
+    </${LayoutErrorProvider}>
+  `;
+  if (!isOnline) return html`
+    <${LayoutErrorProvider}>
+      <${StatusPage} type="no-internet" subMessage="Ứng dụng hiện đang ngoại tuyến. Vui lòng kiểm tra kết nối Internet để tiếp tục đồng bộ dữ liệu." />
+    </${LayoutErrorProvider}>
+  `;
 
   return html`
-    <${BrowserRouter} basename=${getBasename()}>
-      <${ClassProvider}>
-        <${BreadcrumbProvider}>
-          <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg}>
-             <${ErrorBoundary}>
-               <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
-             </${ErrorBoundary}>
-          </${Layout}>
-        </${BreadcrumbProvider}>
-      </${ClassProvider}>
-    </${BrowserRouter}>
+    <${LayoutErrorProvider}>
+      <${BrowserRouter} basename=${getBasename()}>
+        <${ErrorBoundary}>
+          <${ClassProvider}>
+            <${BreadcrumbProvider}>
+              <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg}>
+                 <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
+              </${Layout}>
+            </${BreadcrumbProvider}>
+          </${ClassProvider}>
+        </${ErrorBoundary}>
+      </${BrowserRouter}>
+    </${LayoutErrorProvider}>
   `;
 };
 

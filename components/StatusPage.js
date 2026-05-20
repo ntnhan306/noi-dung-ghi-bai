@@ -3,8 +3,21 @@ import { html } from '../utils/html.js';
 import { ShieldAlert, WifiOff, FileX, AlertTriangle, Search, Home } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { useLayoutError } from '../context/LayoutErrorContext.js';
 
 export const StatusPage = ({ type, message, subMessage, icon: CustomIcon }) => {
+  const { setLayoutError } = useLayoutError();
+
+  React.useEffect(() => {
+    const isTypeB = ['not-found', 'load-failed'].includes(type);
+    if (isTypeB) {
+      setLayoutError(type);
+      return () => {
+        setLayoutError(null);
+      };
+    }
+  }, [type, setLayoutError]);
+
   const configs = {
     'access-denied': {
       icon: ShieldAlert,
@@ -49,8 +62,42 @@ export const StatusPage = ({ type, message, subMessage, icon: CustomIcon }) => {
   const config = configs[type] || configs['load-failed'];
   const Icon = CustomIcon || config.icon;
 
+  const isTypeA = ['access-denied', 'no-internet', 'source-error'].includes(type);
+
+  if (isTypeA) {
+    return html`
+      <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-6 z-50 overflow-y-auto">
+        <div className="w-[85vw] max-w-lg md:max-w-xl bg-white p-8 md:p-12 text-center rounded-[2.5rem] border border-slate-200/60 shadow-xl flex flex-col items-center justify-center mx-auto my-auto" style=${{ width: 'fit-content' }}>
+          <${motion.div}
+            initial=${{ y: 0 }}
+            animate=${{ y: [-12, 0, -12] }}
+            transition=${{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className=${`w-28 h-28 md:w-32 md:h-32 ${config.iconBg} border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-lg`}
+          >
+            <${Icon} size=${48} className="md:w-14 md:h-14" strokeWidth=${2.5} />
+          </${motion.div}>
+          <h1 className=${`text-2xl md:text-3xl font-sans font-black ${config.color} mb-6 tracking-tight drop-shadow-sm`}>${message || config.title}</h1>
+          <div className="flex flex-col gap-4">
+            <p className="text-slate-600 max-w-sm mx-auto font-medium text-base md:text-lg leading-relaxed">
+              ${subMessage || 'Yêu cầu không hợp lệ hoặc đã xảy ra sự cố kỹ thuật. Vui lòng kiểm tra lại thao tác của bạn.'}
+            </p>
+            ${config.showContact && html`
+              <${React.Fragment}>
+                <div className="h-px w-24 bg-slate-200 mx-auto my-4 opacity-50"></div>
+                <p className="text-slate-500 text-[10px] md:text-xs font-extrabold uppercase tracking-[0.2em] animate-pulse">
+                  Vui lòng liên hệ quản trị viên để xử lý!
+                </p>
+              </${React.Fragment}>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Type B errors
   return html`
-    <div className=${`min-h-[70vh] flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] border border-white/40 shadow-glass backdrop-blur-sm`}>
+    <div className=${`min-h-[60vh] flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] border border-white/40 shadow-glass backdrop-blur-sm bg-white/40`}>
       <${motion.div}
         initial=${{ y: 0 }}
         animate=${{ y: [-12, 0, -12] }}
@@ -78,7 +125,7 @@ export const StatusPage = ({ type, message, subMessage, icon: CustomIcon }) => {
           <${React.Fragment}>
             <div className="h-px w-24 bg-slate-200 mx-auto my-4 opacity-50"></div>
             <p className="text-slate-500 text-xs md:text-sm font-extrabold uppercase tracking-[0.2em] animate-pulse">
-              Vui lòng liên hệ quản trị viên để xử lí!
+              Vui lòng liên hệ quản trị viên để xử lý!
             </p>
           </${React.Fragment}>
         `}

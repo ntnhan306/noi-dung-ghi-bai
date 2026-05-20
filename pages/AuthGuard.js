@@ -61,7 +61,7 @@ export const AuthGuard = ({ children }) => {
             <${Lock} className="text-white w-10 h-10 drop-shadow-md" strokeWidth=${2.5} />
           </div>
           <h2 className="text-3xl font-sans font-bold text-white tracking-tight drop-shadow-sm">Khu vực Quản trị</h2>
-          <p className="text-indigo-100 mt-3 text-sm font-medium tracking-wide opacity-90">Hệ thống bảo mật Cloud Learning</p>
+          <p className="text-indigo-100 mt-3 text-sm font-medium tracking-wide opacity-90">Hệ thống bảo mật</p>
         </div>
 
         <div className="p-10 bg-white/40 relative z-10">
