@@ -1022,12 +1022,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
               ${currentNode ? currentNode.title : 'Danh sách môn học'}
             </h1>
           </div>
-          ${syncing && html`
-            <div key="sync-indicator" className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 rounded-full border border-indigo-500/20 text-[10px] font-sans font-bold text-indigo-600 animate-pulse ml-4 h-fit">
-              <${Loader2} size=${12} className="animate-spin text-indigo-500" />
-              <span className="hidden sm:inline">Đang nạp mới...</span>
-            </div>
-          `}
         </div>
         
         ${mode === 'edit' && !isAppMode && !nodeId && html`

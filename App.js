@@ -273,14 +273,17 @@ const App = () => {
     const pingOnce = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
-        // Thêm timestamp ngẫu nhiên để tránh browser cache và CDN caching hoàn toàn
-        const testRes = await fetch(`/favicon.ico?_t=${Date.now()}`, { 
+        // Nâng timeout lên 5000ms để tránh các khoảng trễ DNS/bắt tay TCP lúc mới kết nối card mạng
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        // Ping chính trang chủ '/' luôn luôn tồn tại đối với ứng dụng SPA, sử dụng phương thức HEAD để siêu nhẹ
+        const testRes = await fetch(`/?_t=${Date.now()}`, { 
           method: 'HEAD', 
           cache: 'no-store', 
           signal: controller.signal 
         });
         clearTimeout(timeoutId);
+        // Chấp nhận mọi phản hồi thành công < 400 (kể cả 200, 301, 302,...)
         return testRes.ok || testRes.status < 400;
       } catch (err) {
         return false;
@@ -302,10 +305,11 @@ const App = () => {
         setIsOnline(true);
       } else {
         consecutiveFails++;
-        if (consecutiveFails >= 2) {
+        // Chỉ khi thất bại liên tiếp 3 lần trở lên thì mới thực sự báo offline dứt điểm
+        if (consecutiveFails >= 3) {
           setIsOnline(false);
         } else {
-          // Khi mới thất bại lần đầu (ví dụ lúc vừa kết nối wifi chưa có mạng ngay), hãy đợi 600ms rồi ping lại lần nữa
+          // Gặp lỗi chập chờn hoặc bắt đầu bật mạng, đợi thêm 1.5 giây để ping kiểm tra lại lần 2 và 3 trước khi hấp tấp báo mất mạng
           setTimeout(async () => {
             if (!active) return;
             const secondTry = await pingOnce();
@@ -314,20 +318,23 @@ const App = () => {
               setIsOnline(true);
             } else {
               consecutiveFails++;
-              if (consecutiveFails >= 2) {
+              if (consecutiveFails >= 3) {
                 setIsOnline(false);
               }
             }
-          }, 600);
+          }, 1500);
         }
       }
     };
 
     const handleOnline = () => {
-      // Khi trình duyệt phát sự kiện online, chúng ta tin là online ngay để nâng cao trải nghiệm, đồng thời kiểm tra lại bằng ping sau đó
+      // Khi trình duyệt phát sự kiện online, tin tưởng ngay lập tức để nâng trải nghiệm người dùng không bị kẹt màn hình lỗi
       setIsOnline(true);
       consecutiveFails = 0;
-      fastPingCheck();
+      // Trì hoãn việc kiểm nghiệm ping lại 1 giây để mạng của thiết bị ổn định IP hoàn toàn
+      setTimeout(() => {
+        if (active) fastPingCheck();
+      }, 1000);
     };
 
     const handleOffline = () => {
@@ -338,11 +345,11 @@ const App = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Initial check immediately
+    // Kiểm tra chạy lần đầu ngay khi app load
     fastPingCheck();
 
-    // Constant active link verification every 2 seconds for ultra fast 1-3s offline state switch
-    const interval = setInterval(fastPingCheck, 2000);
+    // Giãn cách thời gian ping định kỳ lên 15 giây một lần để tiết kiệm băng thông và tài nguyên máy, tránh xung đột dập dồn
+    const interval = setInterval(fastPingCheck, 15000);
 
     return () => {
       active = false;
