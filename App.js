@@ -268,35 +268,71 @@ const App = () => {
 
   useEffect(() => {
     let active = true;
-    const handleOnline = () => {
-      setIsOnline(true);
-      fastPingCheck();
-    };
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
+    let consecutiveFails = 0;
 
-    const fastPingCheck = async () => {
-      if (!navigator.onLine) {
-        if (active) setIsOnline(false);
-        return;
-      }
+    const pingOnce = async () => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1200);
-        // Ping an extremely small static file (favicon) to make sure there is genuine internet access
-        const testRes = await fetch('/favicon.ico', { 
+        // Thêm timestamp ngẫu nhiên để tránh browser cache và CDN caching hoàn toàn
+        const testRes = await fetch(`/favicon.ico?_t=${Date.now()}`, { 
           method: 'HEAD', 
           cache: 'no-store', 
           signal: controller.signal 
         });
         clearTimeout(timeoutId);
-        if (active) {
-          setIsOnline(testRes.ok || testRes.status < 400);
-        }
+        return testRes.ok || testRes.status < 400;
       } catch (err) {
-        if (active) setIsOnline(false);
+        return false;
       }
+    };
+
+    const fastPingCheck = async () => {
+      if (!navigator.onLine) {
+        consecutiveFails = 99;
+        if (active) setIsOnline(false);
+        return;
+      }
+
+      const success = await pingOnce();
+      if (!active) return;
+
+      if (success) {
+        consecutiveFails = 0;
+        setIsOnline(true);
+      } else {
+        consecutiveFails++;
+        if (consecutiveFails >= 2) {
+          setIsOnline(false);
+        } else {
+          // Khi mới thất bại lần đầu (ví dụ lúc vừa kết nối wifi chưa có mạng ngay), hãy đợi 600ms rồi ping lại lần nữa
+          setTimeout(async () => {
+            if (!active) return;
+            const secondTry = await pingOnce();
+            if (secondTry) {
+              consecutiveFails = 0;
+              setIsOnline(true);
+            } else {
+              consecutiveFails++;
+              if (consecutiveFails >= 2) {
+                setIsOnline(false);
+              }
+            }
+          }, 600);
+        }
+      }
+    };
+
+    const handleOnline = () => {
+      // Khi trình duyệt phát sự kiện online, chúng ta tin là online ngay để nâng cao trải nghiệm, đồng thời kiểm tra lại bằng ping sau đó
+      setIsOnline(true);
+      consecutiveFails = 0;
+      fastPingCheck();
+    };
+
+    const handleOffline = () => {
+      consecutiveFails = 99;
+      setIsOnline(false);
     };
 
     window.addEventListener('online', handleOnline);
