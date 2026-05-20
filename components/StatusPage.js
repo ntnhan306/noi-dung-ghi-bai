@@ -5,8 +5,9 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useLayoutError } from '../context/LayoutErrorContext.js';
 
-export const StatusPage = ({ type, message, subMessage, icon: CustomIcon }) => {
+export const StatusPage = ({ type, message, subMessage, icon: CustomIcon, uiStyle }) => {
   const { setLayoutError } = useLayoutError();
+  const isLiquid = uiStyle === 'liquid' || (uiStyle === undefined && localStorage.getItem('style_mode') !== 'normal');
 
   React.useEffect(() => {
     const isTypeB = ['not-found', 'load-failed'].includes(type);
@@ -65,14 +66,26 @@ export const StatusPage = ({ type, message, subMessage, icon: CustomIcon }) => {
   const isTypeA = ['access-denied', 'no-internet', 'source-error'].includes(type);
 
   if (isTypeA) {
+    const mainBgClass = isLiquid 
+      ? "fixed inset-0 bg-slate-950/20 backdrop-blur-[6px] flex items-center justify-center p-6 z-50 overflow-y-auto"
+      : "fixed inset-0 bg-slate-50 flex items-center justify-center p-6 z-50 overflow-y-auto";
+
+    const cardClass = isLiquid
+      ? "w-[85vw] max-w-lg md:max-w-xl bg-white/40 border border-white/50 backdrop-blur-xl shadow-glass p-8 md:p-12 text-center rounded-[2.5rem] flex flex-col items-center justify-center mx-auto my-auto"
+      : "w-[85vw] max-w-lg md:max-w-xl bg-white p-8 md:p-12 text-center rounded-[2.5rem] border border-slate-200/60 shadow-xl flex flex-col items-center justify-center mx-auto my-auto";
+
+    const iconBgClass = isLiquid
+      ? `w-28 h-28 md:w-32 md:h-32 bg-white/50 border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-lg`
+      : `w-28 h-28 md:w-32 md:h-32 ${config.iconBg} border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-lg`;
+
     return html`
-      <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-6 z-50 overflow-y-auto">
-        <div className="w-[85vw] max-w-lg md:max-w-xl bg-white p-8 md:p-12 text-center rounded-[2.5rem] border border-slate-200/60 shadow-xl flex flex-col items-center justify-center mx-auto my-auto" style=${{ width: 'fit-content' }}>
+      <div className=${mainBgClass}>
+        <div className=${cardClass} style=${{ width: 'fit-content' }}>
           <${motion.div}
             initial=${{ y: 0 }}
             animate=${{ y: [-12, 0, -12] }}
             transition=${{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className=${`w-28 h-28 md:w-32 md:h-32 ${config.iconBg} border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-lg`}
+            className=${iconBgClass}
           >
             <${Icon} size=${48} className="md:w-14 md:h-14" strokeWidth=${2.5} />
           </${motion.div}>
@@ -96,13 +109,21 @@ export const StatusPage = ({ type, message, subMessage, icon: CustomIcon }) => {
   }
 
   // Type B errors
+  const cardClassB = isLiquid
+    ? `min-h-[60vh] flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] border border-white/40 shadow-glass backdrop-blur-md bg-white/40`
+    : `min-h-[60vh] flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] border border-slate-200 shadow-sm bg-white`;
+
+  const iconBgClassB = isLiquid
+    ? `w-32 h-32 bg-white/50 backdrop-blur-md border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-xl ring-4 ring-white/10`
+    : `w-32 h-32 ${config.iconBg} border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-md`;
+
   return html`
-    <div className=${`min-h-[60vh] flex flex-col items-center justify-center p-8 text-center rounded-[2.5rem] border border-white/40 shadow-glass backdrop-blur-sm bg-white/40`}>
+    <div className=${cardClassB}>
       <${motion.div}
         initial=${{ y: 0 }}
         animate=${{ y: [-12, 0, -12] }}
         transition=${{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className=${`w-32 h-32 ${config.iconBg} backdrop-blur-2xl border border-white/60 ${config.color} rounded-full flex items-center justify-center mb-10 shadow-xl ring-4 ring-white/30`}
+        className=${iconBgClassB}
       >
         <${Icon} size=${56} strokeWidth=${2.5} />
       </${motion.div}>

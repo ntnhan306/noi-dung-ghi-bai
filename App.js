@@ -335,6 +335,11 @@ const App = () => {
               backgroundActive: fullConfig.background.active,
               backgrounds: fullConfig.background.images
           });
+          try {
+              localStorage.setItem('style_mode', fullConfig.ui.style);
+          } catch (e) {
+              console.error(e);
+          }
           
           if (fullConfig.background.active && fullConfig.background.images.length > 0) {
             setCurrentBg(fullConfig.background.images[Math.floor(Math.random() * fullConfig.background.images.length)]);
