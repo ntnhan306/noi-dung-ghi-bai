@@ -262,7 +262,7 @@ const AccessDenied = () => {
 const App = () => {
   const [isAuthorized, setIsAuthorized] = useState(true);
   const isAppMode = window.location.pathname.includes('/special-application');
-  const [isOnline, setIsOnline] = useState(isAppMode ? navigator.onLine : true);
+  const [isOnline, setIsOnline] = useState(true);
   const [uiConfig, setUiConfig] = useState({ style: 'liquid', zoom: { view: true, edit: true, app: false }, backgroundActive: false, backgrounds: [] });
   const [currentBg, setCurrentBg] = useState(null);
 
@@ -284,6 +284,14 @@ const App = () => {
     window.updateNetworkStatus = (isConnected) => {
       setIsOnline(isConnected);
     };
+    // Hàm vạn năng tổng hợp: Nhận trực tiếp trạng thái điều khiển từ điện thoại
+    // - value: có thể là true/false đại diện cho online/offline (hoặc ngược lại)
+    // - modeType: 'online' (mặc định) nếu tham số đầu tiên đại diện cho trạng thái kết nối mạng
+    //             'offline' nếu tham số đầu tiên đại diện cho trạng thái mất kết nối mạng
+    window.setNetworkStateUnified = (value, modeType = 'online') => {
+      const isOnlineState = modeType === 'offline' ? !value : !!value;
+      setIsOnline(isOnlineState);
+    };
 
     return () => {
       delete window.setOffline;
@@ -291,98 +299,9 @@ const App = () => {
       delete window.setOfflineStatus;
       delete window.setOfflineState;
       delete window.updateNetworkStatus;
+      delete window.setNetworkStateUnified;
     };
   }, []);
-
-  useEffect(() => {
-    // Chỉ chạy kiểm nghiệm ping mạng định kỳ đối với chế độ app
-    if (!isAppMode) {
-      setIsOnline(true);
-      return;
-    }
-
-    let active = true;
-    let consecutiveFails = 0;
-
-    const pingOnce = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const testRes = await fetch(`/?_t=${Date.now()}`, { 
-          method: 'HEAD', 
-          cache: 'no-store', 
-          signal: controller.signal 
-        });
-        clearTimeout(timeoutId);
-        return testRes.ok || testRes.status < 400;
-      } catch (err) {
-        return false;
-      }
-    };
-
-    const fastPingCheck = async () => {
-      if (!navigator.onLine) {
-        consecutiveFails = 99;
-        if (active) setIsOnline(false);
-        return;
-      }
-
-      const success = await pingOnce();
-      if (!active) return;
-
-      if (success) {
-        consecutiveFails = 0;
-        setIsOnline(true);
-      } else {
-        consecutiveFails++;
-        if (consecutiveFails >= 3) {
-          setIsOnline(false);
-        } else {
-          setTimeout(async () => {
-            if (!active) return;
-            const secondTry = await pingOnce();
-            if (secondTry) {
-              consecutiveFails = 0;
-              setIsOnline(true);
-            } else {
-              consecutiveFails++;
-              if (consecutiveFails >= 3) {
-                setIsOnline(false);
-              }
-            }
-          }, 1500);
-        }
-      }
-    };
-
-    const handleOnline = () => {
-      setIsOnline(true);
-      consecutiveFails = 0;
-      setTimeout(() => {
-        if (active) fastPingCheck();
-      }, 1000);
-    };
-
-    const handleOffline = () => {
-      consecutiveFails = 99;
-      setIsOnline(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    fastPingCheck();
-
-    const interval = setInterval(fastPingCheck, 15000);
-
-    return () => {
-      active = false;
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      clearInterval(interval);
-    };
-  }, [isAppMode]);
 
   useEffect(() => {
     if (isAppMode) {

@@ -414,7 +414,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (navigator.onLine && !isSorting && !isEditingContent) fetchData(true);
+      if (!isSorting && !isEditingContent) fetchData(true);
     }, 1000);
     return () => clearInterval(intervalId);
   }, [mode, isSorting, isEditingContent]);
