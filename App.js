@@ -267,13 +267,52 @@ const App = () => {
   const isAppMode = window.location.pathname.includes('/special-application');
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    let active = true;
+    const handleOnline = () => {
+      setIsOnline(true);
+      fastPingCheck();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    const fastPingCheck = async () => {
+      if (!navigator.onLine) {
+        if (active) setIsOnline(false);
+        return;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        // Ping an extremely small static file (favicon) to make sure there is genuine internet access
+        const testRes = await fetch('/favicon.ico', { 
+          method: 'HEAD', 
+          cache: 'no-store', 
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        if (active) {
+          setIsOnline(testRes.ok || testRes.status < 400);
+        }
+      } catch (err) {
+        if (active) setIsOnline(false);
+      }
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    // Initial check immediately
+    fastPingCheck();
+
+    // Constant active link verification every 2 seconds for ultra fast 1-3s offline state switch
+    const interval = setInterval(fastPingCheck, 2000);
+
     return () => {
+      active = false;
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
     };
   }, []);
 

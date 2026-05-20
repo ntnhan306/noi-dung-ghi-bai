@@ -20,8 +20,23 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   const { updateBreadcrumbs, setBreadcrumbsVisible } = useBreadcrumbs();
   const { selectedClassId } = useClasses();
   
-  const [allNodes, setAllNodes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [allNodes, setAllNodes] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_nodes');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_nodes');
+      return cached && JSON.parse(cached).length > 0 ? false : true;
+    } catch {
+      return true;
+    }
+  });
+  const [syncing, setSyncing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [viewFontSize, setViewFontSize] = useState(16);
   const [isMathRendered, setIsMathRendered] = useState(false);
@@ -126,13 +141,29 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     if (isFetchingRef.current) return;
     const shouldDelay = isAppMode && nodeId && !isBackground;
     const startTime = Date.now();
-    if (!isBackground) setLoading(true);
+    
+    const hasCache = allNodes.length > 0;
+    const isSilentlyFetching = isBackground || hasCache;
+
+    if (!isSilentlyFetching) {
+      setLoading(true);
+    } else if (hasCache) {
+      setSyncing(true);
+    }
+
     isFetchingRef.current = true;
     try {
       const currentPass = mode === 'edit' ? sessionStorage.getItem('auth_pass') : null;
       const data = await apiService.getAllNodes(currentPass);
       if (Array.isArray(data)) {
-        if (!isSorting && !isEditingContent) setAllNodes(data);
+        if (!isSorting && !isEditingContent) {
+          setAllNodes(data);
+          try {
+            localStorage.setItem('cached_nodes', JSON.stringify(data));
+          } catch (e) {
+            console.error(e);
+          }
+        }
         const nodeExists = !nodeId || data.some(n => n.id === nodeId);
         if (!nodeExists) {
           setError('not-found');
@@ -152,7 +183,8 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       console.error("Failed to load data", err);
     } finally {
       isFetchingRef.current = false;
-      if (!isBackground) {
+      setSyncing(false);
+      if (!isSilentlyFetching) {
         if (shouldDelay) {
             const elapsed = Date.now() - startTime;
             const MIN_LOAD_TIME = 1000;
@@ -851,14 +883,36 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }
 
     if (loading && !allNodes.length) {
-        if (isAppMode && nodeId) return html`<div className="flex items-center justify-center h-[60vh]"><div className="loader"></div></div>`;
         return html`
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className=${`flex flex-col items-center gap-4 p-8 rounded-3xl border animate-float ${isLiquid ? 'bg-white/40 backdrop-blur-xl shadow-glass border-white/50' : 'bg-white border-slate-200 shadow-lg'}`}>
-               <div className="relative">
-                 <div className="w-14 h-14 rounded-full border-[5px] border-slate-200 animate-spin border-t-indigo-500 shadow-lg"></div>
-               </div>
-               <span className="font-sans text-base font-bold text-indigo-800 tracking-wider">Đang tải dữ liệu...</span>
+          <div className="w-full max-w-5xl mx-auto space-y-6 animate-pulse p-4">
+            <div className="space-y-3">
+              <div className="h-4 bg-slate-200 rounded-full w-24"></div>
+              <div className="h-8 bg-slate-200 rounded-full w-2/3 md:w-1/3"></div>
+            </div>
+            
+            <div className=${`p-6 md:p-10 rounded-[2rem] border ${isLiquid ? 'bg-white/30 border-white/40 shadow-glass' : 'bg-white border-slate-200 shadow-sm'} space-y-6`}>
+              <div className="h-6 bg-slate-200 rounded-full w-3/4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-slate-200 rounded-full w-full"></div>
+                <div className="h-4 bg-slate-200 rounded-full w-5/6"></div>
+                <div className="h-4 bg-slate-200 rounded-full w-4/6"></div>
+              </div>
+              
+              <div className="pt-6 space-y-4">
+                <div className="h-4 bg-slate-200 rounded-full w-full"></div>
+                <div className="h-4 bg-slate-200 rounded-full w-11/12"></div>
+                <div className="h-4 bg-slate-200 rounded-full w-3/4"></div>
+              </div>
+
+              <div className="pt-6 space-y-4">
+                <div className="h-4 bg-slate-200 rounded-full w-5/6"></div>
+                <div className="h-4 bg-slate-200 rounded-full w-4/6"></div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 py-4">
+              <div className="w-10 h-10 rounded-full bg-slate-200 animate-spin border-2 border-slate-200 border-t-indigo-500"></div>
+              <span className="text-sm font-sans font-bold text-slate-400">Đang chuẩn bị nội dung...</span>
             </div>
           </div>
         `;
@@ -878,11 +932,18 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
             <div key="lesson-container" className=${`${containerStyle} overflow-hidden min-h-[700px] flex flex-col relative`}>
               <div className=${`px-6 md:px-12 py-6 md:py-8 flex justify-between items-start z-20 ${headerStyle}`}>
                 <div key="lesson-header-info" className="flex-1 min-w-0">
-                  ${!isAppMode && html`
-                      <span key="lesson-type-badge" className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-indigo-500 to-violet-500 text-white uppercase tracking-widest mb-3 shadow-md shadow-indigo-500/20">
-                        ${NODE_LABELS[NodeType.LESSON]}
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    ${!isAppMode && html`
+                        <span key="lesson-type-badge" className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-indigo-500 to-violet-500 text-white uppercase tracking-widest shadow-md shadow-indigo-500/20">
+                          ${NODE_LABELS[NodeType.LESSON]}
+                        </span>
+                    `}
+                    ${syncing && html`
+                      <span key="lesson-sync-badge" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase tracking-wider animate-pulse">
+                        <${Loader2} size=${10} className="animate-spin" /> Đang cập nhật...
                       </span>
-                  `}
+                    `}
+                  </div>
                   <div key="title-box" className="relative flex items-center">
                     <h1 
                       ref=${marqueeTitleRef}
@@ -946,15 +1007,23 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
     return html`
       <header key="explorer-header" className=${`mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 ${isAppMode ? `mt-6 border ${headerAppClasses} ${isLiquid ? 'bg-white/40 backdrop-blur-sm border-white/20 shadow-sm' : 'bg-white border-slate-200 shadow-sm'}` : 'px-2'}`}>
-        <div key="header-title-container" className=${isAppMode ? 'w-full' : ''}>
-          ${!isAppMode && html`<h2 key="node-label" className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div key="label-dot" className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
-          <h1 
-            key="main-title" 
-            ref=${titleRef} 
-            className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} ${currentNode?.type === 'lesson' ? 'font-serif' : 'font-sans'} font-bold text-slate-900 leading-tight drop-shadow-sm`}
-          >
-            ${currentNode ? currentNode.title : 'Danh sách môn học'}
-          </h1>
+        <div key="header-title-container" className=${isAppMode ? 'w-full flex items-center justify-between' : 'flex items-end justify-between w-full'}>
+          <div>
+            ${!isAppMode && html`<h2 key="node-label" className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2 flex items-center gap-2"><div key="label-dot" className="w-8 h-1 bg-indigo-500 rounded-full"></div> ${currentNode ? NODE_LABELS[currentNode.type] : 'Trang chủ'}</h2>`}
+            <h1 
+              key="main-title" 
+              ref=${titleRef} 
+              className=${`${isAppMode ? 'text-xl md:text-2xl' : 'text-3xl md:text-5xl'} ${currentNode?.type === 'lesson' ? 'font-serif' : 'font-sans'} font-bold text-slate-900 leading-tight drop-shadow-sm`}
+            >
+              ${currentNode ? currentNode.title : 'Danh sách môn học'}
+            </h1>
+          </div>
+          ${syncing && html`
+            <div key="sync-indicator" className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 rounded-full border border-indigo-500/20 text-[10px] font-sans font-bold text-indigo-600 animate-pulse ml-4 h-fit">
+              <${Loader2} size=${12} className="animate-spin text-indigo-500" />
+              <span className="hidden sm:inline">Đang nạp mới...</span>
+            </div>
+          `}
         </div>
         
         ${mode === 'edit' && !isAppMode && !nodeId && html`
