@@ -76,7 +76,9 @@ input, textarea, .select-text {
 
 .math-tex.is-rendered::-webkit-scrollbar,
 .is-rendered .math-tex::-webkit-scrollbar {
-  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 
 .katex-display {
@@ -90,7 +92,9 @@ input, textarea, .select-text {
 }
 
 .katex-display::-webkit-scrollbar {
-  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 
 .katex-html {
