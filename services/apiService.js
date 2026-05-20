@@ -18,15 +18,20 @@ export const apiService = {
       if (response.status === 401) throw new Error('UNAUTHORIZED');
       if (!response.ok) throw new Error('Network response was not ok');
       const text = await response.text();
-      if (!text || !text.trim() || text.trim().startsWith('<')) return [];
+      if (!text || !text.trim() || text.trim().startsWith('<')) {
+        if (text && text.trim().startsWith('<')) {
+          throw new Error('SERVER_HTML_ERROR');
+        }
+        return [];
+      }
       try { return JSON.parse(text); } catch (e) { 
         console.error("JSON parse error:", e, "Text:", text.substring(0, 50));
-        return []; 
+        throw new Error('INVALID_JSON');
       }
     } catch (error) {
       if (error.message === 'UNAUTHORIZED') throw error;
       console.error("API Error in getAllNodes:", error);
-      return [];
+      throw error;
     }
   },
 

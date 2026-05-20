@@ -364,7 +364,31 @@ const App = () => {
 
   useEffect(() => {
       const initConfig = async () => {
-          const fullConfig = await apiService.getFullConfig();
+          let fullConfig = null;
+          try {
+              fullConfig = await apiService.getFullConfig();
+              if (fullConfig) {
+                  localStorage.setItem('cached_full_config', JSON.stringify(fullConfig));
+              }
+          } catch (e) {
+              console.error("Failed to fetch full config, trying to use offline cache:", e);
+          }
+
+          if (!fullConfig) {
+              try {
+                  const cached = localStorage.getItem('cached_full_config');
+                  if (cached) {
+                      fullConfig = JSON.parse(cached);
+                  }
+              } catch (e) {
+                  console.error("Failed to parse cached full config:", e);
+              }
+          }
+
+          if (!fullConfig) {
+              fullConfig = { classes: [], background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
+          }
+
           setUiConfig({
               style: fullConfig.ui.style,
               zoom: fullConfig.ui.zoom,
