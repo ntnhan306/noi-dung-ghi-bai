@@ -12,6 +12,8 @@ import { ClassProvider, useClasses } from './context/ClassContext.js';
 import { Breadcrumbs } from './components/Breadcrumbs.js';
 import { ClassManagementPage } from './pages/ClassManagementPage.js';
 import { ChevronDown, Settings as SettingsIcon, Trash2, Edit2, GripVertical } from 'lucide-react';
+import { StatusPage } from './components/StatusPage.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
 
 const getBasename = () => {
   const path = window.location.pathname;
@@ -252,13 +254,9 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
   `;
 };
 
-import { StatusPage } from './components/StatusPage.js';
-
 const AccessDenied = () => {
     return html`<${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />`;
 };
-
-import { ErrorBoundary } from './components/ErrorBoundary.js';
 
 const App = () => {
   const [isAuthorized, setIsAuthorized] = useState(true);
