@@ -942,11 +942,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
                           ${NODE_LABELS[NodeType.LESSON]}
                         </span>
                     `}
-                    ${syncing && html`
-                      <span key="lesson-sync-badge" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase tracking-wider animate-pulse">
-                        <${Loader2} size=${10} className="animate-spin" /> Đang cập nhật...
-                      </span>
-                    `}
                   </div>
                   <div key="title-box" className="relative flex items-center">
                     <h1 
