@@ -22,19 +22,25 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
   
   const [allNodes, setAllNodes] = useState(() => {
     try {
-      const cached = localStorage.getItem('cached_nodes');
-      return cached ? JSON.parse(cached) : [];
+      if (isAppMode) {
+        const cached = localStorage.getItem('cached_nodes');
+        return cached ? JSON.parse(cached) : [];
+      }
     } catch {
       return [];
     }
+    return [];
   });
   const [loading, setLoading] = useState(() => {
     try {
-      const cached = localStorage.getItem('cached_nodes');
-      return cached && JSON.parse(cached).length > 0 ? false : true;
+      if (isAppMode) {
+        const cached = localStorage.getItem('cached_nodes');
+        return cached && JSON.parse(cached).length > 0 ? false : true;
+      }
     } catch {
       return true;
     }
+    return true;
   });
   const [syncing, setSyncing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -158,10 +164,16 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       if (Array.isArray(data)) {
         if (!isSorting && !isEditingContent) {
           setAllNodes(data);
-          try {
-            localStorage.setItem('cached_nodes', JSON.stringify(data));
-          } catch (e) {
-            console.error(e);
+          if (isAppMode) {
+            try {
+              localStorage.setItem('cached_nodes', JSON.stringify(data));
+              // Log tin dài đặc biệt để tránh bị trùng lặp hay nhầm lẫn với các cảnh báo khác từ thư viện
+              console.log("==========================================================================================");
+              console.log("KODULAR_APP_OFFLINE_CACHE_SYSTEM_STATUS_SUCCESS_NODES_DATA_SYNCHRONIZED_AND_FULLY_STORED_IN_LOCALSTORAGE_CACHE_READY_FOR_OFFLINE_MODE_OPERATION");
+              console.log("==========================================================================================");
+            } catch (e) {
+              console.error(e);
+            }
           }
         }
         const nodeExists = !nodeId || data.some(n => n.id === nodeId);
@@ -179,7 +191,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
         window.location.reload(); 
         return;
       }
-      if (allNodes.length === 0) {
+      if (!isAppMode || allNodes.length === 0) {
         setError(err.message === 'LOAD_FAILED' ? 'load-failed' : 'source-error');
       } else {
         console.warn("Soft handling fetch failure to keep offline/cached view active:", err);
@@ -214,6 +226,7 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
 
   useEffect(() => {
     if (isEditingContent) return;
+    if (currentNode?.type !== NodeType.LESSON) return;
     
     // Rendering lock to prevent concurrent calls
     let isRendering = false;
@@ -223,7 +236,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       
       const contentElement = lessonContentRef.current || document.querySelector('.lesson-content');
       if (!contentElement) {
-        console.log('KaTeX: Content element not found yet.');
         return;
       }
 
@@ -373,7 +385,6 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
       }
       
       if (retryCount > 20) { // Try for 10 seconds
-        console.log('KaTeX: Max retries reached.');
         clearInterval(retryInterval);
       }
       retryCount++;
@@ -418,6 +429,16 @@ export const Explorer = ({ mode, isAppMode, uiConfig }) => {
     }, 1000);
     return () => clearInterval(intervalId);
   }, [mode, isSorting, isEditingContent]);
+
+  useEffect(() => {
+    const handleOnlineEvent = () => {
+      if (isAppMode && !isSorting && !isEditingContent) {
+        fetchData(true);
+      }
+    };
+    window.addEventListener('app-network-online', handleOnlineEvent);
+    return () => window.removeEventListener('app-network-online', handleOnlineEvent);
+  }, [isAppMode, isSorting, isEditingContent]);
 
   useEffect(() => {
     if (isSorting && sortableListRef.current) {

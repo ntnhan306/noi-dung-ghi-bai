@@ -69,7 +69,7 @@ const AnimatedRoutes = ({ isAppMode, uiConfig }) => {
     `;
 }
 
-const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
+const Layout = ({ children, isAppMode, uiConfig, currentBg, isOnline }) => {
   const { layoutError } = useLayoutError();
   const location = useLocation();
   const navigate = useNavigate();
@@ -160,6 +160,11 @@ const Layout = ({ children, isAppMode, uiConfig, currentBg }) => {
     </div>
 
     <div key="layout-main" className="min-h-screen flex flex-col overflow-x-hidden">
+      ${isAppMode && !isOnline && html`
+        <div key="offline-banner" className="bg-red-500/10 border-b border-red-500/20 py-2.5 px-4 text-center flex items-center justify-center gap-2 text-xs font-sans font-bold text-red-600 animate-pulse">
+          <${ShieldAlert} size=${14} /> Bạn đang sử dụng ứng dụng ngoại tuyến. Một số nội dung mới nhất có thể chưa hiển thị.
+        </div>
+      `}
       <header className=${`sticky top-0 z-30 transition-all duration-300 ${isAppMode ? 'h-16' : 'h-20'} ${isLiquid ? 'bg-white/60 backdrop-blur-xl border-b border-white/20' : 'bg-white border-b border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <div className="flex items-center gap-4 cursor-pointer select-none active:scale-95 transition-transform group" onClick=${handleSecretEntry}>
@@ -266,31 +271,76 @@ const App = () => {
   const [uiConfig, setUiConfig] = useState({ style: 'liquid', zoom: { view: true, edit: true, app: false }, backgroundActive: false, backgrounds: [] });
   const [currentBg, setCurrentBg] = useState(null);
 
+  const initConfig = useCallback(async () => {
+      let fullConfig = null;
+      try {
+          fullConfig = await apiService.getFullConfig();
+          if (fullConfig && isAppMode) {
+              localStorage.setItem('cached_full_config', JSON.stringify(fullConfig));
+          }
+      } catch (e) {
+          console.error("Failed to fetch full config, trying to use offline cache:", e);
+      }
+
+      if (!fullConfig && isAppMode) {
+          try {
+              const cached = localStorage.getItem('cached_full_config');
+              if (cached) {
+                  fullConfig = JSON.parse(cached);
+              }
+          } catch (e) {
+              console.error("Failed to parse cached full config:", e);
+          }
+      }
+
+      if (!fullConfig) {
+          fullConfig = { classes: [], background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
+      }
+
+      setUiConfig({
+          style: fullConfig.ui.style,
+          zoom: fullConfig.ui.zoom,
+          backgroundActive: fullConfig.background.active,
+          backgrounds: fullConfig.background.images
+      });
+      try {
+          localStorage.setItem('style_mode', fullConfig.ui.style);
+      } catch (e) {
+          console.error(e);
+      }
+      
+      if (fullConfig.background.active && fullConfig.background.images.length > 0) {
+        setCurrentBg(fullConfig.background.images[Math.floor(Math.random() * fullConfig.background.images.length)]);
+      }
+  }, []);
+
   useEffect(() => {
+    const triggerOnlineUpdate = (isConnected) => {
+      setIsOnline(isConnected);
+      if (isConnected) {
+        window.dispatchEvent(new CustomEvent('app-network-online'));
+      }
+    };
+
     // Đăng ký các hàm toàn cục để ứng dụng điện thoại tự chạy và cập nhật trạng thái kết nối mạng
-    // Truyền vào TRUE để báo mất mạng (offline), FALSE để báo online trở lại
     window.setOffline = (isOffline) => {
-      setIsOnline(!isOffline);
+      triggerOnlineUpdate(!isOffline);
     };
     window.setOfflineMode = (isOffline) => {
-      setIsOnline(!isOffline);
+      triggerOnlineUpdate(!isOffline);
     };
     window.setOfflineStatus = (isOffline) => {
-      setIsOnline(!isOffline);
+      triggerOnlineUpdate(!isOffline);
     };
     window.setOfflineState = (isOffline) => {
-      setIsOnline(!isOffline);
+      triggerOnlineUpdate(!isOffline);
     };
     window.updateNetworkStatus = (isConnected) => {
-      setIsOnline(isConnected);
+      triggerOnlineUpdate(isConnected);
     };
-    // Hàm vạn năng tổng hợp: Nhận trực tiếp trạng thái điều khiển từ điện thoại
-    // - value: có thể là true/false đại diện cho online/offline (hoặc ngược lại)
-    // - modeType: 'online' (mặc định) nếu tham số đầu tiên đại diện cho trạng thái kết nối mạng
-    //             'offline' nếu tham số đầu tiên đại diện cho trạng thái mất kết nối mạng
     window.setNetworkStateUnified = (value, modeType = 'online') => {
       const isOnlineState = modeType === 'offline' ? !value : !!value;
-      setIsOnline(isOnlineState);
+      triggerOnlineUpdate(isOnlineState);
     };
 
     return () => {
@@ -314,50 +364,18 @@ const App = () => {
   }, [isAppMode]);
 
   useEffect(() => {
-      const initConfig = async () => {
-          let fullConfig = null;
-          try {
-              fullConfig = await apiService.getFullConfig();
-              if (fullConfig) {
-                  localStorage.setItem('cached_full_config', JSON.stringify(fullConfig));
-              }
-          } catch (e) {
-              console.error("Failed to fetch full config, trying to use offline cache:", e);
-          }
-
-          if (!fullConfig) {
-              try {
-                  const cached = localStorage.getItem('cached_full_config');
-                  if (cached) {
-                      fullConfig = JSON.parse(cached);
-                  }
-              } catch (e) {
-                  console.error("Failed to parse cached full config:", e);
-              }
-          }
-
-          if (!fullConfig) {
-              fullConfig = { classes: [], background: { images: [], active: false }, ui: { style: 'liquid', zoom: { view: true, edit: true, app: false } } };
-          }
-
-          setUiConfig({
-              style: fullConfig.ui.style,
-              zoom: fullConfig.ui.zoom,
-              backgroundActive: fullConfig.background.active,
-              backgrounds: fullConfig.background.images
-          });
-          try {
-              localStorage.setItem('style_mode', fullConfig.ui.style);
-          } catch (e) {
-              console.error(e);
-          }
-          
-          if (fullConfig.background.active && fullConfig.background.images.length > 0) {
-            setCurrentBg(fullConfig.background.images[Math.floor(Math.random() * fullConfig.background.images.length)]);
-          }
-      };
       initConfig();
-  }, []);
+  }, [initConfig]);
+
+  useEffect(() => {
+    const handleOnlineEvent = () => {
+      if (isAppMode) {
+        initConfig();
+      }
+    };
+    window.addEventListener('app-network-online', handleOnlineEvent);
+    return () => window.removeEventListener('app-network-online', handleOnlineEvent);
+  }, [isAppMode, initConfig]);
 
   useEffect(() => {
     if (!uiConfig.backgroundActive || uiConfig.backgrounds.length <= 1) return;
@@ -368,14 +386,19 @@ const App = () => {
     return () => clearInterval(interval);
   }, [uiConfig, currentBg]);
 
+  const hasOfflineCache = (() => {
+    try {
+      if (!isAppMode) return false;
+      const cached = localStorage.getItem('cached_nodes');
+      return cached && JSON.parse(cached).length > 0;
+    } catch {
+      return false;
+    }
+  })();
+
   if (!isAuthorized) return html`
     <${LayoutErrorProvider}>
       <${StatusPage} type="access-denied" subMessage="Yêu cầu không hợp lệ. Bạn cần có đủ mã khóa xác thực để truy cập ứng dụng này." />
-    </${LayoutErrorProvider}>
-  `;
-  if (!isOnline && isAppMode) return html`
-    <${LayoutErrorProvider}>
-      <${StatusPage} type="no-internet" subMessage="Ứng dụng hiện đang ngoại tuyến. Vui lòng kiểm tra kết nối Internet để tiếp tục đồng bộ dữ liệu." />
     </${LayoutErrorProvider}>
   `;
 
@@ -385,7 +408,7 @@ const App = () => {
         <${ErrorBoundary}>
           <${ClassProvider}>
             <${BreadcrumbProvider}>
-              <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg}>
+              <${Layout} isAppMode=${isAppMode} uiConfig=${uiConfig} currentBg=${currentBg} isOnline=${isOnline}>
                  <${AnimatedRoutes} isAppMode=${isAppMode} uiConfig=${uiConfig} />
               </${Layout}>
             </${BreadcrumbProvider}>
